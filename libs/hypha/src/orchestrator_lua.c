@@ -6,17 +6,41 @@
 #include "hypha/log.h"
 #include "hypha/orchestrator.h"
 
+static inline void InitRegData(lua_State* L, Orchestrator* orc) {
+  lua_pushlightuserdata(L, orc);
+  lua_setfield(L, LUA_REGISTRYINDEX, LUA_REGISTRY_ORC_KEY);
+
+  lua_pushlightuserdata(L, OrchestratorGetEventBus(orc));
+  lua_setfield(L, LUA_REGISTRYINDEX, LUA_REGISTRY_EVENTS_KEY);
+}
+
+static inline void OpenLuaLibs(lua_State* L) {
+  luaL_requiref(L, "_G", luaopen_base, 1);
+  lua_pop(L, 1);
+
+  luaL_requiref(L, LUA_TABLIBNAME, luaopen_table, 1);
+  lua_pop(L, 1);
+
+  luaL_requiref(L, LUA_STRLIBNAME, luaopen_string, 1);
+  lua_pop(L, 1);
+
+  luaL_requiref(L, LUA_MATHLIBNAME, luaopen_math, 1);
+  lua_pop(L, 1);
+
+  luaL_requiref(L, LUA_UTF8LIBNAME, luaopen_utf8, 1);
+  lua_pop(L, 1);
+
+  luaL_requiref(L, LUA_LOADLIBNAME, luaopen_package, 1);
+  lua_pop(L, 1);
+}
+
 lua_State* NewOrchestratorLuaState(Orchestrator* orc) {
   lua_State* L = luaL_newstate();
   if (!L)
     goto finished;
 
-  luaL_openlibs(L);
-
-  // LOG_DEBUG("setting lua registry value for the orchestrator");
-  // lua_pushlightuserdata(L, orc);
-  // lua_setfield(L, LUA_REGISTRYINDEX, CONTEXT_REGISTRY_KEY_ORCHESTRATOR);
-  // LOG_DEBUG("done creating lua state");
+  OpenLuaLibs(L);
+  InitRegData(L, orc);
 
 finished:
   if (!L)

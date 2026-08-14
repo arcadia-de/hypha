@@ -60,6 +60,22 @@ static inline bool ResourceAnnotationEq(const ResourceAnnotation* lhs, const Res
   return strcmp(lhs->name, rhs->name) == 0 && strcmp(lhs->value, rhs->value) == 0;
 }
 
+bool ResourceGetAnnotation(const Resource* res, const char* name, const char** result) {
+  if (!res || !name)
+    goto finished;
+
+  BEGIN_FOREACH_RESOURCE_ANNOTATION(res, lhs)
+  if (strcmp(lhs->name, name) == 0) {
+    (*result) = lhs->value;
+    return true;
+  }
+  END_FOREACH_RESOURCE_ANNOTATION;
+
+finished:
+  (*result) = NULL;
+  return false;
+}
+
 bool ResourceHasAnnotation(const Resource* res, const ResourceAnnotation* rhs) {
   if (!res || !rhs)
     return false;

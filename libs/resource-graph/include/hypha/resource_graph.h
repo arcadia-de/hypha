@@ -6,7 +6,7 @@
 #include "hypha/resource.h"
 #include "hypha/resource_selector.h"
 
-typedef int32_t ResourceGraphIndex;
+typedef size_t ResourceGraphIndex;
 static const ResourceGraphIndex kInvalidResourceIndex = -1;
 
 typedef struct _ResourceGraph ResourceGraph;

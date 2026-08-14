@@ -32,17 +32,18 @@ func handleQuery(cmd *cobra.Command, args []string) error {
 	return nil
 }
 
-var queryCmd = &cobra.Command{
-	Use:     "query",
-	Short:   "Query the resource graph using an expression",
-	RunE:    handleQuery,
-	GroupID: "inspection",
-}
-
 func init() {
+	queryCmd := &cobra.Command{
+		Use:     "query",
+		Short:   "Query the resource graph using an expression",
+		RunE:    handleQuery,
+		GroupID: "inspection",
+	}
+
 	queryCmd.Flags().StringVarP(&queryFile, "file", "f", "", "The query file to evaluate")
 	queryCmd.Flags().StringVarP(&queryExpr, "expr", "e", "", "The query expression to evaluate")
 	queryCmd.MarkFlagsOneRequired("file", "expr")
 	queryCmd.MarkFlagsMutuallyExclusive("file", "expr")
+
 	RootCmd.AddCommand(queryCmd)
 }

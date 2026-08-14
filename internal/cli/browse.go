@@ -10,13 +10,13 @@ func handleBrowse(cmd *cobra.Command, args []string) error {
 	return nil
 }
 
-var browseCmd = &cobra.Command{
-	Use:     "browse",
-	Short:   "Open a read-only interactive browser session",
-	GroupID: "inspection",
-	RunE:    handleBrowse,
-}
-
 func init() {
+	browseCmd := &cobra.Command{
+		Use:     "browse",
+		Short:   "Open a read-only interactive browser session",
+		GroupID: "inspection",
+		RunE:    handleBrowse,
+	}
+
 	RootCmd.AddCommand(browseCmd)
 }

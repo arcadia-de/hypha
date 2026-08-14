@@ -17,8 +17,11 @@ import (
 )
 
 type Resource struct {
-	ID   string
-	Kind string
+	ID     string
+	Kind   string
+	State  string
+	Action string
+	Reason string
 }
 
 type ResourceVisitor func(Resource) bool
@@ -29,8 +32,9 @@ func goVisitResource(res *C.Resource, data unsafe.Pointer) C.bool {
 	vis := handle.Value().(ResourceVisitor)
 
 	goResource := Resource{
-		ID:   C.GoString(res.id),
-		Kind: C.GoString(res.kind),
+		ID:    C.GoString(res.id),
+		Kind:  C.GoString(res.kind),
+		State: C.GoString(C.ResourceStateName(res.state)),
 	}
 	return C.bool(vis(goResource))
 }

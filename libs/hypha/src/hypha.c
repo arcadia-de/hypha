@@ -24,7 +24,7 @@ void InitControllers() {
   {
     static const char* kControllerControllerName = "Controller";
     ControllerConfig config = {};
-    Controller* ctrl = RegisterController(kControllerControllerName, config);
+    Controller* ctrl = RegisterController(kControllerControllerName, config, NULL, NULL);
     if (!ctrl)
       return FailedToRegisterController(kControllerControllerName);
   }
@@ -48,7 +48,7 @@ void InitControllers() {
 #undef INIT_CONTROLLER
 }
 
-void InitHypha() {
-  InitPackageManagers();
+void InitHypha(const char* luarocks_dir) {
+  InitPackageManagers(luarocks_dir);
   InitControllers();
 }

@@ -68,11 +68,11 @@ finished:
   return status;
 }
 
-PackageManager* CreateParuPackageManager() {
-  PackageManagerConfig config = {
-      .install = &ParuInstall,
-      .uninstall = &ParuUninstall,
-      .status = &ParuStatus,
-  };
-  return NewPackageManager(HYPHA_PARU_NAME, NULL, config, NULL, NULL);
+DEFINE_PACKAGE_MANAGER_CONFIG(Paru){
+    .install = &ParuInstall,
+    .uninstall = &ParuUninstall,
+    .status = &ParuStatus,
+};
+PackageManager* NewParu() {
+  return NewPackageManager(kParuName, NULL, &kParuConfig, NULL, NULL);
 }

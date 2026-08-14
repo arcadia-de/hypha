@@ -3,6 +3,7 @@
 #include <stdlib.h>
 
 #include "hypha.h"
+#include "hypha/bitset.h"
 #include "hypha/log.h"
 #include "hypha/resource_selector.h"
 
@@ -10,7 +11,7 @@ struct _ResourceGraph {
   Resource* resources;
   uint64_t count;
   uint64_t capacity;
-  int* execution_order;
+  ResourceGraphIndex* execution_order;
 };
 
 void EnsureCapacity(ResourceGraph* graph);
@@ -27,7 +28,7 @@ bool VisitAllResources(const ResourceGraph* rg, ResourceVisitorFn fn, void* data
   if (!rg)
     return false;
 
-  for (uint64_t i = 0; i < rg->count; i++) {
+  for (ResourceGraphIndex i = 0; i < rg->count; i++) {
     const Resource* res = &rg->resources[i];
     if (!fn(res, data))
       return false;
@@ -41,7 +42,7 @@ bool VisitAllNonMatchingResources(const ResourceGraph* rg, const ResourceSelecto
   if (!rg || !rs)
     return false;
 
-  for (uint64_t i = 0; i < rg->count; i++) {
+  for (ResourceGraphIndex i = 0; i < rg->count; i++) {
     const Resource* res = &rg->resources[i];
     if (ResourceSelectorMatch(rs, res))
       continue;
@@ -57,7 +58,7 @@ bool VisitAllMatchingResources(const ResourceGraph* rg, const ResourceSelector* 
   if (!rg || !rs)
     return false;
 
-  for (uint64_t i = 0; i < rg->count; i++) {
+  for (ResourceGraphIndex i = 0; i < rg->count; i++) {
     const Resource* res = &rg->resources[i];
     if (!ResourceSelectorMatch(rs, res))
       continue;
@@ -70,7 +71,7 @@ bool VisitAllMatchingResources(const ResourceGraph* rg, const ResourceSelector* 
 }
 
 ResourceGraph* NewResourceGraph() {
-  static const uint32_t kInitCapacity = 8;
+  static const size_t kInitCapacity = 8;
   ResourceGraph* result = NULL;  // NOLINT(modernize-use-nullptr)
 
   ResourceGraph* graph = (ResourceGraph*)malloc(sizeof(ResourceGraph));
@@ -81,7 +82,7 @@ ResourceGraph* NewResourceGraph() {
   if (!resources)
     goto failed0;
 
-  int* exec_order = (int*)malloc(sizeof(int) * kInitCapacity);
+  ResourceGraphIndex* exec_order = (ResourceGraphIndex*)malloc(sizeof(ResourceGraphIndex) * kInitCapacity);
   if (!exec_order)
     goto failed1;
 
@@ -91,7 +92,6 @@ ResourceGraph* NewResourceGraph() {
   graph->execution_order = exec_order;
   result = graph;
   goto finished;
-
 failed1:
   free(resources);
 failed0:
@@ -104,14 +104,14 @@ void EnsureCapacity(ResourceGraph* graph) {
   if (!graph || graph->count < graph->capacity)
     goto finished;
 
-  const uint64_t new_cap = graph->capacity * 2;
+  const size_t new_cap = graph->capacity * 2;
   Resource* new_resources = realloc(graph->resources, sizeof(Resource) * new_cap);
   if (!new_resources) {
     LOG_ERROR("failed to allocate new resources for ResourceGraph with capacity %d", new_cap);
     goto finished;
   }
 
-  int* new_exec_order = realloc(graph->execution_order, sizeof(int) * new_cap);
+  ResourceGraphIndex* new_exec_order = realloc(graph->execution_order, sizeof(ResourceGraphIndex) * new_cap);
   if (!new_exec_order) {
     LOG_ERROR("failed to allocate new execution_order for ResourceGraph with capacity %d", new_cap);
     goto failed0;
@@ -128,7 +128,7 @@ finished:
 }
 
 static inline ResourceGraphIndex FindResourceIndex(ResourceGraph* graph, const char* id) {
-  for (uint64_t i = 0; i < graph->count; i++) {
+  for (ResourceGraphIndex i = 0; i < graph->count; i++) {
     if (strcmp(graph->resources[i].id, id) == 0)
       return (ResourceGraphIndex)i;
   }
@@ -136,19 +136,20 @@ static inline ResourceGraphIndex FindResourceIndex(ResourceGraph* graph, const c
   return kInvalidResourceIndex;
 }
 
-bool topological_sort_dfs(ResourceGraph* graph, int node_idx, bool* visited, bool* stack, int* output_idx) {
-  if (stack[node_idx])
+bool topological_sort_dfs(ResourceGraph* graph, ResourceGraphIndex node_idx, BitSet* visited, BitSet* stack,
+                          ResourceGraphIndex* output_idx) {
+  if (BitSetTest(stack, node_idx))
     return false;
 
-  if (visited[node_idx])
+  if (BitSetTest(visited, node_idx))
     return true;
 
-  stack[node_idx] = true;
-  visited[node_idx] = true;
+  BitSetSet(stack, node_idx);
+  BitSetSet(visited, node_idx);
 
   Resource* res = &graph->resources[node_idx];
-  for (uint64_t i = 0; i < res->num_depends_on; i++) {
-    int dep_idx = FindResourceIndex(graph, res->depends_on[i]);
+  for (ResourceGraphIndex i = 0; i < res->num_depends_on; i++) {
+    ResourceGraphIndex dep_idx = FindResourceIndex(graph, res->depends_on[i]);
     if (dep_idx == kInvalidResourceIndex) {
       LOG_ERROR("out-of-bounds dependency: '%s' relies on missing '%s'", res->id, res->depends_on[i]);
       return false;
@@ -158,37 +159,38 @@ bool topological_sort_dfs(ResourceGraph* graph, int node_idx, bool* visited, boo
       return false;
   }
 
-  stack[node_idx] = false;
+  BitSetReset(stack, node_idx);
   graph->execution_order[*output_idx] = node_idx;
   (*output_idx)++;
   return true;
 }
 
 bool ComputeExecutionSchedule(ResourceGraph* graph) {
-  if (graph->count == 0)
+  if (IsResourceGraphEmpty(graph))
     return true;
 
-  bool* visited = calloc(graph->count, sizeof(bool));
-  bool* stack = calloc(graph->count, sizeof(bool));
-  int output_idx = 0;
+  BitSet stack;
+  InitBitSet(&stack, graph->count);
+  BitSet visited;
+  ResourceGraphIndex output_idx = 0;
   bool success = true;
 
-  for (uint64_t i = 0; i < graph->count; i++) {
-    if (!visited[i]) {
-      if (!topological_sort_dfs(graph, (int32_t)i, visited, stack, &output_idx)) {
+  for (ResourceGraphIndex i = 0; i < graph->count; i++) {
+    if (!BitSetTest(&visited, i)) {
+      if (!topological_sort_dfs(graph, i, &visited, &stack, &output_idx)) {
         success = false;
         break;
       }
     }
   }
 
-  free(visited);
-  free(stack);
+  FreeBitSet(&stack);
+  FreeBitSet(&visited);
   return success;
 }
 
 bool DependenciesAreSatisfied(ResourceGraph* graph, Resource* res) {
-  for (uint64_t i = 0; i < res->num_depends_on; i++) {
+  for (ResourceGraphIndex i = 0; i < res->num_depends_on; i++) {
     ResourceGraphIndex dep_idx = FindResourceIndex(graph, res->depends_on[i]);
     if (dep_idx == kInvalidResourceIndex || !IsResourceReady(&graph->resources[dep_idx]))
       return false;
@@ -201,12 +203,12 @@ void FreeResourceGraph(ResourceGraph* graph) {
   if (!graph)
     return;
 
-  for (uint64_t i = 0; i < graph->count; i++) {
+  for (ResourceGraphIndex i = 0; i < graph->count; i++) {
     Resource* res = &graph->resources[i];
     free(res->id);
     free(res->kind);
 
-    for (int j = 0; j < res->num_depends_on; j++)
+    for (ResourceGraphIndex j = 0; j < res->num_depends_on; j++)
       free(res->depends_on[j]);
 
     if (res->depends_on)
@@ -225,6 +227,7 @@ void FreeResourceGraph(ResourceGraph* graph) {
 Resource* AllocNewResouceInGraph(ResourceGraph* rg) {
   if (!rg)
     return NULL;
+
   EnsureCapacity(rg);
   Resource* new_res = &rg->resources[rg->count];
   ASSERT(new_res);

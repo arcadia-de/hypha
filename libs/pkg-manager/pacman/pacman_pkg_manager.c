@@ -69,11 +69,11 @@ finished:
   return status;
 }
 
-PackageManager* CreatePacmanPackageManager() {
-  PackageManagerConfig config = {
-      .install = &PacmanInstall,
-      .status = &PacmanStatus,
-      .uninstall = &PacmanUninstall,
-  };
-  return NewPackageManager(HYPHA_PACMAN_NAME, NULL, config, NULL, NULL);
+DEFINE_PACKAGE_MANAGER_CONFIG(Pacman){
+    .install = &PacmanInstall,
+    .status = &PacmanStatus,
+    .uninstall = &PacmanUninstall,
+};
+PackageManager* NewPacman() {
+  return NewPackageManager(kPacmanName, NULL, &kPacmanConfig, NULL, NULL);
 }

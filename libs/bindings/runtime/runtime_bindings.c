@@ -5,11 +5,22 @@
 #include <lualib.h>
 #include <stdlib.h>
 
+#include "hypha/expander.h"
+#include "hypha/lua_controller.h"
 #include "hypha/process.h"
 
 LUA_FN(getVersion) {
   lua_pushstring(L, "0.0.0");
   return 1;
+}
+
+LUA_FN(createController) {
+  const char* kind = luaL_checkstring(L, 1);
+  Controller* ctrl = NewLuaController(L, kind, 2);
+  if (!ctrl)
+    return luaL_error(L, "failed to create new lua controller for kind: %s", kind);
+  ControllerInit(ctrl);
+  return 0;
 }
 
 LUA_FN(exec) {
@@ -39,14 +50,29 @@ LUA_FN(which) {
   return 1;
 }
 
+LUA_FN(expand) {
+  const char* value = luaL_checkstring(L, 1);
+
+  char* result = NULL;
+  size_t result_len = 0;
+  Expander expander;
+  if (!ExpandStr(&expander, value, &result, &result_len))
+    return luaL_error(L, "error: failed to expand: %s", value);
+
+  lua_pushstring(L, result);
+  return 1;
+}
+
 // clang-format off
 static const struct luaL_Reg kFuncs[] = {
 #define BIND(Name) {#Name, lua_##Name},
   BIND(getVersion)
   BIND(exec)
   BIND(which)
-  {NULL, NULL},  // NOLINT(modernize-use-nullptr)
+  BIND(expand)
+  BIND(createController)
 #undef BIND
+  {NULL, NULL},  // NOLINT(modernize-use-nullptr)
 };
 // clang-format on
 

@@ -4,6 +4,7 @@
 #include <uv.h>
 
 #include "hypha.h"
+#include "hypha/controller.h"
 #include "hypha/orchestrator.h"
 #include "hypha/state.h"
 
@@ -16,6 +17,7 @@ typedef struct {
   ControllerAction action;
   ControllerStatus status;
   StateEntry last_applied;
+  Reason reason;
 } ReconcileTask;
 
 #endif  // HYPHA_RECONCILE_H

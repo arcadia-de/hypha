@@ -10,14 +10,14 @@ func handleDocs(cmd *cobra.Command, args []string) error {
 	return nil
 }
 
-var docsCmd = &cobra.Command{
-	Use:     "docs [kind]",
-	Short:   "Open the documentation for a specific resource kind in the system browser",
-	Args:    cobra.ExactArgs(1),
-	GroupID: "development",
-	RunE:    handleDocs,
-}
-
 func init() {
+	docsCmd := &cobra.Command{
+		Use:     "docs [kind]",
+		Short:   "Open the documentation for a specific resource kind in the system browser",
+		Args:    cobra.ExactArgs(1),
+		GroupID: "development",
+		RunE:    handleDocs,
+	}
+
 	RootCmd.AddCommand(docsCmd)
 }

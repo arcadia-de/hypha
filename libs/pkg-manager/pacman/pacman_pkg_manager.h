@@ -3,8 +3,6 @@
 
 #include "hypha/package_manager.h"
 
-#define HYPHA_PACMAN_NAME "pacman"
-
-PackageManager* CreatePacmanPackageManager();
+PackageManager* NewPacman();
 
 #endif  // HYPHA_PACMAN_PKG_MANAGER_H

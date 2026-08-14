@@ -1,0 +1,5 @@
+option('enable_profiling', 
+  type: 'boolean', 
+  value: false, 
+  description: 'Enable profiling (w/ Tracy)',
+)

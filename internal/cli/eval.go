@@ -14,6 +14,12 @@ func handleEval(cmd *cobra.Command, args []string) error {
 	if err != nil {
 		return fmt.Errorf("failed to create new Orchestrator with default config: %v", err)
 	}
+	defer orc.Close()
+
+	err = orc.Run(hypha.OrchestratorApplyMode) // TODO(@s0cks): should have a noop mode
+	if err != nil {
+		return fmt.Errorf("failed to run Orchestrator: %v", err)
+	}
 
 	if expr != "" {
 		orc.EvalLuaExpr(expr)
@@ -21,18 +27,17 @@ func handleEval(cmd *cobra.Command, args []string) error {
 		orc.EvalLuaFile(file)
 	}
 
-	orc.Close()
 	return nil
 }
 
-var evalCmd = &cobra.Command{
-	Use:     "eval",
-	Short:   "Evaluate a lua expression or file",
-	GroupID: "development",
-	RunE:    handleEval,
-}
-
 func init() {
+	evalCmd := &cobra.Command{
+		Use:     "eval",
+		Short:   "Evaluate a lua expression or file",
+		GroupID: "development",
+		RunE:    handleEval,
+	}
+
 	evalCmd.Flags().StringVarP(&file, "file", "f", "", "The lua file to evaluate")
 	evalCmd.Flags().StringVarP(&expr, "expr", "e", "", "The lua expression to evaluate")
 	evalCmd.MarkFlagsOneRequired("file", "expr")

@@ -7,7 +7,7 @@
 #include <string.h>
 #include <unistd.h>
 
-#include "crc32.h"
+#include "hypha/crc32.h"
 
 struct _StateLog {
   FILE* file;

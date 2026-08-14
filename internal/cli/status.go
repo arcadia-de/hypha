@@ -10,13 +10,13 @@ func handleStatus(cmd *cobra.Command, args []string) error {
 	return nil
 }
 
-var statusCommand = &cobra.Command{
-	Use:     "status",
-	Short:   "Show resource drift",
-	GroupID: "config",
-	RunE:    handleStatus,
-}
-
 func init() {
+	statusCommand := &cobra.Command{
+		Use:     "status",
+		Short:   "Show resource drift",
+		GroupID: "config",
+		RunE:    handleStatus,
+	}
+
 	RootCmd.AddCommand(statusCommand)
 }

@@ -21,37 +21,37 @@ void ClearLogResourceContext();
 #define LOG_INFO_IF(Cond, fmt, ...) \
   ({                                \
     if ((Cond))                     \
-      LOG_INFO(fmt, ##__VA_ARGS__)  \
+      LOG_INFO(fmt, ##__VA_ARGS__); \
   })
 
 #define LOG_DEBUG_IF(Cond, fmt, ...) \
   ({                                 \
     if ((Cond))                      \
-      LOG_DEBUG(fmt, ##__VA_ARGS__)  \
+      LOG_DEBUG(fmt, ##__VA_ARGS__); \
   })
 
 #define LOG_SUCCESS_IF(Cond, fmt, ...) \
   ({                                   \
     if ((Cond))                        \
-      LOG_SUCCESS(fmt, ##__VA_ARGS__)  \
+      LOG_SUCCESS(fmt, ##__VA_ARGS__); \
   })
 
 #define LOG_WARN_IF(Cond, fmt, ...) \
   ({                                \
     if ((Cond))                     \
-      LOG_WARN(fmt, ##__VA_ARGS__)  \
+      LOG_WARN(fmt, ##__VA_ARGS__); \
   })
 
 #define LOG_ERROR_IF(Cond, fmt, ...) \
   ({                                 \
     if ((Cond))                      \
-      LOG_ERROR(fmt, ##__VA_ARGS__)  \
+      LOG_ERROR(fmt, ##__VA_ARGS__); \
   })
 
 #define LOG_FATAL_IF(Cond, fmt, ...) \
   ({                                 \
     if ((Cond))                      \
-      LOG_FATAL(fmt, ##__VA_ARGS__)  \
+      LOG_FATAL(fmt, ##__VA_ARGS__); \
   })
 
 #ifdef HYPHA_DEBUG

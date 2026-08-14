@@ -92,13 +92,13 @@ func handleInit(cmd *cobra.Command, args []string) error {
 	return nil
 }
 
-var initCmd = &cobra.Command{
-	Use:     "init",
-	Short:   "Initialize hypha on a system",
-	GroupID: "config",
-	RunE:    handleInit,
-}
-
 func init() {
+	initCmd := &cobra.Command{
+		Use:     "init",
+		Short:   "Initialize hypha on a system",
+		GroupID: "config",
+		RunE:    handleInit,
+	}
+
 	RootCmd.AddCommand(initCmd)
 }

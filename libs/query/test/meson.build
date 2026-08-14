@@ -1,16 +1,15 @@
 query_test_exec = executable('hypha-query-tests',
   sources : [
-
-  ],
-  link_with: [
-    hypha_log,
+    'test_query.cc',
   ],
   dependencies : [
-    gtest_dep
+    gtest_dep,
+    hypha_query_dep,
   ],
 )
 
-test('GoogleTest Core Features',
-  log_test_exec,
+test(
+  'Hypha Query Tests',
+  query_test_exec,
   protocol: 'gtest',
 )

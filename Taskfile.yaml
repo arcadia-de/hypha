@@ -59,27 +59,33 @@ tasks:
           GO_TARGET: hypha
   ouch:compress:
     internal: true
+    vars:
+      OUCH_ARTIFACT: "{{.ROOT_DIR_NAME}}-sources.{{.OUCH_COMPRESSION}}"
     cmds:
       - |
-        ouch compress \
-          api/ \
-          bindings/ \
-          assets/ \
-          cmd/ \
-          config/ \
-          controllers/ \
-          internal/ \
-          libs/ \
-          schema/ \
-          wiki/ \
-          .env \
-          go.mod \
-          go.sum \
-          LICENSE \
-          meson.build \
-          README.md \
-          Taskfile.yaml \
-          "{{.ROOT_DIR_NAME}}-sources.{{.OUCH_COMPRESSION}}"
+        ouch compress        \
+          assets             \
+          cmd                \
+          config             \
+          docs               \
+          internal           \
+          libs               \
+          lua                \
+          schema             \
+          wiki               \
+          .clang-format      \
+          .clang-tidy        \
+          .clangd            \
+          .env               \
+          .gitignore         \
+          .luarc.json        \
+          go.mod             \
+          go.sum             \
+          LICENSE            \
+          meson.build        \
+          README.md          \
+          Taskfile.yaml      \
+          {{.OUCH_ARTIFACT}}
   zip:
     cmds:
       - task: ouch:compress

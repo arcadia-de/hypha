@@ -6,6 +6,8 @@ package hypha
 #include "hypha.h"
 #include "hypha/orchestrator.h"
 #include "hypha/resource.h"
+
+bool goVisitPlannedActions(PlannedAction* action, void* data);
 */
 import "C"
 
@@ -13,9 +15,20 @@ import (
 	"encoding/json"
 	"fmt"
 	"os"
+	"runtime"
+	"runtime/cgo"
 	"unsafe"
 
 	"github.com/google/go-jsonnet"
+)
+
+type OrchestratorRunMode int
+
+const (
+	OrchestratorPlanMode    OrchestratorRunMode = C.kOrchestratorPlanMode
+	OrchestratorDiffMode    OrchestratorRunMode = C.kOrchestratorDiffMode
+	OrchestratorDestroyMode OrchestratorRunMode = C.kOrchestratorDestroyMode
+	OrchestratorApplyMode   OrchestratorRunMode = C.kOrchestratorApplyMode
 )
 
 type Orchestrator struct {
@@ -27,6 +40,16 @@ type OrchestratorConfig struct {
 	Root     string
 	CacheDir string
 	StateDir string
+}
+
+type OrchestratorMetrics struct {
+	Start     uint64 `json:"start" yaml:"start"`
+	Finish    uint64 `json:"finish" yaml:"finish"`
+	Processed uint64 `json:"processed" yaml:"processed"`
+	Noop      uint64 `json:"noop" yaml:"noop"`
+	Created   uint64 `json:"created" yaml:"created"`
+	Updated   uint64 `json:"updated" yaml:"updated"`
+	Destroyed uint64 `json:"destroyed" yaml:"destroyed"`
 }
 
 func NewOrchestrator(config OrchestratorConfig) *Orchestrator {
@@ -50,6 +73,20 @@ func NewOrchestrator(config OrchestratorConfig) *Orchestrator {
 	return &Orchestrator{
 		Handle:  orc,
 		Jsonnet: vm,
+	}
+}
+
+func (orc *Orchestrator) GetMetrics() OrchestratorMetrics {
+	var cMetrics C.OrchestratorMetrics
+	C.GetOrchestratorMetrics(orc.Handle, &cMetrics)
+	return OrchestratorMetrics{
+		Start:     uint64(cMetrics.run_start),
+		Finish:    uint64(cMetrics.run_finished),
+		Processed: uint64(cMetrics.num_processed),
+		Noop:      uint64(cMetrics.num_actions[C.kNoAction]),
+		Created:   uint64(cMetrics.num_actions[C.kCreateAction]),
+		Updated:   uint64(cMetrics.num_actions[C.kUpdateAction]),
+		Destroyed: uint64(cMetrics.num_actions[C.kDestroyAction]),
 	}
 }
 
@@ -114,8 +151,8 @@ func (orc *Orchestrator) RenderAnonymousJsonnetManifest(code string) (string, er
 	return orc.RenderJsonnetManifest("manifest.jsonnet", code)
 }
 
-func (orc *Orchestrator) Run() error {
-	success := C.OrchestratorRun(orc.Handle)
+func (orc *Orchestrator) Run(mode OrchestratorRunMode) error {
+	success := C.OrchestratorRun(orc.Handle, C.OrchestratorRunMode(mode))
 	if !bool(success) {
 		return fmt.Errorf("failed to run Orchestrator")
 	}
@@ -123,17 +160,15 @@ func (orc *Orchestrator) Run() error {
 	return nil
 }
 
-func (orc *Orchestrator) RenderGraph(name string, layout string, render string) error {
-	cName := C.CString(name)
-	defer C.free(unsafe.Pointer(cName))
+func (orc *Orchestrator) RunWithReason(mode OrchestratorRunMode, reason string) error {
+	cReason := C.CString(reason)
+	defer C.free(unsafe.Pointer(cReason))
 
-	cLayout := C.CString(layout)
-	defer C.free(unsafe.Pointer(cLayout))
+	success := C.OrchestratorRunWithReason(orc.Handle, C.OrchestratorRunMode(mode), cReason)
+	if !bool(success) {
+		return fmt.Errorf("failed to run Orchestrator")
+	}
 
-	cRender := C.CString(render)
-	defer C.free(unsafe.Pointer(cRender))
-
-	C.OrchestratorRenderResourceGraphToStdout(orc.Handle, cName, cLayout, cRender)
 	return nil
 }
 
@@ -156,22 +191,27 @@ func (orc *Orchestrator) AddResource(res ResourceSpec) {
 		}
 	}
 
-	specBytes, err := json.Marshal(res.Spec)
-	if err != nil {
-		fmt.Printf("error marshalling spec: %v", err)
-		os.Exit(1)
-		return
+	var cRawSpec *C.char
+	if res.Spec != nil {
+		specBytes, err := json.Marshal(res.Spec)
+		if err != nil {
+			fmt.Printf("error marshalling spec: %v", err)
+			os.Exit(1)
+			return
+		}
+		cRawSpec = C.CString(string(specBytes))
+		defer C.free(unsafe.Pointer(cRawSpec))
 	}
-
-	cSpec := C.CString(string(specBytes))
-	defer C.free(unsafe.Pointer(cSpec))
 
 	spec := C.Resource{
 		id:             cID,
 		kind:           cKind,
 		depends_on:     cDeps,
 		num_depends_on: C.uint32_t(numDeps),
-		spec:           cSpec,
+		spec: C.ResourceSpecDocument{
+			raw: cRawSpec,
+			doc: nil,
+		},
 	}
 
 	C.OrchestratorAddResource(orc.Handle, spec)
@@ -242,4 +282,43 @@ func (orc *Orchestrator) CollectGarbage() error {
 
 func (orc *Orchestrator) PrintRuntimeInfo() {
 	C.OrchestratorPrintRuntimeInfo(orc.Handle)
+}
+
+type PlannedAction struct {
+	ID     string
+	Action string
+	Reason string
+}
+
+type PlannedActionVisitor func(action PlannedAction) bool
+
+//export goVisitPlannedActions
+func goVisitPlannedActions(action *C.PlannedAction, data unsafe.Pointer) C.bool {
+	handle := *(*cgo.Handle)(data)
+	vis := handle.Value().(PlannedActionVisitor)
+
+	var goReason string
+	if action.reason != nil {
+		goReason = C.GoString(action.reason)
+	}
+
+	goAction := PlannedAction{
+		ID:     C.GoString(action.id),
+		Action: C.GoString(C.ControllerActionToCString(action.action)),
+		Reason: goReason,
+	}
+	return C.bool(vis(goAction))
+}
+
+func (orc *Orchestrator) VisitPlannedActions(vis PlannedActionVisitor) {
+	handle := cgo.NewHandle(vis)
+	defer handle.Delete()
+
+	C.OrchestratorVisitPlannedActions(
+		orc.Handle,
+		(C.PlannedActionVisitorFn)(unsafe.Pointer(C.goVisitPlannedActions)),
+		unsafe.Pointer(&handle),
+	)
+
+	runtime.KeepAlive(handle)
 }

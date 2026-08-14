@@ -152,17 +152,18 @@ func handleHistory(cmd *cobra.Command, args []string) error {
 	return nil
 }
 
-var historyCmd = &cobra.Command{
-	Use:     "history",
-	Short:   "Show the history of the resource graph",
-	GroupID: "inspection",
-	RunE:    handleHistory,
-}
-
 func init() {
+	historyCmd := &cobra.Command{
+		Use:     "history",
+		Short:   "Show the history of the resource graph",
+		GroupID: "inspection",
+		RunE:    handleHistory,
+	}
+
 	historyCmd.Flags().StringVarP(&kindFilter, "kind", "k", "", "Filter by kind")
 	historyCmd.Flags().Int64VarP(&runidFilter, "run-id", "r", -1, "Filter by run id")
 	historyCmd.Flags().StringVarP(&actionFilter, "action", "a", "", "Filter by action")
 	historyCmd.Flags().StringVarP(&statusFilter, "status", "s", "", "Filter by status")
+
 	RootCmd.AddCommand(historyCmd)
 }

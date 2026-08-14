@@ -8,4 +8,9 @@ local M = {}
 ---@return string
 function getVersion() end
 
+--- Expand a string
+---@param value string
+---@return string
+function expand(value) end
+
 return M

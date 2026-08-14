@@ -62,6 +62,10 @@ func ParseResultNode(node *C.QueryResult) any {
 	}
 }
 
+// TODO(@s0cks): use this where possible
+// goStr := "Hello from Go, no allocations!"
+// cPtr := (*C.char)(unsafe.Pointer(unsafe.StringData(goStr)))
+// cLen := C.int(len(goStr))
 func (orc *Orchestrator) Query(query string) (any, error) {
 	cResourceGraph := C.OrchestratorGetResourceGraph(orc.Handle)
 	if cResourceGraph == nil {

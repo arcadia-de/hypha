@@ -1,4 +1,8 @@
 hypha_query_inc = include_directories('include/')
+hypha_query_deps = [
+  libuv,
+  threads,
+]
 hypha_query = static_library(
   'hypha-query',
   [
@@ -9,22 +13,14 @@ hypha_query = static_library(
     'src/query_parser.c',
     'src/query_result.c',
   ],
-  dependencies: [
-    libuv,
-    threads,
-  ],
-  include_directories: [
-    hypha_query_inc,
-  ],
-  install: true
+  dependencies: hypha_query_deps,
+  include_directories: hypha_query_inc,
+  install: false,
 )
 hypha_query_dep = declare_dependency(
-  link_with: [
-    hypha_query,
-  ],
-  include_directories: [
-    hypha_query_inc,
-  ]
+  link_with: hypha_query,
+  dependencies: hypha_query_deps,
+  include_directories: hypha_query_inc,
 )
 
 if gtest_dep.found()

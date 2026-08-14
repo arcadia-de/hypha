@@ -9,3 +9,6 @@ bin/
 *.tar.gz
 *.log
 /*.lua
+/*.jsonnet
+/*.libsonnet
+docs/

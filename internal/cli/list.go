@@ -71,6 +71,7 @@ func init() {
 		Args:  cobra.ExactArgs(1),
 		RunE:  handleList,
 	}
+
 	listCmd.Flags().StringP("kind", "k", "", "Filter by kind")
 	listCmd.Flags().StringP("label", "l", "", "Filter by label")
 

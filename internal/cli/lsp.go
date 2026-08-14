@@ -11,13 +11,13 @@ func handleLsp(cmd *cobra.Command, args []string) error {
 	return nil
 }
 
-var lspCmd = &cobra.Command{
-	Use:     "lsp",
-	Short:   "Run the LSP service for a manifest",
-	GroupID: "development",
-	RunE:    handleLsp,
-}
-
 func init() {
+	lspCmd := &cobra.Command{
+		Use:     "lsp",
+		Short:   "Run the LSP service for a manifest",
+		GroupID: "development",
+		RunE:    handleLsp,
+	}
+
 	RootCmd.AddCommand(lspCmd)
 }

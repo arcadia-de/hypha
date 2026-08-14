@@ -56,5 +56,5 @@ local TemplateManifest(id) = Manifest(id, 'Template');
     'debug',
   ]),
 
-  SymlinkManifest('symlink-0', '/home/tazz/Projects/hypha/config/test-manifest.jsonnet', '/home/tazz/Projects/hypha/config/test.jsonnet'),
+  SymlinkManifest('symlink-0', './config/test-manifest.jsonnet', '~/test.jsonnet'),
 ]

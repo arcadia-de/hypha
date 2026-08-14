@@ -1,3 +1,5 @@
+#include "jsonnet_bindings.h"
+
 #include <dlfcn.h>
 #include <lauxlib.h>
 #include <lua.h>
@@ -5,9 +7,8 @@
 #include <stdlib.h>
 
 #include "hypha.h"
-#include "jsonnet_bindings.h"
 
-static inline int LuaRenderJsonnet(lua_State* L) {
+LUA_FN(render) {
   const int num_args = lua_gettop(L);
 
   if (num_args < 1)
@@ -33,10 +34,10 @@ static inline int LuaRenderJsonnet(lua_State* L) {
 
 // clang-format off
 static const struct luaL_Reg kFuncs[] = {
-#define _BIND(Name, Func) {#Name, &Lua##Func}
-  _BIND(render, RenderJsonnet),
+#define BIND(Name) {#Name, lua_##Name},
+  BIND(render)
+#undef BIND
   {NULL, NULL},  // NOLINT(modernize-use-nullptr)
-#undef _BIND 
 };
 // clang-format on
 

@@ -10,14 +10,14 @@ func handleAdopt(cmd *cobra.Command, args []string) error {
 	return nil
 }
 
-var adoptCmd = &cobra.Command{
-	Use:     "adopt [resources]",
-	Short:   "Adopt specific resources into the resource graph",
-	Args:    cobra.MinimumNArgs(1),
-	GroupID: "config",
-	RunE:    handleAdopt,
-}
-
 func init() {
+	adoptCmd := &cobra.Command{
+		Use:     "adopt [resources]",
+		Short:   "Adopt specific resources into the resource graph",
+		Args:    cobra.MinimumNArgs(1),
+		GroupID: "config",
+		RunE:    handleAdopt,
+	}
+
 	RootCmd.AddCommand(adoptCmd)
 }

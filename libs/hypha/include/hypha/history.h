@@ -11,7 +11,7 @@ typedef struct {
   ControllerStatus status;
   char* hash_before;
   char* hash_after;
-  char* reason;
+  Reason reason;
   uint64_t run_id;
   int64_t applied_at;
 } HistoryRecord;

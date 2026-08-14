@@ -17,12 +17,12 @@ func handleInfo(cmd *cobra.Command, args []string) error {
 	return nil
 }
 
-var infoCmd = &cobra.Command{
-	Use:   "info",
-	Short: "Show system info",
-	RunE:  handleInfo,
-}
-
 func init() {
+	infoCmd := &cobra.Command{
+		Use:   "info",
+		Short: "Show system info",
+		RunE:  handleInfo,
+	}
+
 	RootCmd.AddCommand(infoCmd)
 }

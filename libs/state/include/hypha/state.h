@@ -3,13 +3,15 @@
 
 #include <stdint.h>
 
+#include "hypha.h"
+
 typedef struct _StateStore StateStore;
 typedef struct _StateLog StateLog;
 
 typedef struct {
   bool orphaned;
-  int64_t applied_at;
-  int32_t last_status;
+  uint64_t applied_at;
+  int last_status;
   char* id;
   char* kind;
   char* hash;

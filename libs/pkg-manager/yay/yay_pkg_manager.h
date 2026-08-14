@@ -3,8 +3,6 @@
 
 #include "hypha/package_manager.h"
 
-#define HYPHA_YAY_NAME "yay"
-
-PackageManager* CreateYayPackageManager();
+PackageManager* NewYay();
 
 #endif  // HYPHA_YAY_PKG_MANAGER_H

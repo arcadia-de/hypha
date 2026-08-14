@@ -44,7 +44,7 @@ func goHistoryLogVisit(rec *C.HistoryRecord, data unsafe.Pointer) C.bool {
 		Kind:       C.GoString(rec.kind),
 		HashBefore: C.GoString(rec.hash_before),
 		HashAfter:  C.GoString(rec.hash_after),
-		Reason:     C.GoString(rec.reason),
+		Reason:     C.GoString((*C.char)(unsafe.Pointer(&rec.reason))),
 		RunID:      uint64(rec.run_id),
 		AppliedAt:  int64(rec.applied_at),
 		Action:     GetControllerActionName(ControllerAction(rec.action)),

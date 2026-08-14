@@ -1,6 +1,10 @@
 subdir('api/')
 
 pkg_manager_matrix = {
+  'luarocks': {
+    'deps': [],
+    'override_opts': [],
+  },
   'apt': {
     'deps': [],
     'override_opts': [],
@@ -17,6 +21,34 @@ pkg_manager_matrix = {
     'deps': [],
     'override_opts': [],
   },
+  'asdf': {
+    'deps': [],
+    'override_opts': [],
+  },
+  'brew': {
+    'deps': [],
+    'override_opts': [],
+  },
+  'cargo': {
+    'deps': [],
+    'override_opts': [],
+  },
+  'dnf': {
+    'deps': [],
+    'override_opts': [],
+  },
+  'eget': {
+    'deps': [],
+    'override_opts': [],
+  },
+  'flatpak': {
+    'deps': [],
+    'override_opts': [],
+  },
+  'go': {
+    'deps': [],
+    'override_opts': [],
+  },
 }
 
 base_pkg_manager_deps = [
@@ -25,7 +57,7 @@ base_pkg_manager_deps = [
   hypha_utils_dep,
   pkg_manager_api_dep,
 ]
-all_pkg_manager_deps = []
+pkg_manager_deps = []
 foreach name, cfg : pkg_manager_matrix
   pkg_manager_inc = include_directories(name)
   pkg_manager_lib = static_library(
@@ -37,7 +69,7 @@ foreach name, cfg : pkg_manager_matrix
     dependencies: base_pkg_manager_deps + cfg.get('deps'),
     override_options: cfg.get('override_opts'),
   )
-  all_pkg_manager_deps += declare_dependency(
+  pkg_manager_deps += declare_dependency(
     link_with: [
       pkg_manager_lib,
     ],

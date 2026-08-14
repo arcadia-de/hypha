@@ -1,5 +1,11 @@
-hypha_resource_graph_inc_dir = meson.current_source_dir() / 'include'
 hypha_resource_graph_inc = include_directories('include/')
+hypha_resource_graph_deps = [
+  libuv,
+  threads,
+  hypha_api_dep,
+  hypha_log_dep,
+  hypha_utils_dep,
+]
 hypha_resource_graph = static_library(
   'hypha-resource-graph',
   [
@@ -8,24 +14,18 @@ hypha_resource_graph = static_library(
     'src/resource_graph.c',
     'src/resource_graph_gvc.c',
   ],
-  dependencies: [
-    libuv,
-    threads,
-    hypha_api_dep,
-    hypha_log_dep,
-  ],
+  dependencies: hypha_resource_graph_deps,
   include_directories: [
     hypha_resource_graph_inc,
   ],
-  install: true
+  install: false,
 )
 hypha_resource_graph_dep = declare_dependency(
-  link_with: [
-    hypha_resource_graph,
-  ],
+  link_with: hypha_resource_graph,
+  dependencies: hypha_resource_graph_deps,
   include_directories: [
     hypha_resource_graph_inc,
-  ]
+  ],
 )
 
 if gtest_dep.found()

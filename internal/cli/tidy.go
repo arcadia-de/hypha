@@ -10,13 +10,13 @@ func handleTidy(cmd *cobra.Command, args []string) error {
 	return nil
 }
 
-var tidyCmd = &cobra.Command{
-	Use:     "tidy",
-	Short:   "Cleanup the configuration dir",
-	GroupID: "config",
-	RunE:    handleTidy,
-}
-
 func init() {
+	tidyCmd := &cobra.Command{
+		Use:     "tidy",
+		Short:   "Cleanup the configuration dir",
+		GroupID: "config",
+		RunE:    handleTidy,
+	}
+
 	RootCmd.AddCommand(tidyCmd)
 }

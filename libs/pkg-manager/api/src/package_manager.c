@@ -1,5 +1,7 @@
 #include "hypha/package_manager.h"
 
+#include <linux/limits.h>
+#include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 
@@ -15,27 +17,28 @@ struct _PackageManager {
   void (*free_data)(void*);
 };
 
-PackageManager* managers[32];
+PackageManager* managers[64];
 static uint64_t num_managers = 0;
 
-PackageManager* NewPackageManager(const char* name, const char* bin, PackageManagerConfig config, void* data,
+PackageManager* NewPackageManager(const char* name, const char* bin, const PackageManagerConfig* config, void* data,
                                   void (*free_data)(void*)) {
   ASSERT(name);
   PackageManager* m = (PackageManager*)malloc(sizeof(PackageManager));
   if (m) {
     memset(m, 0, sizeof(PackageManager));
-    memmove(&m->config, &config, sizeof(PackageManagerConfig));
+    memcpy(&m->config, config, sizeof(PackageManagerConfig));
     m->name = strdup(name);
 
     if (!bin) {
       char* p = NULL;
       if (!ExecWhich(name, &p)) {
-        free(m->name);
-        free(m);
-        return NULL;
+        char path[PATH_MAX];
+        snprintf(path, PATH_MAX, "/usr/bin/%s", name);
+        m->bin = strdup(path);
+      } else {
+        m->bin = p;
       }
 
-      m->bin = p;
     } else {
       m->bin = strdup(bin);
     }
@@ -107,7 +110,6 @@ PackageStatus PackageManagerInstall(PackageManager* mgr, const char* pkg) {
   if (!mgr || !pkg || !mgr->config.install)
     goto finished;
 
-  LOG_INFO("running install");
   status = mgr->config.install(mgr, pkg, mgr->data);
 finished:
   return status;

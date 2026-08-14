@@ -11,8 +11,7 @@ void HistoryRecordFree(HistoryRecord* rec) {
   free(rec->kind);
   free(rec->hash_before);
   free(rec->hash_after);
-  free(rec->reason);
-  rec->id = rec->kind = rec->hash_before = rec->hash_after = rec->reason = NULL;
+  rec->id = rec->kind = rec->hash_before = rec->hash_after;
 }
 
 static inline void RotatedPath(const char* path, uint32_t n, char* out, size_t out_len) {

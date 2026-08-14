@@ -40,11 +40,11 @@ static inline void PushResultNode(lua_State* L, const QueryResult* node) {
   }
 }
 
-static inline int LuaQuery(lua_State* L) {
+LUA_FN(query) {
   const char* query_text = luaL_checkstring(L, 1);
 
-  lua_getfield(L, LUA_REGISTRYINDEX, CONTEXT_REGISTRY_KEY_ORCHESTRATOR);
-  OrchestratorHandle orc = (OrchestratorHandle*)lua_touserdata(L, -1);
+  lua_getfield(L, LUA_REGISTRYINDEX, LUA_REGISTRY_ORC_KEY);
+  Orchestrator* orc = (Orchestrator*)lua_touserdata(L, -1);
   ResourceGraph* graph = OrchestratorGetResourceGraph(orc);
 
   if (!graph) {
@@ -73,9 +73,13 @@ static inline int LuaQuery(lua_State* L) {
   return 1;
 }
 
+// clang-format off
 static const struct luaL_Reg kFuncs[] = {
-    {"query", LuaQuery},
-    {NULL, NULL},  // NOLINT(modernize-use-nullptr)
+#define BIND(Name) {#Name, lua_##Name},
+  BIND(query)
+#undef BIND
+  {NULL, NULL},  // NOLINT(modernize-use-nullptr)
 };
+// clang-format on
 
 DEFINE_LUA_BINDINGS(hypha_resource, kFuncs);

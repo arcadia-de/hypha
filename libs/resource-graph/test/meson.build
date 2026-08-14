@@ -1,16 +1,15 @@
 resource_graph_test_exec = executable('hypha-resource-graph-tests',
   sources : [
-
-  ],
-  link_with: [
-    hypha_resource_graph,
+    'test_resource.cc',
   ],
   dependencies : [
-    gtest_dep
+    gtest_dep,
+    hypha_resource_graph_dep,
   ],
 )
 
-test('GoogleTest Core Features',
+test(
+  'Hypha Resource Graph Tests',
   resource_graph_test_exec,
   protocol: 'gtest',
 )

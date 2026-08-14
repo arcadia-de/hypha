@@ -1,3 +1,5 @@
+#include "template_bindings.h"
+
 #include <dlfcn.h>
 #include <lauxlib.h>
 #include <lua.h>
@@ -5,11 +7,10 @@
 #include <stdlib.h>
 
 #include "hypha.h"
-#include "template_bindings.h"
 
 typedef char* (*RenderTemplateFunc)(char*, char*, bool);
 
-static inline int LuaRenderTemplate(lua_State* L) {
+LUA_FN(render) {
   const int num_args = lua_gettop(L);
 
   if (num_args < 1)
@@ -42,9 +43,13 @@ static inline int LuaRenderTemplate(lua_State* L) {
   return 0;
 }
 
+// clang-format off
 static const struct luaL_Reg kFuncs[] = {
-    {"render", &LuaRenderTemplate},
-    {NULL, NULL},  // NOLINT(modernize-use-nullptr)
+#define BIND(Name) {#Name, lua_##Name},
+  BIND(render)
+#undef BIND
+  {NULL, NULL},  // NOLINT(modernize-use-nullptr)
 };
+// clang-format on
 
 DEFINE_LUA_BINDINGS(hypha_template, kFuncs);

@@ -10,6 +10,7 @@ import (
 	"fmt"
 	"github.com/spf13/viper"
 	"os"
+	"unsafe"
 )
 
 func EnsureStateDirExists() (string, error) {
@@ -42,6 +43,9 @@ func EnsureCacheDirExists() (string, error) {
 	return dir, nil
 }
 
-func InitHypha() {
-	C.InitHypha()
+func InitHypha(luarocksDir string) {
+	cLuarocksDir := C.CString(luarocksDir)
+	defer C.free(unsafe.Pointer(cLuarocksDir))
+
+	C.InitHypha(cLuarocksDir)
 }

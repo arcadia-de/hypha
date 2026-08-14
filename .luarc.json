@@ -1,6 +1,7 @@
 {
   "workspace": {
     "library": [
+      "./docs/lua",
       "./lua"
     ],
     "checkThirdParty": false

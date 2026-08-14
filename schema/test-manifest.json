@@ -1,0 +1,11 @@
+{
+  "kind": "Directory",
+  "metadata": {
+    "labels": [
+      "test"
+    ]
+  },
+  "spec": {
+    "dir": "hello"
+  }
+}

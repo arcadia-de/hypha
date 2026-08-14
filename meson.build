@@ -7,6 +7,8 @@ project(
 )
 add_project_arguments('-D_XOPEN_SOURCE=700', language: 'c')
 
+enable_profiling = get_option('enable_profiling')
+
 if get_option('buildtype') == 'debug'
   message('debug mode is enabled')
   add_project_arguments('-DHYPHA_DEBUG', language: [ 'c', 'cpp' ])
@@ -14,47 +16,61 @@ endif
 
 threads = dependency('threads', required: true)
 libuv = dependency('libuv', version: '>=1.0.0', required: true)
-lua54 = dependency('lua54', version: '>=5.4.8', required: true)
+lua54 = dependency('lua54', version: '=5.4.8', required: true)
 jansson = dependency('jansson', version: '>=2.15.0', required: true)
-archive = dependency('libarchive', version: '>= 3.8.8', required: false)
-git2 = dependency('libgit2', version: '>= 1.9.4', required: false)
-
-gvc = dependency('libgvc', version: '>= 15.1.0', required: false)
-if gvc.found()
-  message('graphviz is enabled')
-  add_project_arguments('-DHYPHA_GRAPHVIZ_ENABLED', language: [ 'c', 'cpp' ])
-endif
-
-wamr = dependency('libiwasm', version: '>=2.2.0', required: false) 
-if wamr.found()
-  message('wamr is enabled')
-  add_project_arguments('-DHYPHA_WAMR_ENABLED', language: [ 'c', 'cpp' ])
-endif
-
-gtest_dep = dependency('gtest', main: true, required: false)
-
-subdir('libs/')
-
-cc = meson.get_compiler('c')
-m_dep = cc.find_library('m', required: false)
-pkg = import('pkgconfig')
+sodium = dependency('libsodium', version: '>=1.0.22', required: true)
+uuid = dependency('uuid', version: '>=2.42.2', required: true)
 
 all_hypha_deps = [
   threads,
   libuv,
   lua54,
   jansson,
-  archive,
-  git2,
+  sodium,
+  uuid,
 ]
 
+archive = dependency('libarchive', version: '>=3.8.8', required: false)
+if archive.found()
+  all_hypha_deps += archive
+endif
+
+git2 = dependency('libgit2', version: '>=1.9.4', required: false)
+if git2.found()
+  all_hypha_deps += git2
+endif
+
+gvc = dependency('libgvc', version: '>= 15.1.0', required: false)
 if gvc.found()
+  message('graphviz is enabled')
+  add_project_arguments('-DHYPHA_GRAPHVIZ_ENABLED', language: [ 'c', 'cpp' ])
   all_hypha_deps += gvc
 endif
 
+wamr = dependency('libiwasm', version: '>=2.2.0', required: false) 
 if wamr.found()
+  message('wamr is enabled')
+  add_project_arguments('-DHYPHA_WAMR_ENABLED', language: [ 'c', 'cpp' ])
   all_hypha_deps += wamr
 endif
+
+tracy_dep = dependency('tracy', required: false)
+if enable_profiling
+  if tracy_dep.found()
+    message('profiling is enabled with tracy')
+    all_hypha_deps += tracy_dep
+    add_project_arguments('-DHYPHA_ENABLE_PROFILING', language: [ 'c', 'cpp' ])
+  endif
+endif
+
+gtest_dep = dependency('gtest', main: true, required: false)
+
+subdir('libs/')
+subdir('test/')
+
+cc = meson.get_compiler('c')
+m_dep = cc.find_library('m', required: false)
+pkg = import('pkgconfig')
 
 pkg.generate(
   name: 'hypha',
@@ -74,8 +90,6 @@ pkg.generate(
     m_dep,
   ],
   subdirs: [
-    hypha_api_inc_dir,
     hypha_inc_dir,
-    hypha_resource_graph_inc_dir,
   ],
 )

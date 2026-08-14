@@ -114,13 +114,17 @@ static inline uint8_t* EncodeHistoryRecord(const HistoryRecord* rec, uint32_t* o
   return buf;
 }
 
+#define MIN(a, b) (a < b ? a : b)
+
 static inline void DecodeHistoryRecord(const char* id, const uint8_t* buf, HistoryRecord* out) {
   const uint8_t* p = buf;
   out->id = strdup(id);
   out->kind = GetString(&p);
   out->hash_before = GetString(&p);
   out->hash_after = GetString(&p);
-  out->reason = GetString(&p);
+  const char* reason = GetString(&p);
+  memcpy(out->reason, reason, MIN(strlen(reason), HYPHA_REASON_MAX_LENGTH));
+
   memcpy(&out->action, p, 4);
   p += 4;
   memcpy(&out->status, p, 4);

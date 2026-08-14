@@ -17,7 +17,18 @@ var RootCmd = &cobra.Command{
 	Short: "A dotfile manager",
 	Long:  "A dotfile manager",
 	PersistentPreRunE: func(cmd *cobra.Command, args []string) error {
-		return initConfig(cmd)
+		err := initConfig(cmd)
+		if err != nil {
+			return err
+		}
+
+		config_dir, err := hypha.EnsureConfigDirExists()
+		if err != nil {
+			return err
+		}
+
+		hypha.InitHypha(config_dir)
+		return nil
 	},
 }
 

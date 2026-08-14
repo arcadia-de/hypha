@@ -36,10 +36,59 @@ static inline void FlushAccumulatedLines(Process* p, char* accumulator, int is_s
   }
 }
 
+static inline void InitRootEnv(const char** in_env, const size_t in_env_size, char*** out_env, size_t* out_env_size) {
+  static const size_t kTotalNumberOfDefaultVars = 3;
+  const uint64_t total_env_vars = kTotalNumberOfDefaultVars + in_env_size + 1;
+  char** env = (char**)malloc(sizeof(char*) * total_env_vars);
+  env[0] = "PATH=/usr/bin:/bin";
+  env[1] = "HOME=/root";
+  env[2] = "USER=root";
+  for (uint64_t i = 0; i < in_env_size; i++)
+    env[i + kTotalNumberOfDefaultVars] = (char*)in_env[i];
+  env[in_env_size + kTotalNumberOfDefaultVars] = NULL;
+
+  (*out_env) = env;
+  (*out_env_size) = total_env_vars;
+}
+
+static inline void InitDefaultEnv(const char** in_env, const size_t in_env_size, char*** out_env,
+                                  size_t* out_env_size) {
+  static const size_t kTotalNumberOfDefaultVars = 1;
+  const uint64_t total_env_vars = kTotalNumberOfDefaultVars + in_env_size + 1;
+  char** env = (char**)malloc(sizeof(char*) * total_env_vars);
+  env[0] = "PATH=/usr/bin:/bin:/usr/local/bin";
+  for (uint64_t i = 0; i < in_env_size; i++)
+    env[i + kTotalNumberOfDefaultVars] = (char*)in_env[i];
+  env[in_env_size + kTotalNumberOfDefaultVars] = NULL;
+
+  (*out_env) = env;
+  (*out_env_size) = total_env_vars;
+}
+
+static inline void InitArgs(const char* bin, const char** in_args, const size_t in_num_args, char*** out_args,
+                            size_t* out_num_args) {
+  static const size_t kTotalNumberOfDefaultArgs = 1;
+  const size_t total_args = kTotalNumberOfDefaultArgs + in_num_args + 1;
+  char** args = (char**)malloc(sizeof(char*) * total_args);
+  args[0] = (char*)bin;
+  for (size_t i = 0; i < in_num_args; i++)
+    args[i + kTotalNumberOfDefaultArgs] = (char*)in_args[i];
+  args[in_num_args + kTotalNumberOfDefaultArgs] = NULL;
+
+  (*out_args) = args;
+  (*out_num_args) = total_args;
+}
+
 int ExecProcess(Process* p) {
   if (!p)
     return -1;
 
+  char** args = NULL;
+  size_t args_size = 0;
+  InitArgs(p->bin, p->args, p->num_args, &args, &args_size);
+
+  char** env = NULL;
+  size_t env_size = 0;
   if (p->root) {
     if (geteuid() != 0) {
       LOG_ERROR("this binary must be owned by root and have the SUID bit set.");
@@ -50,6 +99,10 @@ int ExecProcess(Process* p) {
       LOG_FATAL("setuid failed");
       return -1;
     }
+
+    InitRootEnv(p->env_variables, p->num_env_variables, &env, &env_size);
+  } else {
+    InitDefaultEnv(p->env_variables, p->num_env_variables, &env, &env_size);
   }
 
   int stdout_pipe[2];
@@ -75,34 +128,9 @@ int ExecProcess(Process* p) {
     close(stdout_pipe[1]);
     close(stderr_pipe[1]);
 
-    char** args = (char**)malloc(sizeof(char*) * (2 + p->num_args));
-    args[0] = (char*)p->bin;
-    for (uint64_t i = 0; i < p->num_args; i++)
-      args[i + 1] = (char*)p->args[i];
-    args[p->num_args + 1] = NULL;
-
-    // LOG_INFO("args %d:", (1 + p->num_args));
-    // for (uint64_t i = 0; i < (1 + p->num_args); i++)
-    //   LOG_INFO(" - %s", args[i]);
-
-    const uint64_t total_env_vars = (p->root ? 4 : 2) + p->num_env_variables;
-    char** env = (char**)malloc(sizeof(char*) * total_env_vars);
-    if (p->root) {
-      env[0] = "PATH=/usr/bin:/bin";
-    } else {
-      env[0] = "PATH=/usr/bin:/bin:/usr/local/bin";
-    }
-    env[1] = "HOME=/root";
-    env[2] = "USER=root";
-    for (uint64_t i = 0; i < p->num_env_variables; i++)
-      env[i + (p->root ? 3 : 1)] = (char*)p->env_variables[i];
-    env[p->num_env_variables + (p->root ? 3 : 1)] = NULL;
-
-    // LOG_INFO("env %d:", (1 + p->num_env_variables));
-    // for (uint64_t i = 0; i < (1 + p->num_env_variables); i++)
-    //   LOG_INFO(" - %s", env[i]);
-
     execve(p->bin, args, env);
+    free(env);
+    free(args);
     exit(127);
   }
 
@@ -167,6 +195,8 @@ int ExecProcess(Process* p) {
   if (stderr_accumulator[0] != '\0')
     LOG_ERROR("%s", stderr_accumulator);
 
+  free(env);
+  free(args);
   int status = 0;
   waitpid(pid, &status, 0);
   return WIFEXITED(status) ? WEXITSTATUS(status) : -1;

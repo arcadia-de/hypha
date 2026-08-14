@@ -12,7 +12,7 @@ pkg_manager_api = static_library(
   include_directories: [
     pkg_manager_api_inc,
   ],
-  install: true
+  install: false,
 )
 pkg_manager_api_dep = declare_dependency(
   link_with: [

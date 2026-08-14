@@ -97,8 +97,8 @@ LUA_FN(getAllPackageManagers) {
 static const struct luaL_Reg kFuncs[] = {
 #define BIND(Name) {#Name, lua_##Name},
   BIND(getAllPackageManagers)
-  {NULL, NULL},  // NOLINT(modernize-use-nullptr)
 #undef BIND
+  {NULL, NULL},  // NOLINT(modernize-use-nullptr)
 };
 // clang-format on
 

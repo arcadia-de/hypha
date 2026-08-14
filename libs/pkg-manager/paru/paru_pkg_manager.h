@@ -3,8 +3,6 @@
 
 #include "hypha/package_manager.h"
 
-#define HYPHA_PARU_NAME "paru"
-
-PackageManager* CreateParuPackageManager();
+PackageManager* NewParu();
 
 #endif  // HYPHA_PARU_PKG_MANAGER_H

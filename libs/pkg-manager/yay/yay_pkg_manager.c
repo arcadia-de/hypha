@@ -36,9 +36,9 @@ finished:
   return status;
 }
 
-PackageManager* CreateYayPackageManager() {
-  PackageManagerConfig config = {
-      .status = &YayStatus,
-  };
-  return NewPackageManager(HYPHA_YAY_NAME, NULL, config, NULL, NULL);
+DEFINE_PACKAGE_MANAGER_CONFIG(Yay){
+    .status = &YayStatus,
+};
+PackageManager* NewYay() {
+  return NewPackageManager(kYayName, NULL, &kYayConfig, NULL, NULL);
 }

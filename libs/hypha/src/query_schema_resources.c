@@ -4,21 +4,6 @@
 #include "hypha/query.h"
 #include "hypha/resource_query_schema.h"
 
-static const char* ResourceStateName(ResourceState state) {
-  switch (state) {
-    case kResourcePending:
-      return "Pending";
-    case kResourceProcessing:
-      return "Processing";
-    case kResourceReady:
-      return "Ready";
-    case kResourceFailed:
-      return "Failed";
-    default:
-      return "Unknown";
-  }
-}
-
 static FieldResolverResult ResourceFieldId(void* obj) {
   return (FieldResolverResult){.kind = kQueryFieldResultScalar, .scalar = strdup(((Resource*)obj)->id)};
 }

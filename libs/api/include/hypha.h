@@ -5,6 +5,9 @@
 extern "C" {
 #endif  // __cplusplus
 
+#include <stdint.h>
+#include <stdlib.h>
+
 #ifdef HYPHA_DEBUG
 
 #include <assert.h>
@@ -37,7 +40,8 @@ extern "C" {
 
 #endif  // HYPHA_DEBUG
 
-#define CONTEXT_REGISTRY_KEY_ORCHESTRATOR "hypha_orchestrator"
+#define LUA_REGISTRY_ORC_KEY    "hypha_orchestrator"
+#define LUA_REGISTRY_EVENTS_KEY "hypha_events"
 
 #ifndef container_of
 #define container_of(ptr, type, member)               \
@@ -47,14 +51,120 @@ extern "C" {
   })
 #endif  // container_of
 
+#ifndef HYPHA_REASON_MAX_LENGTH
+#define HYPHA_REASON_MAX_LENGTH 128
+#endif  // HYPHA_REASON_MAX_LENGTH
+
+typedef char Reason[HYPHA_REASON_MAX_LENGTH];
+
+typedef struct _Resource Resource;
+
 typedef void* OrchestratorHandle;
+
+#define FOR_EACH_CONTROLLER_STATUS(V) \
+  V(Ok)                               \
+  V(NoOp)                             \
+  V(InvalidSpec)                      \
+  V(NotFound)                         \
+  V(Conflict)                         \
+  V(Unsupported)                      \
+  V(TransientError)                   \
+  V(PermanentError)                   \
+  V(InternalError)
+
+// clang-format off
+typedef enum {
+#define DEFINE_STATUS(Name) kStatus##Name,
+  FOR_EACH_CONTROLLER_STATUS(DEFINE_STATUS)
+#undef DEFINE_STATUS
+  kTotalNumberOfControllerStatuses,
+} ControllerStatus;
+// clang-format on
+
+static inline const char* ControllerStatusToCString(const ControllerStatus rhs) {
+  switch (rhs) {
+#define DEFINE_TOSTRING(Name) \
+  case kStatus##Name:         \
+    return #Name;
+
+    FOR_EACH_CONTROLLER_STATUS(DEFINE_TOSTRING)
+#undef DEFINE_TOSTRING
+    default:
+      return "Unknown";
+  }
+}
+
+#define FOR_EACH_CONTROLLER_ACTION(V) \
+  V(No)                               \
+  V(Create)                           \
+  V(Update)                           \
+  V(Destroy)
+
+// clang-format off
+typedef enum {
+#define DEFINE_ACTION(Name) k##Name##Action,
+  FOR_EACH_CONTROLLER_ACTION(DEFINE_ACTION)
+#undef DEFINE_ACTION
+  kTotalNumberOfControllerActions,
+} ControllerAction;
+// clang-format on
+
+static inline const char* ControllerActionToCString(const ControllerAction rhs) {
+  switch (rhs) {
+#define DEFINE_TOSTRING(Name) \
+  case k##Name##Action:       \
+    return #Name;
+
+    FOR_EACH_CONTROLLER_ACTION(DEFINE_TOSTRING)
+#undef DEFINE_TOSTRING
+    default:
+      return "Unknown";
+  }
+}
+
+#define FOR_EACH_ORCHESTRATOR_RUN_MODE(V) \
+  V(Plan)                                 \
+  V(Diff)                                 \
+  V(Destroy)                              \
+  V(Apply)
+
+// clang-format off
+typedef enum {
+#define DEFINE_MODE(Name) kOrchestrator##Name##Mode,
+  FOR_EACH_ORCHESTRATOR_RUN_MODE(DEFINE_MODE)
+#undef DEFINE_MODE
+  kTotalNumberOfOrchestratorRunModes,
+  kDefaultOrchestratorMode = kOrchestratorApplyMode,
+} OrchestratorRunMode;
+// clang-format on
+
+static inline const char* OrchestratorRunModeName(const OrchestratorRunMode rhs) {
+  switch (rhs) {
+#define DEFINE_TOSTRING(Name)     \
+  case kOrchestrator##Name##Mode: \
+    return #Name;
+    FOR_EACH_ORCHESTRATOR_RUN_MODE(DEFINE_TOSTRING)
+#undef DEFINE_TOSTRING
+    default:
+      return "Unknown";
+  }
+}
+
+typedef uint64_t ControllerActionCounts[kTotalNumberOfControllerActions];
+
+typedef struct {
+  uint64_t run_start;
+  uint64_t run_finished;
+  uint64_t num_processed;
+  ControllerActionCounts num_actions;
+} OrchestratorMetrics;
 
 typedef struct _HistoryLog HistoryLog;
 
-void InitHypha();
-
+void InitHypha(const char* luarocks_dir);
 extern char* RenderJsonnet(char* name, char* code);
 extern char* RenderTemplate(char* tpl, char* data, bool is_yaml);
+extern uint64_t ValidateManifests(char** tpls, uint64_t num_tpls, bool* valid);
 
 #ifdef __cplusplus
 };

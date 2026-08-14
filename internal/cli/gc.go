@@ -21,13 +21,13 @@ func handleGc(cmd *cobra.Command, args []string) error {
 	return nil
 }
 
-var gcCmd = &cobra.Command{
-	Use:     "gc",
-	Short:   "Cleanup orphaned resources",
-	GroupID: "config",
-	RunE:    handleGc,
-}
-
 func init() {
+	gcCmd := &cobra.Command{
+		Use:     "gc",
+		Short:   "Cleanup orphaned resources",
+		GroupID: "config",
+		RunE:    handleGc,
+	}
+
 	RootCmd.AddCommand(gcCmd)
 }
