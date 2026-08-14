@@ -1,0 +1,122 @@
+version: '3'
+vars:
+  BUILD_DIR: "{{.ROOT_DIR}}/build"
+  BIN_DIR: "{{.ROOT_DIR}}/bin"
+  HYPHA_LIB_SOURCE_DIR: "{{.ROOT_DIR}}/libs/hypha"
+  HYPHA_LIB_BUILD_DIR: "{{.BUILD_DIR}}/libs/hypha"
+  HYPHA_LIB_TESTS_BUILD_DIR: "{{.HYPHA_LIB_BUILD_DIR}}/test"
+  HYPHA_LIB_FILE: "{{.HYPHA_LIB_BUILD_DIR}}/libhypha.a"
+  HYPHA_BIN_FILE: "{{.BIN_DIR}}/hypha"
+  HYPHA_LIB_TESTS_BIN_FILE: "{{.HYPHA_LIB_TESTS_BUILD_DIR}}/hypha-tests"
+  ROOT_DIR_NAME:
+    sh: basename "{{.ROOT_DIR}}"
+tasks:
+  go:test:
+    internal: false
+    vars:
+      GO_TEST_PATH: "./internal/{{.GO_TARGET}}"
+    cmds:
+      - go test "{{.GO_TEST_PATH}}"
+  go:run:
+    internal: false
+    cmds:
+      - go run
+  meson:reconfigure:
+    deps:
+      - clean
+    cmds:
+      - meson setup build/ --reconfigure
+  run:
+    cmds:
+      - task: go:run
+        vars:
+          GO_TARGET: hypha
+  meson:build:
+    cmds:
+      - ninja -C build/
+  go:clean-cache:
+    cmds:
+      - go clean -cache -testcache
+  go:build:
+    cmds:
+      - PKG_CONFIG_PATH="$(pwd)/build/meson-uninstalled:$PKG_CONFIG_PATH" go build {{.GO_BUILD_FLAGS}} -o {{.BIN_DIR}}/{{.GO_TARGET_NAME}} {{.GO_SOURCE_FILE}}
+    vars:
+      GO_BUILD_FLAGS: -ldflags="-linkmode=external -extldflags=-rdynamic"
+      GO_TARGET_NAME: hypha
+      GO_SOURCE_FILE: cmd/hypha/main.go
+  build:
+    cmds:
+      - task: meson:reconfigure
+      - task: meson:build
+      - task: go:build
+  test:
+    deps:
+      - build
+    cmds:
+      - "{{.HYPHA_LIB_TESTS_BIN_FILE}}"
+      - task: go:test
+        vars:
+          GO_TARGET: hypha
+  ouch:compress:
+    internal: true
+    cmds:
+      - |
+        ouch compress \
+          api/ \
+          bindings/ \
+          assets/ \
+          cmd/ \
+          config/ \
+          controllers/ \
+          internal/ \
+          libs/ \
+          schema/ \
+          wiki/ \
+          .env \
+          go.mod \
+          go.sum \
+          LICENSE \
+          meson.build \
+          README.md \
+          Taskfile.yaml \
+          "{{.ROOT_DIR_NAME}}-sources.{{.OUCH_COMPRESSION}}"
+  zip:
+    cmds:
+      - task: ouch:compress
+        vars:
+          OUCH_COMPRESSION: zip
+  targz:
+    cmds:
+      - task: ouch:compress
+        vars:
+          OUCH_COMPRESSION: tar.gz
+  clean:bin:
+    cmds:
+      - rm -rf "{{.HYPHA_BIN_FILE}}"
+  clean:libs:
+    cmds:
+      - rm -rf "{{.HYPHA_LIB_FILE}}"
+  clean:tests:
+    cmds:
+      - rm -rf "{{.HYPHA_LIB_TESTS_BIN_FILE}}"
+  clean:archives:
+    cmds:
+      - rm -rf "{{.ROOT_DIR_NAME}}-sources.zip"
+      - rm -rf "{{.ROOT_DIR_NAME}}-sources.tar.gz"
+  # clean:journal:
+  #   cmds:
+  #     - rm -rf "{{.ROOT_DIR}}/journal.log"
+  # clean:history:
+  #   cmds:
+  #     - rm -rf "{{.ROOT_DIR}}/history.log"
+  clean:
+    deps:
+      - clean:bin
+      - clean:libs
+      - clean:tests
+      - clean:archives
+      # - clean:history
+      # - clean:journal
+  default:
+    cmds:
+      - task: build

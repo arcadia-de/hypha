@@ -1,0 +1,11 @@
+.rumdl_cache/
+.task/
+.cache/
+wiki/
+private/
+bin/
+*.txt
+*.zip
+*.tar.gz
+*.log
+/*.lua

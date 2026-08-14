@@ -1,0 +1,10 @@
+CompileFlags:
+  CompilationDatabase: build/
+Completion:
+  AllScopes: Yes
+# Style:
+#   QuotedHeaders:
+#   - ".*"
+Diagnostics:
+  UnusedIncludes: None
+  MissingIncludes: None

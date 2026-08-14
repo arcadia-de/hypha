@@ -1,0 +1,28 @@
+BasedOnStyle: Google
+IndentWidth: 2
+ColumnLimit: 120
+PackConstructorInitializers: Never
+DerivePointerAlignment: false
+PointerAlignment: Left
+PPIndentWidth: 1
+AllowShortIfStatementsOnASingleLine: Never
+AllowShortLoopsOnASingleLine: false
+AllowShortLambdasOnASingleLine: Empty
+AllowShortFunctionsOnASingleLine: Empty
+BreakConstructorInitializers: AfterColon
+ConstructorInitializerIndentWidth: 2
+BreakInheritanceList: AfterColon
+AlignConsecutiveMacros: AcrossEmptyLinesAndComments
+AlignOperands: AlignAfterOperator
+ContinuationIndentWidth: 4
+IncludeBlocks: Regroup
+SortIncludes: CaseSensitive
+IncludeCategories:
+  - Regex: '^"(gel)/'
+    Priority: 4
+    SortPriority: 4
+    CaseSensitive: true
+  - Regex: '^"(glm|vulkan|tiny_obj_loader)/'
+    Priority: 3
+    SortPriority: 3
+AllowShortBlocksOnASingleLine: Empty

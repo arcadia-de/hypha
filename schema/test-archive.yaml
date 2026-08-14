@@ -1,0 +1,8 @@
+kind: Archive
+metadata:
+  name: test-archive
+  labels:
+    - test
+spec:
+  source: ""
+  dest: ""

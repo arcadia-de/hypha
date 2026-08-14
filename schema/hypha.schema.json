@@ -1,0 +1,224 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/arcadia-de/hypha",
+  "title": "Hypha",
+  "description": "A hypha manifest schema",
+  "type": "object",
+  "required": [
+    "kind",
+    "spec"
+  ],
+  "allOf": [
+    {
+      "properties": {
+        "kind": {
+          "enum": [
+            "Symlink",
+            "Directory",
+            "Archive"
+          ]
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "kind": {
+            "const": "Symlink"
+          }
+        }
+      },
+      "then": {
+        "properties": {
+          "spec": {
+            "$ref": "#/$defs/SymlinkSpec"
+          }
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "kind": {
+            "const": "Directory"
+          }
+        }
+      },
+      "then": {
+        "properties": {
+          "spec": {
+            "$ref": "#/$defs/DirectorySpec"
+          }
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "kind": {
+            "const": "Archive"
+          }
+        }
+      },
+      "then": {
+        "properties": {
+          "spec": {
+            "$ref": "#/$defs/ArchiveSpec"
+          }
+        }
+      }
+    }
+  ],
+  "$defs": {
+    "ResourceId": {
+      "type": "string"
+    },
+    "ResourceAnnotation": {
+      "type": "object",
+      "properties": {
+        "key": {
+          "type": "string"
+        },
+        "value": {
+          "type": "string"
+        }
+      },
+      "required": [
+        "key",
+        "value"
+      ],
+      "additionalProperties": false
+    },
+    "ResourceMetadata": {
+      "type": "object",
+      "properties": {
+        "annotations": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/ResourceAnnotation"
+          }
+        },
+        "labels": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        }
+      },
+      "additionalProperties": false
+    },
+    "SymlinkSpec": {
+      "type": "object",
+      "properties": {
+        "source": {
+          "type": "string"
+        },
+        "target": {
+          "type": "string"
+        }
+      },
+      "required": [
+        "source",
+        "target"
+      ],
+      "additionalProperties": false
+    },
+    "Symlink": {
+      "type": "object",
+      "properties": {
+        "id": {
+          "$ref": "#/$defs/ResourceId"
+        },
+        "kind": {
+          "type": "string",
+          "const": "Symlink"
+        },
+        "metadata": {
+          "$ref": "#/$defs/ResourceMetadata"
+        },
+        "spec": {
+          "$ref": "#/$defs/SymlinkSpec"
+        }
+      },
+      "required": [
+        "kind",
+        "spec"
+      ],
+      "additionalProperties": false
+    },
+    "DirectorySpec": {
+      "type": "object",
+      "properties": {
+        "dir": {
+          "type": "string"
+        }
+      },
+      "required": [
+        "dir"
+      ],
+      "additionalProperties": false
+    },
+    "Directory": {
+      "type": "object",
+      "properties": {
+        "id": {
+          "$ref": "#/$defs/ResourceId"
+        },
+        "kind": {
+          "type": "string",
+          "const": "Directory"
+        },
+        "metadata": {
+          "$ref": "#/$defs/ResourceMetadata"
+        },
+        "spec": {
+          "$ref": "#/$defs/DirectorySpec"
+        }
+      },
+      "required": [
+        "kind",
+        "spec"
+      ],
+      "additionalProperties": false
+    },
+    "ArchiveSpec": {
+      "type": "object",
+      "properties": {
+        "source": {
+          "type": "string"
+        },
+        "dest": {
+          "type": "string"
+        }
+      },
+      "required": [
+        "dest",
+        "source"
+      ],
+      "additionalProperties": false
+    },
+    "Archive": {
+      "type": "object",
+      "properties": {
+        "id": {
+          "$ref": "#/$defs/ResourceId"
+        },
+        "kind": {
+          "type": "string",
+          "const": "Archive"
+        },
+        "metadata": {
+          "$ref": "#/$defs/ResourceMetadata"
+        },
+        "spec": {
+          "$ref": "#/$defs/ArchiveSpec"
+        }
+      },
+      "required": [
+        "kind",
+        "spec"
+      ],
+      "additionalProperties": false
+    }
+  }
+}
