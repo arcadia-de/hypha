@@ -11,6 +11,7 @@
 #include "hypha/event.h"
 #include "hypha/history.h"
 #include "hypha/log.h"
+#include "hypha/planner.h"
 #include "hypha/resource_graph.h"
 #include "hypha/state.h"
 #include "reconcile.h"
@@ -39,9 +40,7 @@ struct _Orchestrator {
   bool failed;
   StateStore* state;
   HistoryLog* history;
-
-  PlannedAction* actions;
-
+  Plan plan;
   OrchestratorMetrics metrics;
 };
 
@@ -117,7 +116,7 @@ static inline bool OnGraphSubmitted(const char* p, const void* event, void* data
   }
 
   if (orc->run.mode == kOrchestratorPlanMode)
-    orc->actions = (PlannedAction*)malloc(sizeof(PlannedAction) * GetNumberOfResourcesInResourceGraph(orc->graph));
+    InitPlan(&orc->plan, GetNumberOfResourcesInResourceGraph(orc->graph));
 
   DispatchReadyResources(orc);
 finished:
@@ -331,17 +330,8 @@ finished:
   return success;
 }
 
-void OrchestratorVisitPlannedActions(OrchestratorHandle handle, PlannedActionVisitorFn fn, void* data) {
-  Orchestrator* orc = (Orchestrator*)handle;
-  if (!orc || !orc->actions)
-    return;
-
-  const size_t num_actions = GetNumberOfResourcesInResourceGraph(orc->graph);
-  for (size_t i = 0; i < num_actions; i++) {
-    PlannedAction* action = &orc->actions[i];
-    if (!fn(action, data))
-      return;
-  }
+Plan* GetOrchestratorPlan(OrchestratorHandle handle) {
+  return handle ? &((Orchestrator*)handle)->plan : NULL;
 }
 
 void FreeOrchestrator(OrchestratorHandle handle) {
@@ -454,18 +444,8 @@ static inline void ReconcileWork(uv_work_t* req) {
     goto finished;
 
   task->action = ControllerPlan(ctrl, observed, desired, task->reason);
-  switch (task->orc->run.mode) {
-    case kOrchestratorPlanMode:
-      PlannedAction* action = &task->orc->actions[task->index];
-      action->id = desired->id;
-      action->reason = task->reason;
-      action->action = task->action;
-      // do nothing
-      break;
-    case kOrchestratorApplyMode:
-    default:
-      task->status = ControllerApply(ctrl, desired, task->action);
-  }
+  if (IsApplyReconcileTask(task))
+    task->status = ControllerApply(ctrl, desired, task->action);
 
 finished:
   ClearLogResourceContext();
@@ -512,6 +492,15 @@ static inline void ReconcileAfterWork(uv_work_t* req, int status) {
 
   SetLogResourceContext(res->id, res->kind);
   orc->metrics.num_actions[task->action]++;
+
+  if (IsPlanReconcileTask(task)) {
+    PlannedAction action;
+    memset(&action, 0, sizeof(PlannedAction));
+    action.id = strdup(res->id);
+    memcpy(action.reason, task->reason, sizeof(Reason));
+    action.action = task->action;
+    AppendPlannedAction(&orc->plan, &action);
+  }
 
   if (status != 0) {
     res->state = kResourceFailed;
@@ -606,4 +595,9 @@ static inline void DispatchReadyResources(Orchestrator* orc) {
   }
 
   MaybeFinishReconciliation(orc);
+}
+
+OrchestratorRunMode GetReconcileTaskRunMode(ReconcileTask* rhs) {
+  ASSERT(rhs);
+  return rhs->orc->run.mode;
 }

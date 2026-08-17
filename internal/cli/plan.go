@@ -9,6 +9,14 @@ import (
 	"github.com/spf13/cobra"
 )
 
+type PlanSummary struct {
+	None      uint64
+	Total     uint64
+	Created   uint64
+	Updated   uint64
+	Destroyed uint64
+}
+
 func handlePlan(cmd *cobra.Command, args []string) error {
 	orc, err := hypha.NewOrchestratorWithDefaultConfig()
 	if err != nil {
@@ -35,57 +43,77 @@ func handlePlan(cmd *cobra.Command, args []string) error {
 		totalSize    = totalWidth + (2 * totalColumns)
 	)
 
-	idStyle := lg.NewStyle().Width(idWidth).Align(lg.Right)
-	actionStyle := lg.NewStyle().Width(actionWidth).Align(lg.Center)
-	reasonStyle := lg.NewStyle().Width(reasonWidth).Align(lg.Left)
+	idStyle := lg.NewStyle().
+		Width(idWidth).
+		Align(lg.Right).
+		Foreground(lg.Color("#CECDC3"))
 
-	noActionStyle := actionStyle.Foreground(lg.Color("#9E9E9E"))
-	createActionStyle := actionStyle.Foreground(lg.Color("#4CAF50"))
-	updateActionStyle := actionStyle.Foreground(lg.Color("#2196F3"))
-	destroyActionStyle := actionStyle.Foreground(lg.Color("#F44336"))
+	actionStyle := lg.NewStyle().
+		Width(actionWidth).
+		Align(lg.Center)
+
+	noActionStyle := actionStyle.
+		Foreground(lg.Color(NoOpSymbol.Color))
+	createActionStyle := actionStyle.
+		Foreground(lg.Color(CreateSymbol.Color))
+	updateActionStyle := actionStyle.
+		Foreground(lg.Color(UpdateSymbol.Color))
+	destroyActionStyle := actionStyle.
+		Foreground(lg.Color(DestroySymbol.Color))
+
+	reasonStyle := lg.NewStyle().
+		Width(reasonWidth).
+		Align(lg.Left).
+		Foreground(lg.Color("#CECDC3"))
 
 	orc.Run(hypha.OrchestratorPlanMode)
 
-	headerStyle := lg.NewStyle().Bold(true).Foreground(lg.Color("#888888"))
-	headerID := headerStyle.Width(idWidth).Align(lg.Right).Render("ID")
-	headerAction := headerStyle.Width(actionWidth).Align(lg.Center).Render("Action")
-	headerReason := headerStyle.Width(reasonWidth).Align(lg.Left).Render("Reason")
+	borderStyle := lg.NewStyle().
+		Foreground(lg.Color("#282726"))
+	headerStyle := lg.NewStyle().
+		Bold(true).
+		Foreground(lg.Color("#CECDC3"))
+	headerID := headerStyle.
+		Width(idWidth).
+		Align(lg.Right).
+		Render("ID")
+	headerAction := headerStyle.
+		Width(actionWidth).
+		Align(lg.Center).
+		Render("Action")
+	headerReason := headerStyle.
+		Width(reasonWidth).
+		Align(lg.Left).
+		Render("Reason")
 
 	fmt.Println()
 	fmt.Printf("  %s  %s  %s\n", headerID, headerAction, headerReason)
-	fmt.Printf("%s\n", headerStyle.Align(lg.Center).Render(strings.Repeat("─", totalSize)))
+	fmt.Printf("%s\n", borderStyle.Align(lg.Center).Render(strings.Repeat("─", totalSize)))
 
-	const (
-		noActionInd      = "󰅚"
-		createActionInd  = "󰐕"
-		updateActionInd  = "󰏫"
-		destroyActionInd = "󰩹"
-	)
+	plan := orc.GetPlan()
+	if plan == nil {
+		return fmt.Errorf("no plans")
+	}
 
-	var (
-		none      = 0
-		total     = 0
-		created   = 0
-		updated   = 0
-		destroyed = 0
-	)
+	var summary PlanSummary
+	plan.VisitPlannedActions(func(idx uint64, action hypha.PlannedAction) bool {
+		_ = idx
 
-	orc.VisitPlannedActions(func(action hypha.PlannedAction) bool {
 		var style lg.Style
 		var ind string
 		switch action.Action {
 		case "No":
 			style = noActionStyle
-			none++
+			summary.None++
 		case "Create":
 			style = createActionStyle
-			created++
+			summary.Created++
 		case "Update":
 			style = updateActionStyle
-			updated++
+			summary.Updated++
 		case "Destroy":
 			style = destroyActionStyle
-			destroyed++
+			summary.Destroyed++
 		}
 
 		var act any
@@ -98,31 +126,42 @@ func handlePlan(cmd *cobra.Command, args []string) error {
 		}
 
 		fmt.Printf("  %s  %s  %s\n", id, style.Render(fmt.Sprintf("%s %s", ind, act)), reason)
-		total++
+		summary.Total++
 		return true
 	})
-	fmt.Printf("%s\n", headerStyle.Render(strings.Repeat("─", totalSize)))
+
+	// ╭─────────╮
+	// │ Summary │
+	// ╰─────────╯
 	fmt.Println()
-
-	if none > 0 {
-		fmt.Println(noActionStyle.UnsetWidth().Render(fmt.Sprintf("  %s %d/%d No Actions", noActionInd, none, total)))
-	}
-
-	if created > 0 {
-		fmt.Println(createActionStyle.UnsetWidth().Render(fmt.Sprintf("  %s %d/%d Created", createActionInd, created, total)))
-	}
-
-	if updated > 0 {
-		fmt.Println(updateActionStyle.UnsetWidth().Render(fmt.Sprintf("  %s %d/%d Updated", updateActionInd, updated, total)))
-	}
-
-	if destroyed > 0 {
-		fmt.Println(destroyActionStyle.UnsetWidth().Render(fmt.Sprintf("  %s %d/%d Destroyed", destroyActionInd, destroyed, total)))
-	}
-
+	fmt.Printf("%s\n", borderStyle.Render(strings.Repeat("─", totalSize)))
 	fmt.Println()
-
+	printSummary(summary)
+	fmt.Println()
 	return nil
+}
+
+func printSummary(summary PlanSummary) {
+	noActionStyle := lg.NewStyle().Foreground(lg.Color(NoOpSymbol.Color))
+	createActionStyle := lg.NewStyle().Foreground(lg.Color(CreateSymbol.Color))
+	updateActionStyle := lg.NewStyle().Foreground(lg.Color(UpdateSymbol.Color))
+	destroyActionStyle := lg.NewStyle().Foreground(lg.Color(DestroySymbol.Color))
+
+	if summary.Created > 0 {
+		fmt.Println(createActionStyle.UnsetWidth().Render(fmt.Sprintf("  %s %d/%d Created", CreateSymbol.NF, summary.Created, summary.Total)))
+	}
+
+	if summary.Updated > 0 {
+		fmt.Println(updateActionStyle.UnsetWidth().Render(fmt.Sprintf("  %s %d/%d Updated", UpdateSymbol.NF, summary.Updated, summary.Total)))
+	}
+
+	if summary.Destroyed > 0 {
+		fmt.Println(destroyActionStyle.UnsetWidth().Render(fmt.Sprintf("  %s %d/%d Destroyed", DestroySymbol.NF, summary.Destroyed, summary.Total)))
+	}
+
+	if summary.None > 0 {
+		fmt.Println(noActionStyle.UnsetWidth().Render(fmt.Sprintf("  %s %d/%d No Actions", NoOpSymbol.NF, summary.None, summary.Total)))
+	}
 }
 
 func init() {

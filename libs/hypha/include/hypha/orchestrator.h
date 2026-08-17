@@ -5,13 +5,8 @@
 
 #include "hypha.h"
 #include "hypha/event.h"
+#include "hypha/planner.h"
 #include "hypha/resource_graph.h"
-
-typedef struct {
-  char* id;
-  ControllerAction action;
-  char* reason;
-} PlannedAction;
 
 typedef struct _Orchestrator Orchestrator;
 
@@ -50,16 +45,14 @@ bool OrchestratorCompact(OrchestratorHandle);
 bool OrchestratorEvalExpr(OrchestratorHandle, const char* expr, char** err);
 bool OrchestratorEvalFile(OrchestratorHandle, const char* filename, char** err);
 void FreeOrchestrator(OrchestratorHandle);
-void OrchestratorPrintRuntimeInfo(OrchestratorHandle orc);
+void OrchestratorPrintRuntimeInfo(OrchestratorHandle);
+Plan* GetOrchestratorPlan(OrchestratorHandle);
 
 static inline bool OrchestratorRun(OrchestratorHandle handle, const OrchestratorRunMode mode) {
   Reason reason;
   memset(reason, '\0', sizeof(Reason));
   return OrchestratorRunWithReason(handle, mode, reason);
 }
-
-typedef bool (*PlannedActionVisitorFn)(PlannedAction* action, void* data);
-void OrchestratorVisitPlannedActions(OrchestratorHandle, PlannedActionVisitorFn fn, void* data);
 
 #ifdef HYPHA_GRAPHVIZ_ENABLED
 void OrchestratorRenderResourceGraphTo(OrchestratorHandle, const char* name, const char* layout, const char* render,

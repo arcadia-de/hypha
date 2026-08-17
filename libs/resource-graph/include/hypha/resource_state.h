@@ -17,7 +17,7 @@ typedef enum {
 } ResourceState;
 // clang-format on
 
-static inline char* ResourceStateName(const ResourceState rhs) {
+static inline const char* ResourceStateName(const ResourceState rhs) {
   switch (rhs) {
 #define DEFINE_TOSTRING(Name) \
   case kResource##Name:       \

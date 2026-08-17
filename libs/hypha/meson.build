@@ -30,6 +30,8 @@ hypha = static_library(
     'src/history_log.c',
     'src/query_schema_resources.c',
     'src/package_managers.c',
+    'src/planner.c',
+    'src/planned_action.c',
   ],
   dependencies: hypha_deps,
   link_with: [

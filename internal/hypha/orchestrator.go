@@ -4,10 +4,9 @@ package hypha
 #cgo pkg-config: hypha-uninstalled
 #include <stdlib.h>
 #include "hypha.h"
+#include "hypha/planner.h"
 #include "hypha/orchestrator.h"
 #include "hypha/resource.h"
-
-bool goVisitPlannedActions(PlannedAction* action, void* data);
 */
 import "C"
 
@@ -15,8 +14,6 @@ import (
 	"encoding/json"
 	"fmt"
 	"os"
-	"runtime"
-	"runtime/cgo"
 	"unsafe"
 
 	"github.com/google/go-jsonnet"
@@ -284,41 +281,13 @@ func (orc *Orchestrator) PrintRuntimeInfo() {
 	C.OrchestratorPrintRuntimeInfo(orc.Handle)
 }
 
-type PlannedAction struct {
-	ID     string
-	Action string
-	Reason string
-}
-
-type PlannedActionVisitor func(action PlannedAction) bool
-
-//export goVisitPlannedActions
-func goVisitPlannedActions(action *C.PlannedAction, data unsafe.Pointer) C.bool {
-	handle := *(*cgo.Handle)(data)
-	vis := handle.Value().(PlannedActionVisitor)
-
-	var goReason string
-	if action.reason != nil {
-		goReason = C.GoString(action.reason)
+func (orc *Orchestrator) GetPlan() *Plan {
+	cHandle := C.GetOrchestratorPlan(orc.Handle)
+	if cHandle == nil {
+		return nil
 	}
 
-	goAction := PlannedAction{
-		ID:     C.GoString(action.id),
-		Action: C.GoString(C.ControllerActionToCString(action.action)),
-		Reason: goReason,
+	return &Plan{
+		Handle: cHandle,
 	}
-	return C.bool(vis(goAction))
-}
-
-func (orc *Orchestrator) VisitPlannedActions(vis PlannedActionVisitor) {
-	handle := cgo.NewHandle(vis)
-	defer handle.Delete()
-
-	C.OrchestratorVisitPlannedActions(
-		orc.Handle,
-		(C.PlannedActionVisitorFn)(unsafe.Pointer(C.goVisitPlannedActions)),
-		unsafe.Pointer(&handle),
-	)
-
-	runtime.KeepAlive(handle)
 }
