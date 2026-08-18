@@ -28,6 +28,25 @@ void VisitPlannedActions(const Plan* pl, VisitPlannedActionFn fn, void* data) {
   }
 }
 
+void AppendPlan(Plan* pl, const Plan* rhs) {
+  if (!pl || !rhs)
+    return;
+
+  if ((pl->actions_len + rhs->actions_len) >= pl->actions_cap) {
+    const size_t new_cap = pl->actions_cap + rhs->actions_cap;
+    const size_t total_size = sizeof(PlannedAction) * new_cap;
+    PlannedAction* new_actions = (PlannedAction*)realloc(pl->actions, total_size);
+    if (!new_actions)
+      return;
+
+    pl->actions = new_actions;
+    pl->actions_cap = new_cap;
+  }
+
+  memcpy(&pl->actions[pl->actions_len], &rhs->actions[0], sizeof(PlannedAction) * rhs->actions_len);
+  pl->actions_len++;
+}
+
 void AppendPlannedAction(Plan* pl, PlannedAction* action) {
   if (!pl || !action)
     return;

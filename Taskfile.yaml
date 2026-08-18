@@ -37,17 +37,30 @@ tasks:
   go:clean-cache:
     cmds:
       - go clean -cache -testcache
+      # cd ui/
+      # npm install
+      # npm run build
+      # cd ../
   go:build:
     cmds:
-      - PKG_CONFIG_PATH="$(pwd)/build/meson-uninstalled:$PKG_CONFIG_PATH" go build {{.GO_BUILD_FLAGS}} -o {{.BIN_DIR}}/{{.GO_TARGET_NAME}} {{.GO_SOURCE_FILE}}
+      - |
+        PKG_CONFIG_PATH="$(pwd)/build/meson-uninstalled:$PKG_CONFIG_PATH" \
+          go build {{.GO_BUILD_FLAGS}} \
+          -o {{.BIN_DIR}}/{{.GO_TARGET_NAME}} \
+          {{.GO_SOURCE_FILE}}
     vars:
-      GO_BUILD_FLAGS: -ldflags="-linkmode=external -extldflags=-rdynamic"
+      GO_BUILD_FLAGS: -ldflags="-linkmode=external -s -w -extldflags=-Wl,--gc-sections"
       GO_TARGET_NAME: hypha
       GO_SOURCE_FILE: cmd/hypha/main.go
+  build:dashboard:
+    dir: "dashboard/"
+    cmds:
+      - pnpm build
   build:
     cmds:
       - task: meson:reconfigure
       - task: meson:build
+      - task: build:dashboard
       - task: go:build
   test:
     deps:

@@ -6,6 +6,7 @@ hypha_deps = [
   jansson,
   lua54,
   wamr,
+  xxhash,
   gvc,
   hypha_api_dep,
   pkg_manager_api_dep,

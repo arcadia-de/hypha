@@ -19,6 +19,7 @@ void InitPlan(Plan* pl, const size_t init_cap);
 typedef bool (*VisitPlannedActionFn)(size_t idx, const PlannedAction* action, void* data);
 void VisitPlannedActions(const Plan* pl, VisitPlannedActionFn fn, void* data);
 void AppendPlannedAction(Plan* pl, PlannedAction* rhs);
+void AppendPlan(Plan* pl, const Plan* rhs);
 void FreePlan(Plan* pl);
 
 static inline bool IsPlanEmpty(const Plan* rhs) {

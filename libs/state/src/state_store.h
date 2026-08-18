@@ -54,14 +54,15 @@ static inline char* GetString(const uint8_t** p) {
 }
 
 static inline uint8_t* EncodeEntry(const StateEntry* entry, uint32_t* out_len) {
-  const uint32_t size = StringEncodedSize(entry->kind) + StringEncodedSize(entry->hash) +
-                        StringEncodedSize(entry->observed_json) + 8 /*applied_at*/ + 4 /*last_status*/ + 1 /*orphaned*/;
+  const uint32_t size = StringEncodedSize(entry->kind) + 8 + StringEncodedSize(entry->observed_json) +
+                        8 /*applied_at*/ + 4 /*last_status*/ + 1 /*orphaned*/;
 
   uint8_t* buf = (uint8_t*)malloc(size);
   uint8_t* p = buf;
 
   PutString(&p, entry->kind);
-  PutString(&p, entry->hash);
+  memcpy(&p, &entry->hash, 8);
+  p += 8;
   PutString(&p, entry->observed_json);
   memcpy(p, &entry->applied_at, 8);
   p += 8;
@@ -78,7 +79,8 @@ static inline uint8_t* EncodeEntry(const StateEntry* entry, uint32_t* out_len) {
 static inline void DecodeEntry(const uint8_t* buf, StateEntry* out) {
   const uint8_t* p = buf;
   out->kind = GetString(&p);
-  out->hash = GetString(&p);
+  memcpy(&out->hash, p, 8);
+  p += 8;
   out->observed_json = GetString(&p);
   memcpy(&out->applied_at, p, 8);
   p += 8;

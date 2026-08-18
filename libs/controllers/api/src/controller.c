@@ -108,7 +108,7 @@ finished:
 #endif  // HYPHA_ENABLE_PROFILING
 }
 
-ControllerAction ControllerPlan(Controller* ctrl, const Resource* current, const Resource* desired, Reason reason) {
+ControllerAction ControllerPlan(Controller* ctrl, const Resource* current, const Resource* desired, Reason* reason) {
 #ifdef HYPHA_ENABLE_PROFILING
   TracyCZone(ctx, 1);
   TracyCZoneName(ctx, "ControllerPlan", 14);
@@ -165,7 +165,7 @@ finished:
   return status;
 }
 
-ControllerValidationResult ControllerValidate(Controller* ctrl, const Resource* desired, Reason reason) {
+ControllerValidationResult ControllerValidate(Controller* ctrl, const Resource* desired, Reason* reason) {
 #ifdef HYPHA_ENABLE_PROFILING
   TracyCZone(ctx, 1);
   TracyCZoneName(ctx, "ControllerValidate", 18);

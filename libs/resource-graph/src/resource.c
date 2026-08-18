@@ -1,6 +1,7 @@
 #include "hypha/resource.h"
 
 #include <string.h>
+#include <xxhash.h>
 
 #include "hypha.h"
 #include "hypha/label.h"

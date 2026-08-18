@@ -1,0 +1,4 @@
+# vim: filetype=yaml :
+extends: default
+rules:
+  key-ordering: disable

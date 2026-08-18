@@ -11,7 +11,7 @@
 
 typedef struct {
   uint32_t action;
-  uint64_t timestamp;
+  struct timespec timestamp;
   char* id;
   Reason reason;
 } AppliedAction;

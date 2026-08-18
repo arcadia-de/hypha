@@ -13,9 +13,8 @@ void StateEntryFree(StateEntry* entry) {
 
   free(entry->id);
   free(entry->kind);
-  free(entry->hash);
   free(entry->observed_json);
-  entry->id = entry->kind = entry->hash = entry->observed_json = NULL;
+  entry->id = entry->kind = entry->observed_json = NULL;
 }
 
 StateStore* StateStoreOpen(const char* path) {

@@ -2,6 +2,7 @@
 #define HYPHA_STATE_H
 
 #include <stdint.h>
+#include <time.h>
 
 #include "hypha.h"
 
@@ -10,12 +11,12 @@ typedef struct _StateLog StateLog;
 
 typedef struct {
   bool orphaned;
-  uint64_t applied_at;
-  int last_status;
   char* id;
   char* kind;
-  char* hash;
+  uint64_t hash;
   char* observed_json;
+  int last_status;
+  time_t applied_at;
 } StateEntry;
 
 StateStore* StateStoreOpen(const char* path);

@@ -5,6 +5,7 @@
 #include <lualib.h>
 #include <stdio.h>
 #include <stdlib.h>
+#include <xxhash.h>
 
 #include "hypha.h"
 #include "hypha/controller.h"
@@ -249,12 +250,17 @@ static inline int CompareAppliedAction(const void* lhs, const void* rhs) {
     return +1;
   }
 
-  if (a->timestamp < b->timestamp) {
+  const struct timespec* lhst = &a->timestamp;
+  const struct timespec* rhst = &b->timestamp;
+  if (lhst->tv_sec < rhst->tv_sec)
     return -1;
-  } else if (a->timestamp > b->timestamp) {
+  else if (lhst->tv_sec > rhst->tv_sec)
     return +1;
-  }
 
+  if (lhst->tv_nsec < rhst->tv_nsec)
+    return -1;
+  else if (lhst->tv_nsec > rhst->tv_nsec)
+    return +1;
   return 0;
 }
 
@@ -342,6 +348,7 @@ void OrchestratorAddResource(OrchestratorHandle handle, Resource* res) {
     if (!new_res->spec.raw)
       return;  // TODO(@s0cks): probably should reclaim the allocated id
     new_res->spec.doc = NULL;
+    new_res->spec.hash = XXH3_64bits(new_res->spec.raw, strlen(new_res->spec.raw));
   }
 
   if (source_info->labels_len > 0) {
@@ -392,9 +399,9 @@ void OrchestratorAddResource(OrchestratorHandle handle, Resource* res) {
 static inline bool Validate(Controller* ctrl, const Resource* desired) {
   Reason reason;
   memset(reason, '\0', sizeof(reason));
-  const ControllerValidationResult result = ControllerValidate(ctrl, desired, reason);
+  const ControllerValidationResult result = ControllerValidate(ctrl, desired, &reason);
   LOG_ERROR_IF(result == kValidationkFailed, "validation failed: %s", reason);
-  return true;
+  return result != kValidationkFailed;
 }
 
 static inline void ReconcileWork(uv_work_t* req) {
@@ -422,7 +429,7 @@ static inline void ReconcileWork(uv_work_t* req) {
   if (!Validate(ctrl, desired))
     goto finished;
 
-  task->action = ControllerPlan(ctrl, observed, desired, task->reason);
+  task->action = ControllerPlan(ctrl, observed, desired, &task->reason);
   if (IsApplyReconcileTask(task))
     task->status = ControllerApply(ctrl, desired, task->action);
 
@@ -441,7 +448,7 @@ static inline void WriteResourceState(Orchestrator* orc, const Resource* res) {
       .applied_at = orc->metrics.run_start,
       .last_status = res->state,
       .orphaned = false,
-      .hash = "",
+      .hash = res->spec.hash,
       .observed_json = res->spec.raw,
   };
   LOG_ERROR_IF(!StateStorePut(orc->state, &entry), "failed to write state entry for %s", res->id);
@@ -481,10 +488,10 @@ static inline void ReconcileAfterWork(uv_work_t* req, int status) {
     AppendPlannedAction(&orc->plan, &action);
   } else if (IsApplyReconcileTask(task)) {
     AppliedAction* action = NewAppliedAction(orc);
-    action->timestamp = task->timestamp;
     action->id = strdup(res->id);
     memcpy(action->reason, task->reason, sizeof(Reason));
     action->action = task->action;
+    memcpy(&action->timestamp, &task->start, sizeof(struct timespec));
   }
 
   if (status != 0) {
@@ -545,7 +552,7 @@ static inline void QueueReconcileTask(Orchestrator* orc, Controller* ctrl, const
   }
 
   task->orc = orc;
-  task->timestamp = uv_hrtime();
+  clock_gettime(CLOCK_REALTIME, &task->start);
   task->index = index;
   task->ctrl = ctrl;
   task->action = kNoAction;

@@ -12,7 +12,7 @@ DEFINE_CONTROLLER_OBSERVE_FN(Test) {
 }
 
 DEFINE_CONTROLLER_PLAN_FN(Test) {
-  snprintf(reason, HYPHA_REASON_MAX_LENGTH, "%s", "Test resources are always created");
+  snprintf(*reason, HYPHA_REASON_MAX_LENGTH, "%s", "Test resources are always created");
   return kCreateAction;
 }
 

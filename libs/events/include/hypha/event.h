@@ -204,7 +204,9 @@ typedef struct {
 typedef struct {
   uv_async_t async;
   uv_mutex_t mutex;
+
   EventRoute* root;
+
   ScheduledEvent* queue;
   size_t queue_len;
   size_t queue_cap;

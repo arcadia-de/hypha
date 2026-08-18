@@ -1,12 +1,33 @@
 package cli
 
 import (
-	"charm.land/log/v2"
+	"fmt"
+	"time"
+
+	"github.com/arcadia-de/hypha/internal/hypha"
 	"github.com/spf13/cobra"
+	"github.com/spf13/viper"
 )
 
 func handleBrowse(cmd *cobra.Command, args []string) error {
-	log.Info("browse is not implemented")
+	web := viper.GetBool("web")
+
+	if web {
+		port := 8080
+		address := "0.0.0.0"
+
+		open := viper.GetBool("open")
+		if open {
+			go func() {
+				time.Sleep(500 * time.Millisecond)
+				hypha.OpenBrowser(fmt.Sprintf("http://%s:%d", address, port))
+			}()
+		}
+
+		fmt.Printf("dashboard can be viewed at: http://%s:%d\n", address, port)
+		hypha.StartDashboardServer(fmt.Sprintf("%s:%d", address, port))
+	}
+
 	return nil
 }
 
@@ -17,6 +38,8 @@ func init() {
 		GroupID: "inspection",
 		RunE:    handleBrowse,
 	}
+	browseCmd.Flags().BoolP("web", "w", false, "Serve the web dashboard")
+	browseCmd.Flags().BoolP("open", "", true, "Open the web dashboard")
 
 	RootCmd.AddCommand(browseCmd)
 }

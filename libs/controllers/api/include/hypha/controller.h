@@ -27,36 +27,26 @@ typedef enum {
 
 // init controller
 typedef void (*ControllerInitFn)(void* data);
-
 // de-init controller
 typedef void (*ControllerDeInitFn)(void* data);
-
 // discover changes
-typedef ControllerStatus (*ControllerObserveFn)(const Resource* desired, Resource* out, void* data);
-
+typedef ControllerStatus (*ControllerObserveFn)(const Resource*, Resource*, void*);
 // normalize the changes with standardized metadata
-typedef ControllerStatus (*ControllerNormalizeFn)(const Resource*, void* data);
-
+typedef ControllerStatus (*ControllerNormalizeFn)(const Resource*, void*);
 // reject malformed specs before planning
-typedef ControllerValidationResult (*ControllerValidateFn)(const Resource*, Reason reason, void* data);
-
+typedef ControllerValidationResult (*ControllerValidateFn)(const Resource*, Reason*, void*);
 // compute the change set
-typedef ControllerAction (*ControllerPlanFn)(const Resource*, const Resource*, Reason reason, void* data);
-
+typedef ControllerAction (*ControllerPlanFn)(const Resource*, const Resource*, Reason*, void*);
 // execute the changes
-typedef ControllerStatus (*ControllerApplyFn)(const Resource*, const ControllerAction, void* data);
-
+typedef ControllerStatus (*ControllerApplyFn)(const Resource*, const ControllerAction, void*);
 // remove the resources cleanly
-typedef ControllerStatus (*ControllerDestroyFn)(const Resource*, void* data);
-
+typedef ControllerStatus (*ControllerDestroyFn)(const Resource*, void*);
 // report the changes between current and planned
-typedef ControllerStatus (*ControllerDiffFn)(const Resource*, void* data);
-
+typedef ControllerStatus (*ControllerDiffFn)(const Resource*, void*);
 // report current state and drift
-typedef ControllerStatus (*ControllerStatusFn)(const Resource*, void* data);
-
+typedef ControllerStatus (*ControllerStatusFn)(const Resource*, void*);
 // rollback changes
-typedef ControllerStatus (*ControllerRollbackFn)(const Resource*, void* data);
+typedef ControllerStatus (*ControllerRollbackFn)(const Resource*, void*);
 
 // clang-format off
 #define DEFINE_CONTROLLER_INIT_FN(Name) \
@@ -69,7 +59,7 @@ typedef ControllerStatus (*ControllerRollbackFn)(const Resource*, void* data);
   static inline ControllerStatus Name##Observe(const Resource* desired, Resource* out, void* data)
 
 #define DEFINE_CONTROLLER_PLAN_FN(Name) \
-  static inline ControllerAction Name##Plan(const Resource* current, const Resource* desired, Reason reason, void* data)
+  static inline ControllerAction Name##Plan(const Resource* current, const Resource* desired, Reason* reason, void* data)
 
 #define DEFINE_CONTROLLER_APPLY_FN(Name) \
   static inline ControllerStatus Name##Apply(const Resource* desired, const ControllerAction action, void* data)
@@ -81,7 +71,7 @@ typedef ControllerStatus (*ControllerRollbackFn)(const Resource*, void* data);
   static inline ControllerStatus Name##Status(const Resource* current, void* data)
 
 #define DEFINE_CONTROLLER_VALIDATE_FN(Name) \
-  static inline ControllerValidationResult Name##Validate(const Resource* desired, Reason reason, void* data)
+  static inline ControllerValidationResult Name##Validate(const Resource* desired, Reason* reason, void* data)
 // clang-format on
 
 typedef struct {
@@ -113,9 +103,9 @@ const char* GetControllerKind(const Controller* ctrl);
 void ControllerInit(Controller*);
 void ControllerDeInit(Controller*);
 void ControllerObserve(Controller* ctrl, const Resource* desired, Resource* res);
-ControllerAction ControllerPlan(Controller* ctrl, const Resource* current, const Resource* desired, Reason reason);
+ControllerAction ControllerPlan(Controller* ctrl, const Resource* current, const Resource* desired, Reason* reason);
 ControllerStatus ControllerApply(Controller* ctrl, const Resource* current, const ControllerAction action);
-ControllerValidationResult ControllerValidate(Controller* ctrl, const Resource* current, Reason reason);
+ControllerValidationResult ControllerValidate(Controller* ctrl, const Resource* current, Reason* reason);
 ControllerStatus ControllerRollback(Controller* ctrl, const Resource* current);
 ControllerStatus ControllerDestroy(Controller* ctrl, const Resource* current);
 ControllerStatus ControllerDiff(Controller* ctrl, const Resource* current);

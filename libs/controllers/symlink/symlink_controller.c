@@ -23,14 +23,14 @@ DEFINE_CONTROLLER_VALIDATE_FN(Symlink) {
   char* source = NULL;
   size_t source_len = 0;
   if (!GetSpecField(desired, "source", &source, &source_len)) {
-    snprintf(reason, HYPHA_REASON_MAX_LENGTH, "failed to get 'source' field");
+    snprintf(*reason, HYPHA_REASON_MAX_LENGTH, "failed to get 'source' field");
     goto finished;
   }
 
   char* target = NULL;
   size_t target_len = 0;
   if (!GetSpecField(desired, "target", &target, &target_len)) {
-    snprintf(reason, HYPHA_REASON_MAX_LENGTH, "failed to get 'target' field");
+    snprintf(*reason, HYPHA_REASON_MAX_LENGTH, "failed to get 'target' field");
     goto finished;
   }
 

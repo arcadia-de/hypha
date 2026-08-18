@@ -20,6 +20,7 @@ lua54 = dependency('lua54', version: '=5.4.8', required: true)
 jansson = dependency('jansson', version: '>=2.15.0', required: true)
 sodium = dependency('libsodium', version: '>=1.0.22', required: true)
 uuid = dependency('uuid', version: '>=2.42.2', required: true)
+xxhash = dependency('libxxhash', version: '>=0.8.3', required: true)
 
 all_hypha_deps = [
   threads,
@@ -28,6 +29,7 @@ all_hypha_deps = [
   jansson,
   sodium,
   uuid,
+  xxhash,
 ]
 
 archive = dependency('libarchive', version: '>=3.8.8', required: false)
@@ -90,6 +92,6 @@ pkg.generate(
     m_dep,
   ],
   subdirs: [
-    hypha_inc_dir,
+    'libs/hypha/include/',
   ],
 )

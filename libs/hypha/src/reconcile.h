@@ -10,7 +10,7 @@
 
 typedef struct {
   uv_work_t work;
-  uint64_t timestamp;
+
   Orchestrator* orc;
   ResourceGraphIndex index;
   Controller* ctrl;
@@ -18,6 +18,7 @@ typedef struct {
   ControllerAction action;
   ControllerStatus status;
   StateEntry last_applied;
+  struct timespec start;
   Reason reason;
 } ReconcileTask;
 

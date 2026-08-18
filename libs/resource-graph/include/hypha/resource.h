@@ -5,6 +5,7 @@
 #include <stdint.h>
 #include <stdlib.h>
 #include <string.h>
+#include <time.h>
 
 #include "hypha.h"
 #include "hypha/annotation.h"
@@ -12,6 +13,8 @@
 #include "hypha/resource_state.h"
 
 typedef struct {
+  char* name;
+
   // labels
   Label* labels;
   size_t labels_len;
@@ -28,23 +31,36 @@ void FreeResourceInfo(ResourceInfo* info);
 typedef struct {
   char* raw;
   json_t* doc;
+  uint64_t hash;
 } ResourceSpecDocument;
 
-// TODO(@s0cks): use a uuid for the id instead of a char*
-//  #include <uuid/uuid.h>
-//  uuid_t buuid;
-//  char str[37];
-//  uuid_generate_random(buuid);
-//  uuid_unparse(buuid, str);
+uint64_t ResourceSpecDocumentGetHash(ResourceSpecDocument* rhs);
+
+typedef struct {
+  struct {
+    struct timespec start;
+    struct timespec finish;
+  } states[kTotalNumberOfOrchestratorStates];
+} ResourceTelemetry;
+
+typedef struct {
+  ResourceState state;
+  Reason reason;
+} ResourceStatus;
+
 struct _Resource {
-  char* id;
+  char* id;  // TODO(@s0cks): replace with uuid_t
   char* kind;
   ResourceInfo info;
-  ResourceState state;
+  ResourceState state;  // TODO(@s0cks): replace w/ status field usage
+  ResourceStatus status;
   ResourceSpecDocument spec;
 
   char** depends_on;
-  uint32_t num_depends_on;
+  size_t num_depends_on;
+  size_t depends_on_cap;
+
+  ResourceTelemetry telemetry;
 };
 
 #define DEFINE_STATE_CHECK(Name)                             \

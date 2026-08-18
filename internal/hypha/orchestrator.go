@@ -295,7 +295,7 @@ func (orc *Orchestrator) AddResource(res ResourceSpec) {
 		id:             cID,
 		kind:           cKind,
 		depends_on:     cDeps,
-		num_depends_on: C.uint32_t(numDeps),
+		num_depends_on: C.size_t(numDeps),
 		info: C.ResourceInfo{
 			labels:     cLabels,
 			labels_len: C.size_t(numLabels),
@@ -501,9 +501,10 @@ func (orc *Orchestrator) GetPlan() *Plan {
 }
 
 func (orc *Orchestrator) ProcessDiscoveredManifests() {
+	var manifests []ResourceSpec
 	orc.VisitDiscoveredManifests(func(idx uint64, dm DiscoveredManifest) bool {
-		var err error
 		var specs []ResourceSpec
+		var err error
 
 		switch dm.Kind {
 		case DiscoveredManifestPath:
@@ -517,11 +518,14 @@ func (orc *Orchestrator) ProcessDiscoveredManifests() {
 		}
 
 		for _, s := range specs {
-			orc.AddResource(s)
+			manifests = append(manifests, s)
 		}
-
 		return true
 	})
+
+	for _, s := range manifests {
+		orc.AddResource(s)
+	}
 }
 
 func (orc *Orchestrator) GetResourceGraph() ResourceGraph {

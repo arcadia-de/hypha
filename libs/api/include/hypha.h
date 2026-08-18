@@ -45,6 +45,26 @@ typedef enum {
 
 #endif  // HYPHA_DEBUG
 
+#define FOR_EACH_ORCHESTRATOR_STATE(V) \
+  V(Observe)                           \
+  V(Normalize)                         \
+  V(Validate)                          \
+  V(Plan)                              \
+  V(Apply)                             \
+  V(Destroy)                           \
+  V(Diff)                              \
+  V(Status)                            \
+  V(Rollback)
+
+// clang-format off
+typedef enum {
+#define DEFINE_STATE(Name) k##Name##State,
+  FOR_EACH_ORCHESTRATOR_STATE(DEFINE_STATE)
+#undef DEFINE_STATE
+  kTotalNumberOfOrchestratorStates,
+} OrchestratorState;
+// clang-format on
+
 #define LUA_REGISTRY_ORC_KEY    "hypha_orchestrator"
 #define LUA_REGISTRY_EVENTS_KEY "hypha_events"
 

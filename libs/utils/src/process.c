@@ -128,7 +128,9 @@ int ExecProcess(Process* p) {
     close(stdout_pipe[1]);
     close(stderr_pipe[1]);
 
+    clock_gettime(CLOCK_REALTIME, &p->start);
     execve(p->bin, args, env);
+    clock_gettime(CLOCK_REALTIME, &p->finish);
     free(env);
     free(args);
     exit(127);
@@ -199,8 +201,12 @@ int ExecProcess(Process* p) {
   free(args);
   int status = 0;
   waitpid(pid, &status, 0);
-  return WIFEXITED(status) ? WEXITSTATUS(status) : -1;
+  clock_gettime(CLOCK_REALTIME, &p->start);
 
+  if (p->on_finished)
+    p->on_finished(p);
+
+  return WIFEXITED(status) ? WEXITSTATUS(status) : -1;
 failed2:
   close(stderr_pipe[0]);
   close(stderr_pipe[1]);
