@@ -11,8 +11,9 @@ typedef struct _ResourceDecoratorPipeline ResourceDecoratorPipeline;
 ResourceDecoratorPipeline* NewResourceDecoratorPipeline();
 void ResourceDecoratorPipelineAdd(ResourceDecoratorPipeline* pipe, ResourceDecoratorFn fn, void* data,
                                   void (*free_data)(void*));
-void ResourceDecoratorPipelineLabel(ResourceDecoratorPipeline* pipe, const char* label);
-void ResourceDecoratorPipelineAnnotate(ResourceDecoratorPipeline* pipe, const char* name, const char* value);
+void ResourceDecoratorPipelineLabel(ResourceDecoratorPipeline* pipe, const Label* label);
+void ResourceDecoratorPipelineAnnotate(ResourceDecoratorPipeline* pipe, const AnnotationKey* k,
+                                       const AnnotationValue* v);
 void ResourceDecoratorPipelineExec(ResourceDecoratorPipeline* pipe, Resource* res);
 void FreeResourceDecoratorPipeline(ResourceDecoratorPipeline* pipe);
 

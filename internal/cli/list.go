@@ -135,7 +135,8 @@ func HandleListResourcesByKindCommand(kind string, args []string) error {
 	filter := CreateListFilter(kind)
 	defer filter.Close()
 
-	resources := orc.ListResourcesWithOptionalSelector(filter)
+	rg := orc.GetResourceGraph()
+	resources := rg.ListResourcesWithOptionalSelector(filter)
 	PrintResourceList(resources)
 
 	return nil

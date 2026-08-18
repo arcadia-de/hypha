@@ -3,6 +3,7 @@
 #include <stdlib.h>
 #include <string.h>
 
+#include "hypha/label.h"
 #include "hypha/log.h"
 #include "hypha/resource.h"
 
@@ -59,26 +60,39 @@ void ResourceDecoratorPipelineAdd(ResourceDecoratorPipeline* pipe, ResourceDecor
 }
 
 static inline void ResourceDecoratorPipelineAddAnnotation(Resource* res, void* data) {
-  ResourceAnnotation* annotation = (ResourceAnnotation*)data;
+  Annotation* annotation = (Annotation*)data;
   if (!annotation)
     return;
 
   PushResourceAnnotation(res, annotation);
-  DeleteResourceAnnotation(annotation);
 }
 
-void ResourceDecoratorPipelineAnnotate(ResourceDecoratorPipeline* pipe, const char* name, const char* value) {
-  return ResourceDecoratorPipelineAdd(pipe, &ResourceDecoratorPipelineAddAnnotation, NewResourceAnnotation(name, value),
-                                      (void (*)(void*))FreeResourceAnnotation);
+void ResourceDecoratorPipelineAnnotate(ResourceDecoratorPipeline* pipe, const AnnotationKey* key,
+                                       const AnnotationValue* value) {
+  Annotation annotation;
+  memcpy(annotation.key, *key, sizeof(AnnotationKey));
+  memcpy(annotation.value, *value, sizeof(AnnotationValue));
+  return ResourceDecoratorPipelineAdd(pipe, &ResourceDecoratorPipelineAddAnnotation, &annotation, NULL);
 }
 
 static inline void ResourceDecoratorPipelineAddLabel(Resource* res, void* data) {
   ResourceInfo* info = &res->info;
-  info->labels[info->labels_len] = strdup((char*)data);
+  const Label* label = (const Label*)data;
+
+  if (info->labels_len + 1 >= info->labels_cap) {
+    const size_t new_cap = info->labels_cap * 2;
+    const size_t total_size = sizeof(Label) * new_cap;
+    Label* new_labels = (Label*)realloc(info->labels, total_size);
+    LOG_FATAL_IF(!new_labels, "failed to allocate new labels for resource");
+    info->labels = new_labels;
+    info->labels_cap = new_cap;
+  }
+
+  memcpy(&info->labels[info->labels_len], label, HYPHA_LABEL_MAX_SIZE);
   info->labels_len++;
 }
 
-void ResourceDecoratorPipelineLabel(ResourceDecoratorPipeline* pipe, const char* label) {
+void ResourceDecoratorPipelineLabel(ResourceDecoratorPipeline* pipe, const Label* label) {
   return ResourceDecoratorPipelineAdd(pipe, &ResourceDecoratorPipelineAddLabel, (void*)label, NULL);
 }
 

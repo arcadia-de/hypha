@@ -49,7 +49,7 @@ AppliedAction* NewAppliedAction(OrchestratorHandle);
 typedef bool (*VisitAppliedActionFn)(size_t, AppliedAction*, void*);
 void VisitAppliedActions(OrchestratorHandle, VisitAppliedActionFn, void*);
 
-void OrchestratorAddResource(OrchestratorHandle, Resource);
+void OrchestratorAddResource(OrchestratorHandle, Resource*);
 void OrchestratorSubscribe(OrchestratorHandle, const char* p, EventCallbackFn cb, void* data, void (*free_data)(void*));
 void OrchestratorPublish(OrchestratorHandle, const char* p, void* event);
 bool OrchestratorRunWithReason(OrchestratorHandle, const OrchestratorRunMode mode, const Reason reason);

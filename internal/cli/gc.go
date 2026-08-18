@@ -28,6 +28,7 @@ func init() {
 		GroupID: "config",
 		RunE:    handleGc,
 	}
+	gcCmd.Flags().BoolP("dry-run", "", false, "Do not actually do anything just print")
 
 	RootCmd.AddCommand(gcCmd)
 }

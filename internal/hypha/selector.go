@@ -3,70 +3,15 @@ package hypha
 /*
 #cgo pkg-config: hypha-uninstalled
 #include <stdlib.h>
+#include "hypha/label.h"
 #include "hypha/orchestrator.h"
 #include "hypha/resource_selector.h"
-
-bool goVisitResource(Resource* res, void* data);
 */
 import "C"
 
 import (
-	"runtime"
-	"runtime/cgo"
 	"unsafe"
 )
-
-type Resource struct {
-	ID     string
-	Kind   string
-	State  string
-	Action string
-	Reason string
-}
-
-type ResourceVisitor func(Resource) bool
-
-//export goVisitResource
-func goVisitResource(res *C.Resource, data unsafe.Pointer) C.bool {
-	handle := *(*cgo.Handle)(data)
-	vis := handle.Value().(ResourceVisitor)
-
-	goResource := Resource{
-		ID:    C.GoString(res.id),
-		Kind:  C.GoString(res.kind),
-		State: C.GoString(C.ResourceStateName(res.state)),
-	}
-	return C.bool(vis(goResource))
-}
-
-// bool VisitAllResources(const ResourceGraph* rg, ResourceVisitorFn fn, void* data);
-func (orc *Orchestrator) VisitAllResources(vis ResourceVisitor) bool {
-	handle := cgo.NewHandle(vis)
-	defer handle.Delete()
-
-	success := C.VisitAllResources(
-		C.OrchestratorGetResourceGraph(orc.Handle),
-		(C.ResourceVisitorFn)(unsafe.Pointer(C.goVisitResource)),
-		unsafe.Pointer(&handle),
-	)
-	runtime.KeepAlive(handle)
-	return bool(success)
-}
-
-// bool VisitAllMatchingResources(const ResourceGraph* rg, const ResourceSelector* rs, ResourceVisitorFn fn, void* data);
-func (orc *Orchestrator) VisitAllMatchingResources(rs ResourceSelector, vis ResourceVisitor) bool {
-	handle := cgo.NewHandle(vis)
-	defer handle.Delete()
-
-	success := C.VisitAllMatchingResources(
-		C.OrchestratorGetResourceGraph(orc.Handle),
-		rs.Handle,
-		(C.ResourceVisitorFn)(unsafe.Pointer(C.goVisitResource)),
-		unsafe.Pointer(&handle),
-	)
-	runtime.KeepAlive(handle)
-	return bool(success)
-}
 
 // bool VisitAllNonMatchingResources(const ResourceGraph* rg, const ResourceSelector* rs, ResourceVisitorFn fn,
 //                                   void* data);
@@ -97,10 +42,31 @@ func NewKindResourceSelector(kind string) ResourceSelector {
 	}
 }
 
+func NewIdsResourceSelector(ids []string) ResourceSelector {
+	var filters []ResourceSelector
+	for _, id := range ids {
+		filters = append(filters, NewIdFilter(id))
+	}
+	return NewOrResourceSelector(filters)
+}
+
 func NewLabelResourceSelector(rhs string) ResourceSelector {
-	cLabel := C.CString(rhs)
-	defer C.free(unsafe.Pointer(cLabel))
-	handle := C.NewLabelResourceSelector(cLabel)
+	var dummyLabel C.Label
+	labelSize := int(unsafe.Sizeof(dummyLabel))
+
+	cLabelMemory := C.malloc(C.size_t(labelSize))
+	defer C.free(cLabelMemory)
+
+	C.memset(cLabelMemory, 0, C.size_t(labelSize))
+	rawByteSlice := unsafe.Slice((*byte)(cLabelMemory), labelSize)
+	maxSafeLength := labelSize - 1
+	if len(rhs) > maxSafeLength {
+		rhs = rhs[:maxSafeLength]
+	}
+	copy(rawByteSlice, rhs)
+
+	cgoExpectedPtr := (*[C.HYPHA_LABEL_MAX_SIZE]C.char)(cLabelMemory)
+	handle := C.NewLabelResourceSelector(cgoExpectedPtr)
 	return ResourceSelector{
 		Handle: handle,
 	}
@@ -141,11 +107,3 @@ func NewAndResourceSelector(selectors []ResourceSelector) ResourceSelector {
 func (rs *ResourceSelector) Close() {
 	C.FreeResourceSelector(rs.Handle)
 }
-
-// ResourceSelector* NewResourceSelector(ResourceSelectorFn fn, void* data, void (*free_data)(void*));
-// ResourceSelector* NewOrResourceSelector(ResourceSelector** selectors, const uint64_t num_selectors);
-// ResourceSelector* NewAnnotationResourceSelector(const ResourceAnnotation* rhs);
-// ResourceSelector* NewAnnotationKeyResourceSelector(const char* rhs);
-// ResourceSelector* NewAnnotationValueResourceSelector(const char* rhs);
-// bool ResourceSelectorMatch(const ResourceSelector* rs, const Resource* res);
-// void FreeResourceSelector(ResourceSelector* rs);

@@ -7,16 +7,18 @@
 #include <string.h>
 
 #include "hypha.h"
-#include "hypha/resource_annotation.h"
+#include "hypha/annotation.h"
+#include "hypha/label.h"
 #include "hypha/resource_state.h"
 
 typedef struct {
   // labels
-  char** labels;
+  Label* labels;
   size_t labels_len;
   size_t labels_cap;
+
   // annotations
-  ResourceAnnotation* annotations;
+  Annotation* annotations;
   size_t annotations_len;
   size_t annotations_cap;
 } ResourceInfo;
@@ -38,10 +40,11 @@ struct _Resource {
   char* id;
   char* kind;
   ResourceInfo info;
-  char** depends_on;
-  uint32_t num_depends_on;
   ResourceState state;
   ResourceSpecDocument spec;
+
+  char** depends_on;
+  uint32_t num_depends_on;
 };
 
 #define DEFINE_STATE_CHECK(Name)                             \
@@ -52,45 +55,24 @@ FOR_EACH_RESOURCE_STATE(DEFINE_STATE_CHECK)
 #undef DEFINE_STATE_CHECK
 
 bool ResourceHasId(const Resource* res, const char* id);
-void ResourcePushLabel(Resource* res, const char* label);
-bool ResourceHasLabel(const Resource* res, const char* label);
-bool ResourceVisitLabels(const Resource* res, bool (*vis)(const Resource*, const uint32_t, const char*));
+void ResourcePushLabel(Resource* res, const Label* label);
+bool ResourceHasLabel(const Resource* res, const Label* label);
+bool ResourceVisitLabels(const Resource* res, bool (*vis)(const Resource*, const uint64_t, const Label*));
 
-static inline void PushResourceAnnotation(Resource* res, const ResourceAnnotation* rhs) {
+static inline void PushResourceAnnotation(Resource* res, const Annotation* rhs) {
   ResourceInfo* info = &res->info;
-  memcpy(&info->annotations[info->annotations_len], rhs, sizeof(ResourceAnnotation));
+  memcpy(&info->annotations[info->annotations_len], rhs, sizeof(Annotation));
   info->annotations_len++;
 }
 
-void ResourcePushAnnotation(Resource* res, const char* k, const char* v);
-bool ResourceGetAnnotation(const Resource* res, const char* name, const char** result);
-bool ResourceHasAnnotation(const Resource* res, const ResourceAnnotation* annotation);
-bool ResourceHasAnnotationK(const Resource* res, const char* label);
-bool ResourceHasAnnotationV(const Resource* res, const char* value);
-bool ResourceHasAnnotationKV(const Resource* res, const char* label, const char* value);
-bool ResourceVisitAnnotations(const Resource* res,
-                              bool (*vis)(const Resource*, const uint32_t, const ResourceAnnotation*));
+void ResourcePushAnnotation(Resource* res, const AnnotationKey* k, const AnnotationValue* v);
+bool ResourceGetAnnotation(const Resource* res, const AnnotationKey* k, Annotation** result);
+bool ResourceHasAnnotation(const Resource* res, const Annotation* annotation);
+bool ResourceHasAnnotationK(const Resource* res, const AnnotationKey* k);
+bool ResourceHasAnnotationV(const Resource* res, const AnnotationValue* v);
+bool ResourceHasAnnotationKV(const Resource* res, const AnnotationKey* k, const AnnotationValue* v);
+bool ResourceVisitAnnotations(const Resource* res, bool (*vis)(const Resource*, const uint64_t, const Annotation*));
 
-bool ResourceVisitDependsOn(const Resource* res, bool (*vis)(const Resource*, const uint32_t, const char*));
-
-#define BEGIN_FOREACH_RESOURCE_DEPENDSON(Resource, Name)    \
-  for (uint32_t i = 0; i < Resource->num_depends_on; i++) { \
-    const char* Name = Resource->depends_on[i];
-
-#define END_FOREACH_RESOURCE_DEPENDSON }
-
-#define BEGIN_FOREACH_RESOURCE_LABEL(Resource, Name)           \
-  const ResourceInfo* Resource##_info = &(Resource)->info;     \
-  for (uint32_t i = 0; i < Resource##_info->labels_len; i++) { \
-    const char* Name = Resource##_info->labels[i];
-
-#define END_FOREACH_RESOURCE_LABEL }
-
-#define BEGIN_FOREACH_RESOURCE_ANNOTATION(Resource, Name)           \
-  const ResourceInfo* Resource##_info = &(Resource)->info;          \
-  for (uint32_t i = 0; i < Resource##_info->annotations_len; i++) { \
-    const ResourceAnnotation* Name = &Resource##_info->annotations[i];
-
-#define END_FOREACH_RESOURCE_ANNOTATION }
+bool ResourceVisitDependsOn(const Resource* res, bool (*vis)(const Resource*, const uint64_t, const char*));
 
 #endif  // HYPHA_RESOURCE_H

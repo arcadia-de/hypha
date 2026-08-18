@@ -185,8 +185,8 @@ func init() {
 		GroupID: "config",
 		RunE:    handleApply,
 	}
-
 	applyCmd.Flags().BoolP("print-telemetry", "", false, "Enable telemetry")
+	applyCmd.Flags().BoolP("dry-run", "", false, "Don't actually do anything, just log")
 
 	RootCmd.AddCommand(applyCmd)
 }

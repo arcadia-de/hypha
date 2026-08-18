@@ -4,23 +4,84 @@ import (
 	"fmt"
 	"strings"
 
+	lg "charm.land/lipgloss/v2"
 	"github.com/arcadia-de/hypha/internal/hypha"
 	"github.com/spf13/cobra"
 )
 
-func createDescribeFilter(ids []string) hypha.ResourceSelector {
-	var filter hypha.ResourceSelector
+func CreateDescribeFilter(kind string, ids []string) hypha.ResourceSelector {
+	kindFilter := hypha.NewKindResourceSelector(kind)
+	idsFilter := hypha.NewIdsResourceSelector(ids)
+	return hypha.NewAndResourceSelector([]hypha.ResourceSelector{
+		kindFilter,
+		idsFilter,
+	})
+}
 
-	if len(ids) > 0 {
-		var filters []hypha.ResourceSelector
-		for _, id := range ids {
-			filters = append(filters, hypha.NewIdFilter(id))
-		}
+var (
+	SummaryTitleStyle = lg.NewStyle()
 
-		filter = hypha.NewOrResourceSelector(filters)
+	SummaryFieldStyle = lg.NewStyle().
+				Width(15).
+				PaddingLeft(2)
+
+	SummaryValueStyle = lg.NewStyle()
+
+	SummaryLabelStyle = lg.NewStyle().
+				PaddingLeft(4)
+
+	SummaryAnnotationStyle = lg.NewStyle().
+				PaddingLeft(4)
+)
+
+func PrintResourceSummaryField(name string, value string) {
+	fmt.Printf("%s %s\n", SummaryFieldStyle.Render(fmt.Sprintf("%s:", name)), SummaryValueStyle.Render(value))
+}
+
+func PrintResourceAnnotations(annotations []hypha.ResourceAnnotation) {
+	fmt.Printf("%s\n", SummaryFieldStyle.Render("annotations:"))
+	for _, annotation := range annotations {
+		annot := fmt.Sprintf("%s=%s", annotation.Key, annotation.Value)
+		fmt.Printf("%s\n", SummaryAnnotationStyle.Render(annot))
+	}
+}
+
+func PrintResourceLabels(labels []string) {
+	fmt.Printf("%s\n", SummaryFieldStyle.Render("labels:"))
+	for _, label := range labels {
+		fmt.Printf("%s\n", SummaryLabelStyle.Render(label))
+	}
+}
+
+func PrintResourceSummary(resource hypha.Resource) {
+	// TestRawManifest2
+	//	kind:        test
+	//	id:          0
+	//	labels:      env=dev, owner=tazz
+	//	annotations: source-kind=raw, hypha.io/managed-by=controller-x
+	//	spec:
+	//	  <jsonnet-resolved fields>
+	//	state:
+	//	  last action:  Create
+	//	  last status:  ok
+	//	  last applied: 2026-08-14T09:12:03Z
+	fmt.Printf("%s\n", SummaryTitleStyle.Render(resource.ID))
+	PrintResourceSummaryField("kind", resource.Kind)
+	PrintResourceSummaryField("id", resource.ID)
+
+	if len(resource.Metadata.Labels) > 0 {
+		PrintResourceLabels(resource.Metadata.Labels)
 	}
 
-	return filter
+	if len(resource.Metadata.Annotations) > 0 {
+		PrintResourceAnnotations(resource.Metadata.Annotations)
+	}
+
+	if len(resource.Spec) > 0 {
+		fmt.Printf("%s\n", SummaryFieldStyle.Render(fmt.Sprintf("spec: %s", resource.Spec)))
+	}
+
+	// TODO(@s0cks): fmt.Printf("%s\n", SummaryFieldStyle.Render("state:"))
 }
 
 func handleDescribe(kind string, args []string) error {
@@ -36,18 +97,16 @@ func handleDescribe(kind string, args []string) error {
 
 	fmt.Println()
 
-	filter := createDescribeFilter(args)
+	filter := CreateDescribeFilter(kind, args)
 	defer filter.Close()
 
-	var records []hypha.Resource
-	orc.VisitAllMatchingResources(filter, func(rec hypha.Resource) bool {
-		records = append(records, rec)
-		return true
-	})
-
-	for _, r := range records {
-		fmt.Printf(" - %s (%s)\n", r.ID, r.Kind)
+	rg := orc.GetResourceGraph()
+	resources := rg.ListResourcesWithSelector(filter)
+	for _, r := range resources {
+		fmt.Println()
+		PrintResourceSummary(r)
 	}
+	fmt.Println()
 
 	return nil
 }

@@ -18,41 +18,18 @@ void ClearLogResourceContext();
 #define LOG_ERROR(fmt, ...)   LogError(__FILE_NAME__, __LINE__, fmt, ##__VA_ARGS__)
 #define LOG_FATAL(fmt, ...)   LogFatal(__FILE_NAME__, __LINE__, fmt, ##__VA_ARGS__)
 
-#define LOG_INFO_IF(Cond, fmt, ...) \
-  ({                                \
-    if ((Cond))                     \
-      LOG_INFO(fmt, ##__VA_ARGS__); \
-  })
-
-#define LOG_DEBUG_IF(Cond, fmt, ...) \
-  ({                                 \
-    if ((Cond))                      \
-      LOG_DEBUG(fmt, ##__VA_ARGS__); \
-  })
-
-#define LOG_SUCCESS_IF(Cond, fmt, ...) \
+#define LOG_IF(Level, Cond, Fmt, ...)  \
   ({                                   \
     if ((Cond))                        \
-      LOG_SUCCESS(fmt, ##__VA_ARGS__); \
+      LOG_##Level(Fmt, ##__VA_ARGS__); \
   })
 
-#define LOG_WARN_IF(Cond, fmt, ...) \
-  ({                                \
-    if ((Cond))                     \
-      LOG_WARN(fmt, ##__VA_ARGS__); \
-  })
-
-#define LOG_ERROR_IF(Cond, fmt, ...) \
-  ({                                 \
-    if ((Cond))                      \
-      LOG_ERROR(fmt, ##__VA_ARGS__); \
-  })
-
-#define LOG_FATAL_IF(Cond, fmt, ...) \
-  ({                                 \
-    if ((Cond))                      \
-      LOG_FATAL(fmt, ##__VA_ARGS__); \
-  })
+#define LOG_INFO_IF(Cond, fmt, ...)    LOG_IF(INFO, Cond, fmt, ##__VA_ARGS__)
+#define LOG_DEBUG_IF(Cond, fmt, ...)   LOG_IF(DEBUG, Cond, fmt, ##__VA_ARGS__)
+#define LOG_SUCCESS_IF(Cond, fmt, ...) LOG_IF(SUCCESS, Cond, fmt, ##__VA_ARGS__)
+#define LOG_WARN_IF(Cond, fmt, ...)    LOG_IF(WARN, Cond, fmt, ##__VA_ARGS__)
+#define LOG_ERROR_IF(Cond, fmt, ...)   LOG_IF(ERROR, Cond, fmt, ##__VA_ARGS__)
+#define LOG_FATAL_IF(Cond, fmt, ...)   LOG_IF(FATAL, Cond, fmt, ##__VA_ARGS__)
 
 #ifdef HYPHA_DEBUG
 
@@ -63,41 +40,18 @@ void ClearLogResourceContext();
 #define DLOG_FATAL(fmt, ...)   LOG_FATAL(fmt, ##__VA_ARGS__)
 #define DLOG_DEBUG(fmt, ...)   LOG_DEBUG(fmt, ##__VA_ARGS__)
 
-#define DLOG_INFO_IF(Cond, fmt, ...) \
-  ({                                 \
-    if ((Cond))                      \
-      DLOG_INFO(fmt, ##__VA_ARGS__); \
-  })
-
-#define DLOG_DEBUG_IF(Cond, fmt, ...) \
-  ({                                  \
-    if ((Cond))                       \
-      DLOG_DEBUG(fmt, ##__VA_ARGS__); \
-  })
-
-#define DLOG_SUCCESS_IF(Cond, fmt, ...) \
+#define DLOG_IF(Level, Cond, Fmt, ...)  \
   ({                                    \
     if ((Cond))                         \
-      DLOG_SUCCESS(fmt, ##__VA_ARGS__); \
+      DLOG_##Level(Fmt, ##__VA_ARGS__); \
   })
 
-#define DLOG_WARN_IF(Cond, fmt, ...) \
-  ({                                 \
-    if ((Cond))                      \
-      DLOG_WARN(fmt, ##__VA_ARGS__); \
-  })
-
-#define DLOG_ERROR_IF(Cond, fmt, ...) \
-  ({                                  \
-    if ((Cond))                       \
-      DLOG_ERROR(fmt, ##__VA_ARGS__); \
-  })
-
-#define DLOG_FATAL_IF(Cond, fmt, ...) \
-  ({                                  \
-    if ((Cond))                       \
-      DLOG_FATAL(fmt, ##__VA_ARGS__); \
-  })
+#define DLOG_INFO_IF(Cond, fmt, ...)    DLOG_IF(INFO, Cond, fmt, ##__VA_ARGS__)
+#define DLOG_DEBUG_IF(Cond, fmt, ...)   DLOG_IF(DEBUG, Cond, fmt, ##__VA_ARGS__)
+#define DLOG_SUCCESS_IF(Cond, fmt, ...) DLOG_IF(SUCCESS, Cond, fmt, ##__VA_ARGS__)
+#define DLOG_WARN_IF(Cond, fmt, ...)    DLOG_IF(WARN, Cond, fmt, ##__VA_ARGS__)
+#define DLOG_ERROR_IF(Cond, fmt, ...)   DLOG_IF(ERROR, Cond, fmt, ##__VA_ARGS__)
+#define DLOG_FATAL_IF(Cond, fmt, ...)   DLOG_IF(FATAL, Cond, fmt, ##__VA_ARGS__)
 
 #else
 

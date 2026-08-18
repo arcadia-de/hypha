@@ -1,13 +1,12 @@
 package cli
 
 import (
-	"charm.land/log/v2"
+	"fmt"
 	"github.com/spf13/cobra"
 )
 
-func handleLint(cmd *cobra.Command, args []string) error {
-	log.Info("lint is not implemented")
-	return nil
+func HandleLint(cmd *cobra.Command, args []string) error {
+	return fmt.Errorf("not implemented")
 }
 
 func init() {
@@ -16,7 +15,7 @@ func init() {
 		Args:    cobra.MinimumNArgs(1),
 		Short:   "Lint the specified manifests",
 		GroupID: "inspection",
-		RunE:    handleLint,
+		RunE:    HandleLint,
 	}
 
 	RootCmd.AddCommand(lintCmd)

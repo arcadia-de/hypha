@@ -14,7 +14,7 @@ static FieldResolverResult ResourceFieldKind(void* obj) {
 
 static FieldResolverResult ResourceFieldState(void* obj) {
   return (FieldResolverResult){.kind = kQueryFieldResultScalar,
-                               .scalar = strdup(ResourceStateName(((Resource*)obj)->state))};
+                               .scalar = strdup(ResourceStateCStr(((Resource*)obj)->state))};
 }
 
 static FieldResolverResult ResourceFieldLabels(void* obj) {
@@ -61,11 +61,11 @@ static const FieldDef kResourceFields[] = {
 };
 
 static FieldResolverResult AnnotationFieldName(void* obj) {
-  return (FieldResolverResult){.kind = kQueryFieldResultScalar, .scalar = strdup(((ResourceAnnotation*)obj)->name)};
+  return (FieldResolverResult){.kind = kQueryFieldResultScalar, .scalar = strdup(((Annotation*)obj)->key)};
 }
 
 static FieldResolverResult AnnotationFieldValue(void* obj) {
-  return (FieldResolverResult){.kind = kQueryFieldResultScalar, .scalar = strdup(((ResourceAnnotation*)obj)->value)};
+  return (FieldResolverResult){.kind = kQueryFieldResultScalar, .scalar = strdup(((Annotation*)obj)->value)};
 }
 
 static const FieldDef kAnnotationFields[] = {
@@ -83,7 +83,9 @@ static RootResult ResolveResources(const QueryArg* args, void* context) {
 
   const char* kind_filter = QueryArgGet(args, "kind");
   const char* id_filter = QueryArgGet(args, "id");
-  const char* label_filter = QueryArgGet(args, "label");
+
+  // TODO(@s0cks): implement
+  //  const char* label_filter = QueryArgGet(args, "label");
 
   QueryObject* matched = (QueryObject*)malloc(sizeof(QueryObject) * (ctx->count > 0 ? ctx->count : 1));
   uint32_t n = 0;
@@ -97,8 +99,8 @@ static RootResult ResolveResources(const QueryArg* args, void* context) {
     if (id_filter && strcmp(res->id, id_filter) != 0)
       continue;
 
-    if (label_filter && !ResourceHasLabel(res, label_filter))
-      continue;
+    // if (label_filter && !ResourceHasLabel(res, label_filter))
+    //   continue;
 
     matched[n++] = (QueryObject){.object = res, .type_name = "Resource"};
   }

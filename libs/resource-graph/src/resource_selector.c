@@ -1,6 +1,7 @@
 #include "hypha/resource_selector.h"
 
 #include "hypha.h"
+#include "hypha/annotation.h"
 #include "hypha/log.h"
 #include "hypha/resource.h"
 
@@ -93,7 +94,7 @@ ResourceSelector* NewOrResourceSelector(ResourceSelector** selectors, const uint
 static inline bool MatchesLabel(const Resource* res, void* data) {
   if (!res || !data)
     return false;
-  return ResourceHasLabel(res, (const char*)data);
+  return ResourceHasLabel(res, (const Label*)data);
 }
 
 static inline bool MatchesKind(const Resource* res, void* data) {
@@ -120,46 +121,55 @@ ResourceSelector* NewIdResourceSelector(const char* rhs) {
   return NewResourceSelector(&MatchesId, strdup(rhs), free);
 }
 
-ResourceSelector* NewLabelResourceSelector(const char* rhs) {
+ResourceSelector* NewLabelResourceSelector(const Label* rhs) {
   if (!rhs)
     return NULL;
-  return NewResourceSelector(&MatchesLabel, strdup(rhs), free);
+
+  Label* label = (Label*)malloc(sizeof(Label));
+  memcpy(label, rhs, sizeof(Label));
+  return NewResourceSelector(&MatchesLabel, label, free);
 }
 
 static inline bool MatchesAnnotation(const Resource* res, void* data) {
   if (!res || !data)
     return false;
-  return ResourceHasAnnotation(res, (const ResourceAnnotation*)data);
+  return ResourceHasAnnotation(res, (const Annotation*)data);
 }
 
 static inline bool MatchesAnnoationKey(const Resource* res, void* data) {
   if (!res || !data)
     return false;
-  return ResourceHasAnnotationK(res, (const char*)data);
+  return ResourceHasAnnotationK(res, (const AnnotationKey*)data);
 }
 
 static inline bool MatchesAnnotationValue(const Resource* res, void* data) {
   if (!res || !data)
     return false;
-  return ResourceHasAnnotationV(res, (const char*)data);
+  return ResourceHasAnnotationV(res, (const AnnotationValue*)data);
 }
 
-ResourceSelector* NewAnnotationResourceSelector(const ResourceAnnotation* rhs) {
+ResourceSelector* NewAnnotationResourceSelector(const Annotation* rhs) {
   if (!rhs)
     return NULL;
-  return NewResourceSelector(&MatchesAnnotation, CloneResourceAnnotation(rhs), (void (*)(void*))FreeResourceAnnotation);
+  Annotation* annotation = (Annotation*)malloc(sizeof(Annotation));
+  memcpy(annotation, rhs, sizeof(Annotation));
+  return NewResourceSelector(&MatchesAnnotation, annotation, free);
 }
 
-ResourceSelector* NewAnnotationKeyResourceSelector(const char* rhs) {
+ResourceSelector* NewAnnotationKeyResourceSelector(const AnnotationKey* rhs) {
   if (!rhs)
     return NULL;
-  return NewResourceSelector(&MatchesAnnoationKey, strdup(rhs), free);
+  AnnotationKey* key = (AnnotationKey*)malloc(sizeof(AnnotationKey));
+  memcpy(key, rhs, sizeof(AnnotationKey));
+  return NewResourceSelector(&MatchesAnnoationKey, key, free);
 }
 
-ResourceSelector* NewAnnotationValueResourceSelector(const char* rhs) {
+ResourceSelector* NewAnnotationValueResourceSelector(const AnnotationValue* rhs) {
   if (!rhs)
     return NULL;
-  return NewResourceSelector(&MatchesAnnotationValue, strdup(rhs), free);
+  AnnotationValue* value = (AnnotationValue*)malloc(sizeof(AnnotationValue));
+  memcpy(value, rhs, sizeof(AnnotationValue));
+  return NewResourceSelector(&MatchesAnnotationValue, value, NULL);
 }
 
 #define BEGIN_FOREACH_SELECTOR(Value, Name)               \

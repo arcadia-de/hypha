@@ -12,10 +12,10 @@ ResourceSelector* NewAndResourceSelector(ResourceSelector** selectors, const uin
 ResourceSelector* NewOrResourceSelector(ResourceSelector** selectors, const uint64_t num_selectors);
 ResourceSelector* NewIdResourceSelector(const char* rhs);
 ResourceSelector* NewKindResourceSelector(const char* rhs);
-ResourceSelector* NewLabelResourceSelector(const char* rhs);
-ResourceSelector* NewAnnotationResourceSelector(const ResourceAnnotation* rhs);
-ResourceSelector* NewAnnotationKeyResourceSelector(const char* rhs);
-ResourceSelector* NewAnnotationValueResourceSelector(const char* rhs);
+ResourceSelector* NewLabelResourceSelector(const Label* rhs);
+ResourceSelector* NewAnnotationResourceSelector(const Annotation* rhs);
+ResourceSelector* NewAnnotationKeyResourceSelector(const AnnotationKey* rhs);
+ResourceSelector* NewAnnotationValueResourceSelector(const AnnotationValue* rhs);
 bool ResourceSelectorMatch(const ResourceSelector* rs, const Resource* res);
 void FreeResourceSelector(ResourceSelector* rs);
 
