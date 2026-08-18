@@ -54,7 +54,7 @@ func handleDescribe(kind string, args []string) error {
 
 func createDescribeResourceCommand(kind string) *cobra.Command {
 	return &cobra.Command{
-		Use: kind + "s ids",
+		Use: kind + "s",
 		Aliases: []string{
 			kind,
 			strings.ToLower(kind),

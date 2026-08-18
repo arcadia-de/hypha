@@ -75,6 +75,10 @@ type ResourceSelector struct {
 	Handle *C.ResourceSelector
 }
 
+func (selector *ResourceSelector) IsValid() bool {
+	return selector.Handle != nil
+}
+
 func NewIdFilter(kind string) ResourceSelector {
 	cId := C.CString(kind)
 	defer C.free(unsafe.Pointer(cId))

@@ -40,6 +40,7 @@ func Execute() error {
 	kinds := hypha.GetAllControllerKinds()
 	RootCmd.AddCommand(CreateGenCommand(kinds))
 	RootCmd.AddCommand(CreateDescribeCommand(kinds))
+	RootCmd.AddCommand(CreateListCommand(kinds))
 	return RootCmd.Execute()
 }
 

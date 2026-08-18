@@ -450,3 +450,29 @@ func (orc *Orchestrator) ProcessDiscoveredManifests() {
 		return true
 	})
 }
+
+func (orc *Orchestrator) ListResources() []Resource {
+	var records []Resource
+	orc.VisitAllResources(func(rec Resource) bool {
+		records = append(records, rec)
+		return true
+	})
+	return records
+}
+
+func (orc *Orchestrator) ListResourcesWithSelector(selector ResourceSelector) []Resource {
+	var records []Resource
+	orc.VisitAllMatchingResources(selector, func(rec Resource) bool {
+		records = append(records, rec)
+		return true
+	})
+	return records
+}
+
+func (orc *Orchestrator) ListResourcesWithOptionalSelector(selector ResourceSelector) []Resource {
+	if selector.IsValid() {
+		return orc.ListResourcesWithSelector(selector)
+	}
+
+	return orc.ListResources()
+}
