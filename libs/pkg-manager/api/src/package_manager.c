@@ -47,7 +47,6 @@ PackageManager* NewPackageManager(const char* name, const char* bin, const Packa
     m->free_data = free_data;
     managers[num_managers] = m;
     num_managers++;
-    LOG_DEBUG("created %s package manager", name);
   }
 
   return m;
@@ -133,4 +132,12 @@ int ExecPackageManager(PackageManager* mgr, const char** args, const uint64_t nu
   proc.args = args;
   proc.root = root;
   return ExecProcess(&proc);
+}
+
+void VisitAllPackageManagers(PackageManagerVisitFn fn, void* data) {
+  for (uint64_t i = 0; i < num_managers; i++) {
+    PackageManager* m = managers[i];
+    if (!fn(i, m, data))
+      return;
+  }
 }

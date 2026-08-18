@@ -4,9 +4,17 @@
 #include <lua.h>
 
 #include "hypha.h"
+#include "hypha/discovery.h"
 #include "hypha/event.h"
 #include "hypha/planner.h"
 #include "hypha/resource_graph.h"
+
+typedef struct {
+  uint32_t action;
+  uint64_t timestamp;
+  char* id;
+  Reason reason;
+} AppliedAction;
 
 typedef struct _Orchestrator Orchestrator;
 
@@ -36,6 +44,11 @@ lua_State* OrchestratorGetLuaState(OrchestratorHandle);
 EventRoute* GetOrchestratorRootEventRoute(OrchestratorHandle);
 EventBus* OrchestratorGetEventBus(OrchestratorHandle);
 
+AppliedAction* NewAppliedAction(OrchestratorHandle);
+
+typedef bool (*VisitAppliedActionFn)(size_t, AppliedAction*, void*);
+void VisitAppliedActions(OrchestratorHandle, VisitAppliedActionFn, void*);
+
 void OrchestratorAddResource(OrchestratorHandle, Resource);
 void OrchestratorSubscribe(OrchestratorHandle, const char* p, EventCallbackFn cb, void* data, void (*free_data)(void*));
 void OrchestratorPublish(OrchestratorHandle, const char* p, void* event);
@@ -47,6 +60,9 @@ bool OrchestratorEvalFile(OrchestratorHandle, const char* filename, char** err);
 void FreeOrchestrator(OrchestratorHandle);
 void OrchestratorPrintRuntimeInfo(OrchestratorHandle);
 Plan* GetOrchestratorPlan(OrchestratorHandle);
+
+typedef bool (*VisitDiscoveredManifestFn)(const uint64_t, DiscoveredManifest*, void*);
+void VisitDiscoveredManifests(OrchestratorHandle, VisitDiscoveredManifestFn, void* data);
 
 static inline bool OrchestratorRun(OrchestratorHandle handle, const OrchestratorRunMode mode) {
   Reason reason;

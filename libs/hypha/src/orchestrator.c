@@ -8,6 +8,7 @@
 
 #include "hypha.h"
 #include "hypha/controller.h"
+#include "hypha/discovery.h"
 #include "hypha/event.h"
 #include "hypha/history.h"
 #include "hypha/log.h"
@@ -42,6 +43,13 @@ struct _Orchestrator {
   HistoryLog* history;
   Plan plan;
   OrchestratorMetrics metrics;
+
+  AppliedAction* actions;
+  size_t actions_len;
+  size_t actions_cap;
+
+  size_t num_discovered_manifests;
+  DiscoveredManifest* discovered_manifests;
 };
 
 #ifdef HYPHA_ENABLE_PROFILING
@@ -94,8 +102,6 @@ static inline void FailedToExecuteInit(FILE* out, Orchestrator* orc, const char*
 static inline void ExecInit(Orchestrator* orc) {
   char path[PATH_MAX];
   snprintf(path, PATH_MAX, "%s/init.lua", orc->config.root);
-
-  DLOG_DEBUG("executing init file %s....", path);
   const int result = luaL_dofile(orc->L, path);  // TODO(@s0cks): check result
   if (result != LUA_OK)
     return FailedToExecuteInit(stderr, orc, path);
@@ -115,8 +121,15 @@ static inline bool OnGraphSubmitted(const char* p, const void* event, void* data
     goto finished;
   }
 
-  if (orc->run.mode == kOrchestratorPlanMode)
-    InitPlan(&orc->plan, GetNumberOfResourcesInResourceGraph(orc->graph));
+  const size_t num_resources = GetNumberOfResourcesInResourceGraph(orc->graph);
+  if (orc->run.mode == kOrchestratorPlanMode) {
+    InitPlan(&orc->plan, num_resources);
+  } else if (orc->run.mode == kOrchestratorApplyMode) {
+    const size_t total_size = sizeof(AppliedAction) * (num_resources + 1);
+    orc->actions = (AppliedAction*)malloc(total_size);
+    orc->actions_len = 0;
+    orc->actions_cap = num_resources;
+  }
 
   DispatchReadyResources(orc);
 finished:
@@ -145,76 +158,6 @@ static inline void InitOrcLuaState(Orchestrator* orc) {
   LOG_FATAL_IF(!orc->L, "failed to create orchestrator lua state");
 }
 
-static inline void DiscoverManifestPaths(Orchestrator* orc, char*** results, size_t* num_results) {
-#define L orc->L
-  size_t capacity = 0;
-
-  char** values = NULL;
-  size_t num_values = 0;
-  const int stack_size = lua_gettop(L);
-  if (stack_size > 0) {
-    const int stack_size = lua_gettop(L);
-    if (stack_size > 0) {
-      if (!lua_isnil(L, -1) && !lua_istable(L, -1)) {
-        LOG_ERROR("expected the config to return nil or a table, received: %s", lua_typename(L, lua_type(L, -1)));
-      } else if (lua_istable(L, -1)) {
-        const size_t len = lua_rawlen(L, -1);
-
-        if (len > 0) {
-          capacity = len;
-          values = (char**)malloc(sizeof(char*) * capacity);
-          memset(values, 0, sizeof(char*) * capacity);
-        }
-
-        for (size_t i = 1; i <= len; i++) {
-          lua_rawgeti(L, -1, (lua_Integer)i);
-
-          if (lua_istable(L, -1)) {
-            const size_t sub_len = lua_rawlen(L, -1);
-
-            if (num_values + sub_len > capacity) {
-              capacity = num_values + sub_len;
-              values = (char**)realloc(values, sizeof(char*) * capacity);
-            }
-
-            for (size_t j = 1; j <= sub_len; j++) {
-              lua_rawgeti(L, -1, (lua_Integer)j);
-
-              if (!lua_isstring(L, -1)) {
-                DLOG_WARN("expected subtable value at index %zu to be a string", j);
-                lua_pop(L, 1);
-                continue;
-              }
-
-              values[num_values] = strdup(lua_tostring(L, -1));
-              num_values++;
-              lua_pop(L, 1);
-            }
-            lua_pop(L, 1);
-
-          } else if (lua_isstring(L, -1)) {
-            if (num_values >= capacity) {
-              capacity = num_values + 1;
-              values = (char**)realloc(values, sizeof(char*) * capacity);
-            }
-
-            values[num_values] = strdup(lua_tostring(L, -1));
-            num_values++;
-            lua_pop(L, 1);
-
-          } else {
-            DLOG_WARN("expected table value at %zu to be a string or table", i);
-            lua_pop(L, 1);
-          }
-        }
-      }
-    }
-  }
-#undef L
-  (*results) = values;
-  (*num_results) = num_values;
-}
-
 OrchestratorHandle NewOrchestrator(OrchestratorConfig config) {
   if (!config.root)
     return NULL;
@@ -227,6 +170,8 @@ OrchestratorHandle NewOrchestrator(OrchestratorConfig config) {
     orc->config.cache_dir = strdup(config.cache_dir);
     orc->loop = uv_default_loop();
     orc->graph = NewResourceGraph();
+    orc->discovered_manifests = NULL;
+    orc->num_discovered_manifests = 0;
 #ifdef HYPHA_ENABLE_PROFILING
     uv_check_init(orc->loop, &orc->profiling_check);
     orc->profiling_check.data = orc;
@@ -244,20 +189,8 @@ OrchestratorHandle NewOrchestrator(OrchestratorConfig config) {
     OrchestratorSubscribe(orc, RECONCILE_COMPLETE_EVENT, &StopLoopOnReconcileDone, orc, NULL);
     OrchestratorSubscribe(orc, RECONCILE_FAILED_EVENT, &StopLoopOnReconcileDone, orc, NULL);
 
-#ifdef HYPHA_DEBUG
-    OrchestratorPrintRuntimeInfo(orc);
-#endif  // HYPHA_DEBUG
-
     ExecInit(orc);
-
-    char** values = NULL;
-    size_t num_values = 0;
-    DiscoverManifestPaths(orc, &values, &num_values);
-    if (values && num_values > 0) {
-      DLOG_INFO("values (%zu):", num_values);
-      for (size_t i = 0; i < num_values; i++)
-        DLOG_INFO(" - %s", values[i]);
-    }
+    DiscoverManifestPaths(orc->L, &orc->discovered_manifests, &orc->num_discovered_manifests);
   }
 
   OrchestratorPublish(orc, ORCHESTRATOR_INIT_EVENT, NewOrchestratorInitEvent());
@@ -268,7 +201,6 @@ OrchestratorHandle NewOrchestrator(OrchestratorConfig config) {
   return (OrchestratorHandle)orc;
 }
 
-// TODO(@s0cks): convert to lua
 void OrchestratorPrintRuntimeInfo(OrchestratorHandle handle) {
   Orchestrator* orc = (Orchestrator*)handle;
   ASSERT(orc);
@@ -308,6 +240,24 @@ finished:
   return success;
 }
 
+static inline int CompareAppliedAction(const void* lhs, const void* rhs) {
+  const AppliedAction* a = (const AppliedAction*)lhs;
+  const AppliedAction* b = (const AppliedAction*)rhs;
+  if (a->action < b->action) {
+    return -1;
+  } else if (a->action > b->action) {
+    return +1;
+  }
+
+  if (a->timestamp < b->timestamp) {
+    return -1;
+  } else if (a->timestamp > b->timestamp) {
+    return +1;
+  }
+
+  return 0;
+}
+
 bool OrchestratorRunWithReason(OrchestratorHandle handle, const OrchestratorRunMode mode, const Reason reason) {
   bool success = false;
   if (!handle)
@@ -319,12 +269,12 @@ bool OrchestratorRunWithReason(OrchestratorHandle handle, const OrchestratorRunM
 
   OrchestratorPublish(orc, GRAPH_SUBMITTED_EVENT, NewGraphSubmittedEvent());
 
-  LOG_DEBUG("running orchestrator loop...");
   orc->metrics.run_start = uv_hrtime();
   uv_run(orc->loop, UV_RUN_DEFAULT);
   orc->metrics.run_finished = uv_hrtime();
-  LOG_DEBUG("orchestrator loop finished");
   success = !orc->failed;
+
+  qsort(orc->actions, orc->actions_len, sizeof(AppliedAction), &CompareAppliedAction);
 
 finished:
   return success;
@@ -343,10 +293,9 @@ void FreeOrchestrator(OrchestratorHandle handle) {
     FreeResourceGraph(orc->graph);
 
   FreeEventBus(orc->bus);
-  lua_close(orc->L);
-
-  if (orc->state)
-    StateStoreClose(orc->state);
+  StateStoreClose(orc->state);
+  if (orc->L)
+    lua_close(orc->L);
 
   free(orc);
 }
@@ -500,6 +449,12 @@ static inline void ReconcileAfterWork(uv_work_t* req, int status) {
     memcpy(action.reason, task->reason, sizeof(Reason));
     action.action = task->action;
     AppendPlannedAction(&orc->plan, &action);
+  } else if (IsApplyReconcileTask(task)) {
+    AppliedAction* action = NewAppliedAction(orc);
+    action->timestamp = task->timestamp;
+    action->id = strdup(res->id);
+    memcpy(action->reason, task->reason, sizeof(Reason));
+    action->action = task->action;
   }
 
   if (status != 0) {
@@ -560,6 +515,7 @@ static inline void QueueReconcileTask(Orchestrator* orc, Controller* ctrl, const
   }
 
   task->orc = orc;
+  task->timestamp = uv_hrtime();
   task->index = index;
   task->ctrl = ctrl;
   task->action = kNoAction;
@@ -600,4 +556,40 @@ static inline void DispatchReadyResources(Orchestrator* orc) {
 OrchestratorRunMode GetReconcileTaskRunMode(ReconcileTask* rhs) {
   ASSERT(rhs);
   return rhs->orc->run.mode;
+}
+
+void VisitDiscoveredManifests(OrchestratorHandle handle, VisitDiscoveredManifestFn fn, void* data) {
+  Orchestrator* orc = (Orchestrator*)handle;
+  for (size_t i = 0; i < orc->num_discovered_manifests; i++) {
+    DiscoveredManifest* dm = &orc->discovered_manifests[i];
+    if (!fn((uint64_t)i, dm, data))
+      return;
+  }
+}
+
+AppliedAction* NewAppliedAction(OrchestratorHandle handle) {
+  Orchestrator* orc = (Orchestrator*)handle;
+  if (orc->actions_len + 1 > orc->actions_cap) {
+    size_t new_cap = (orc->actions_cap + 1) * 2;  // TODO(@s0cks): round up pow2
+    size_t total_size = sizeof(AppliedAction) * new_cap;
+    AppliedAction* new_actions = (AppliedAction*)realloc(orc->actions, total_size);
+    if (!new_actions)
+      return NULL;
+
+    orc->actions = new_actions;
+    orc->actions_cap = new_cap;
+  }
+
+  AppliedAction* new_action = &orc->actions[orc->actions_len];
+  orc->actions_len++;
+  memset(new_action, 0, sizeof(AppliedAction));
+  return new_action;
+}
+
+void VisitAppliedActions(OrchestratorHandle handle, VisitAppliedActionFn fn, void* data) {
+  Orchestrator* orc = (Orchestrator*)handle;
+  for (size_t i = 0; i < orc->actions_len; i++) {
+    if (!fn((uint64_t)i, &orc->actions[i], data))
+      return;
+  }
 }

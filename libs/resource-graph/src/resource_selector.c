@@ -1,6 +1,7 @@
 #include "hypha/resource_selector.h"
 
 #include "hypha.h"
+#include "hypha/log.h"
 #include "hypha/resource.h"
 
 #define FOR_EACH_RESOURCE_SELECTOR_KIND(V) \
@@ -62,6 +63,7 @@ static inline ResourceSelector* NewCompositeSelector(const ResourceSelectorKind 
     return NULL;
 
   ResourceSelector* selector = (ResourceSelector*)malloc(sizeof(ResourceSelector));
+  memset(selector, 0, sizeof(ResourceSelector));
   if (selector) {
     selector->kind = kind;
     ResourceSelector** new_selectors = (ResourceSelector**)malloc(sizeof(ResourceSelector*) * num_selectors);
@@ -76,6 +78,7 @@ static inline ResourceSelector* NewCompositeSelector(const ResourceSelectorKind 
     selector->selectors = new_selectors;
     selector->num_selectors = num_selectors;
   }
+
   return selector;
 }
 
@@ -103,6 +106,18 @@ ResourceSelector* NewKindResourceSelector(const char* rhs) {
   if (!rhs)
     return NULL;
   return NewResourceSelector(&MatchesKind, strdup(rhs), free);
+}
+
+static inline bool MatchesId(const Resource* res, void* data) {
+  if (!res || !data)
+    return false;
+  return ResourceHasId(res, (const char*)data);
+}
+
+ResourceSelector* NewIdResourceSelector(const char* rhs) {
+  if (!rhs)
+    return NULL;
+  return NewResourceSelector(&MatchesId, strdup(rhs), free);
 }
 
 ResourceSelector* NewLabelResourceSelector(const char* rhs) {
@@ -165,7 +180,6 @@ static inline bool MatchAll(const ResourceSelector* rs, const Resource* res) {
   if (!ResourceSelectorMatch(selector, res))
     return false;
   END_FOREACH_SELECTOR;
-
   return true;
 }
 
@@ -181,7 +195,6 @@ static inline bool MatchAny(const ResourceSelector* rs, const Resource* res) {
   if (ResourceSelectorMatch(selector, res))
     return true;
   END_FOREACH_SELECTOR;
-
   return false;
 }
 

@@ -172,6 +172,7 @@ bool ComputeExecutionSchedule(ResourceGraph* graph) {
   BitSet stack;
   InitBitSet(&stack, graph->count);
   BitSet visited;
+  InitBitSet(&visited, graph->count);
   ResourceGraphIndex output_idx = 0;
   bool success = true;
 
@@ -208,8 +209,10 @@ void FreeResourceGraph(ResourceGraph* graph) {
     free(res->id);
     free(res->kind);
 
-    for (ResourceGraphIndex j = 0; j < res->num_depends_on; j++)
-      free(res->depends_on[j]);
+    for (ResourceGraphIndex j = 0; j < res->num_depends_on; j++) {
+      if (res->depends_on[j])
+        free(res->depends_on[j]);
+    }
 
     if (res->depends_on)
       free(res->depends_on);

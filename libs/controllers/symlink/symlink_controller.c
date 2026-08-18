@@ -122,12 +122,10 @@ DEFINE_CONTROLLER_APPLY_FN(Symlink) {
     goto finished;
   }
 
-  if (action == kCreateAction) {
-    if (symlink(source, target) != 0) {
-      LOG_ERROR("failed to create symlink from '%s' to '%s': %s", source, target, strerror(errno));
-      status = kStatusInternalError;
-      goto finished;
-    }
+  if (symlink(source, target) != 0) {
+    LOG_ERROR("failed to create symlink from '%s' to '%s': %s", source, target, strerror(errno));
+    status = kStatusInternalError;
+    goto finished;
   }
 
   status = kStatusOk;

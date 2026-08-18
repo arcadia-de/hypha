@@ -51,6 +51,7 @@ struct _Resource {
 FOR_EACH_RESOURCE_STATE(DEFINE_STATE_CHECK)
 #undef DEFINE_STATE_CHECK
 
+bool ResourceHasId(const Resource* res, const char* id);
 void ResourcePushLabel(Resource* res, const char* label);
 bool ResourceHasLabel(const Resource* res, const char* label);
 bool ResourceVisitLabels(const Resource* res, bool (*vis)(const Resource*, const uint32_t, const char*));

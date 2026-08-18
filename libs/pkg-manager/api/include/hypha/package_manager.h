@@ -67,11 +67,8 @@ static inline const char* PackageStatusName(const PackageStatus rhs) {
 }
 
 typedef struct _PackageManager PackageManager;
-
 typedef PackageStatus (*PackageManagerInstallFn)(PackageManager* pm, const char* name, void* data);
-
 typedef PackageStatus (*PackageManagerStatusFn)(PackageManager* pm, const char* name, void* data);
-
 typedef PackageStatus (*PackageManagerUninstallFn)(PackageManager* pm, const char* name, void* data);
 
 typedef struct {
@@ -89,6 +86,9 @@ uint64_t GetNumberOfPackageManagers();
 const char* GetPackageManagerName(const PackageManager*);
 const char* GetPackageManagerPath(const PackageManager*);
 void FreePackageManager(PackageManager* rhs);
+
+typedef bool (*PackageManagerVisitFn)(uint64_t, PackageManager*, void*);
+void VisitAllPackageManagers(PackageManagerVisitFn, void*);
 
 PackageStatus PackageManagerStatus(PackageManager* mgr, const char* pkg);
 PackageStatus PackageManagerInstall(PackageManager* mgr, const char* pkg);

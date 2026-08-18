@@ -75,6 +75,15 @@ type ResourceSelector struct {
 	Handle *C.ResourceSelector
 }
 
+func NewIdFilter(kind string) ResourceSelector {
+	cId := C.CString(kind)
+	defer C.free(unsafe.Pointer(cId))
+	handle := C.NewIdResourceSelector(cId)
+	return ResourceSelector{
+		Handle: handle,
+	}
+}
+
 func NewKindResourceSelector(kind string) ResourceSelector {
 	cKind := C.CString(kind)
 	defer C.free(unsafe.Pointer(cKind))
@@ -88,6 +97,22 @@ func NewLabelResourceSelector(rhs string) ResourceSelector {
 	cLabel := C.CString(rhs)
 	defer C.free(unsafe.Pointer(cLabel))
 	handle := C.NewLabelResourceSelector(cLabel)
+	return ResourceSelector{
+		Handle: handle,
+	}
+}
+
+func NewOrResourceSelector(selectors []ResourceSelector) ResourceSelector {
+	numSelectors := len(selectors)
+	cSelectors := C.malloc(C.size_t(numSelectors) * C.size_t(unsafe.Sizeof(uintptr(0))))
+	defer C.free(cSelectors)
+
+	cSelectorsSlice := (*[1 << 30]*C.ResourceSelector)(cSelectors)[:numSelectors:numSelectors]
+	for i, s := range selectors {
+		cSelectorsSlice[i] = s.Handle
+	}
+
+	handle := C.NewOrResourceSelector((**C.ResourceSelector)(cSelectors), C.uint64_t(numSelectors))
 	return ResourceSelector{
 		Handle: handle,
 	}

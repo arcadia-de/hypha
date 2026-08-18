@@ -65,8 +65,6 @@ Controller* RegisterController(const char* kind, ControllerConfig config, void* 
   memmove(&result->config, &config, sizeof(ControllerConfig));
   result->data = data;
   result->free_data = free_data;
-
-  DLOG_DEBUG("registered %s controller", kind);
 finished:
   return result;
 }

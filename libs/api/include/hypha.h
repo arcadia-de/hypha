@@ -8,6 +8,11 @@ extern "C" {
 #include <stdint.h>
 #include <stdlib.h>
 
+typedef enum {
+  kDiscoveredPath,
+  kDiscoveredRaw,
+} DiscoveredManifestKind;
+
 #ifdef HYPHA_DEBUG
 
 #include <assert.h>

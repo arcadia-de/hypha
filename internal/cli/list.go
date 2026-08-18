@@ -35,7 +35,7 @@ func handleList(cmd *cobra.Command, args []string) error {
 	defer filter.Close()
 
 	filename := args[0]
-	specs, err := orc.ParseResourceSpecsFromJsonnet(filename)
+	specs, err := orc.ParseResourceSpecsFromJsonnetFile(filename)
 	if err != nil {
 		return fmt.Errorf("failed to parse resource specs from %s: %v", filename, err)
 	}

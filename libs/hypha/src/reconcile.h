@@ -10,6 +10,7 @@
 
 typedef struct {
   uv_work_t work;
+  uint64_t timestamp;
   Orchestrator* orc;
   ResourceGraphIndex index;
   Controller* ctrl;

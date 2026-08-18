@@ -10,6 +10,7 @@ typedef struct _ResourceSelector ResourceSelector;
 ResourceSelector* NewResourceSelector(ResourceSelectorFn fn, void* data, void (*free_data)(void*));
 ResourceSelector* NewAndResourceSelector(ResourceSelector** selectors, const uint64_t num_selectors);
 ResourceSelector* NewOrResourceSelector(ResourceSelector** selectors, const uint64_t num_selectors);
+ResourceSelector* NewIdResourceSelector(const char* rhs);
 ResourceSelector* NewKindResourceSelector(const char* rhs);
 ResourceSelector* NewLabelResourceSelector(const char* rhs);
 ResourceSelector* NewAnnotationResourceSelector(const ResourceAnnotation* rhs);

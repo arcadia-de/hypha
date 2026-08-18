@@ -5,6 +5,12 @@
 #include "hypha.h"
 #include "hypha/log.h"
 
+bool ResourceHasId(const Resource* res, const char* id) {
+  if (!res || !id)
+    return false;
+  return strcmp(res->id, id) == 0;
+}
+
 bool ResourceHasLabel(const Resource* res, const char* label) {
   if (!res || !label)
     return false;

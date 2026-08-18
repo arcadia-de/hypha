@@ -24,15 +24,9 @@ func handlePlan(cmd *cobra.Command, args []string) error {
 	}
 	defer orc.Close()
 
-	filename := args[0]
-	specs, err := orc.ParseResourceSpecsFromJsonnet(filename)
-	if err != nil {
-		return fmt.Errorf("failed to parse resource specs from %s: %v", filename, err)
-	}
+	orc.ProcessDiscoveredManifests()
 
-	for i := range specs {
-		orc.AddResource(specs[i])
-	}
+	// orc.Run(hypha.OrchestratorPlanMode)
 
 	const (
 		idWidth      = 20

@@ -5,10 +5,9 @@ import (
 	"os"
 	"strings"
 
+	"github.com/arcadia-de/hypha/internal/hypha"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
-
-	"github.com/arcadia-de/hypha/internal/hypha"
 )
 
 var Verbose bool
@@ -17,22 +16,30 @@ var RootCmd = &cobra.Command{
 	Short: "A dotfile manager",
 	Long:  "A dotfile manager",
 	PersistentPreRunE: func(cmd *cobra.Command, args []string) error {
-		err := initConfig(cmd)
-		if err != nil {
-			return err
-		}
-
-		config_dir, err := hypha.EnsureConfigDirExists()
-		if err != nil {
-			return err
-		}
-
-		hypha.InitHypha(config_dir)
-		return nil
+		return initConfig(cmd)
 	},
 }
 
 func Execute() error {
+	if err := RootCmd.PersistentFlags().Parse(os.Args[1:]); err != nil {
+		// ignore?
+	}
+
+	if flag := RootCmd.PersistentFlags().Lookup("config-dir"); flag != nil {
+		if err := viper.BindPFlag("config-dir", flag); err != nil {
+			return fmt.Errorf("failed to bind early config-dir flag: %w", err)
+		}
+	}
+
+	config_dir, err := hypha.EnsureConfigDirExists()
+	if err != nil {
+		return err
+	}
+	hypha.InitHypha(config_dir)
+
+	kinds := hypha.GetAllControllerKinds()
+	RootCmd.AddCommand(CreateGenCommand(kinds))
+	RootCmd.AddCommand(CreateDescribeCommand(kinds))
 	return RootCmd.Execute()
 }
 
@@ -133,8 +140,4 @@ func init() {
 	RootCmd.PersistentFlags().StringP("state-dir", "", state_dir, "The state dir for hypha")
 
 	RootCmd.PersistentFlags().BoolVarP(&Verbose, "verbose", "v", false, "add more detailed output")
-
-	kinds := hypha.GetAllControllerKinds()
-	RootCmd.AddCommand(CreateGenCommand(kinds))
-	RootCmd.AddCommand(CreateDescribeCommand(kinds))
 }

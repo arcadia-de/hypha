@@ -3,10 +3,14 @@ package hypha
 /*
 #cgo pkg-config: hypha-uninstalled
 #include <stdlib.h>
+
 #include "hypha.h"
 #include "hypha/planner.h"
-#include "hypha/orchestrator.h"
 #include "hypha/resource.h"
+#include "hypha/orchestrator.h"
+
+bool goVisitAppliedActions(uint64_t, AppliedAction*, void*);
+bool goVisitDiscoveredManifests(uint64_t, DiscoveredManifest*, void*);
 */
 import "C"
 
@@ -14,9 +18,13 @@ import (
 	"encoding/json"
 	"fmt"
 	"os"
+	"runtime"
+	"runtime/cgo"
+	"strings"
 	"unsafe"
 
 	"github.com/google/go-jsonnet"
+	"github.com/spf13/viper"
 )
 
 type OrchestratorRunMode int
@@ -85,6 +93,26 @@ func (orc *Orchestrator) GetMetrics() OrchestratorMetrics {
 		Updated:   uint64(cMetrics.num_actions[C.kUpdateAction]),
 		Destroyed: uint64(cMetrics.num_actions[C.kDestroyAction]),
 	}
+}
+
+func (orc *Orchestrator) PrintMetrics() error {
+	metrics := orc.GetMetrics()
+	fmt.Println("Telemetry:")
+	s, err := json.Marshal(metrics)
+	if err != nil {
+		return fmt.Errorf("failed to marshal OrchestratorMetrics: %v", err)
+	}
+	fmt.Println(string(s))
+	return nil
+}
+
+func (orc *Orchestrator) PrintMetricsIfDesired() error {
+	telemetry := viper.GetBool("print-telemetry")
+	if telemetry {
+		return orc.PrintMetrics()
+	}
+
+	return nil
 }
 
 func NewOrchestratorWithDefaultConfig() (*Orchestrator, error) {
@@ -227,7 +255,115 @@ func (orc *Orchestrator) Close() {
 	C.FreeOrchestrator(orc.Handle)
 }
 
-func (orc *Orchestrator) ParseResourceSpecsFromJsonnet(filename string) ([]ResourceSpec, error) {
+type DiscoveredManifestKind int
+
+const (
+	DiscoveredManifestPath = C.kDiscoveredPath
+	DiscoveredManifestRaw  = C.kDiscoveredRaw
+)
+
+type DiscoveredManifest struct {
+	Kind  DiscoveredManifestKind
+	Value string
+}
+
+type DiscoveredManifestVisitor func(idx uint64, manifest DiscoveredManifest) bool
+
+//export goVisitDiscoveredManifests
+func goVisitDiscoveredManifests(idx C.uint64_t, dm *C.DiscoveredManifest, data unsafe.Pointer) C.bool {
+	handle := *(*cgo.Handle)(data)
+	vis := handle.Value().(DiscoveredManifestVisitor)
+
+	goManifest := DiscoveredManifest{
+		Kind:  DiscoveredManifestKind(dm.kind),
+		Value: C.GoString(dm.value),
+	}
+	return C.bool(vis(uint64(idx), goManifest))
+}
+
+func (orc *Orchestrator) VisitDiscoveredManifests(vis DiscoveredManifestVisitor) {
+	handle := cgo.NewHandle(vis)
+	defer handle.Delete()
+
+	C.VisitDiscoveredManifests(
+		orc.Handle,
+		(C.VisitDiscoveredManifestFn)(unsafe.Pointer(C.goVisitDiscoveredManifests)),
+		unsafe.Pointer(&handle),
+	)
+
+	runtime.KeepAlive(handle)
+}
+
+type AppliedAction struct {
+	Action uint32
+	ID     string
+	Reason string
+}
+
+type AppliedActionVisitor func(idx uint64, act AppliedAction) bool
+
+//export goVisitAppliedActions
+func goVisitAppliedActions(idx C.uint64_t, act *C.AppliedAction, data unsafe.Pointer) C.bool {
+	handle := *(*cgo.Handle)(data)
+	vis := handle.Value().(AppliedActionVisitor)
+
+	rawReason := C.GoStringN(&act.reason[0], C.int(C.HYPHA_REASON_MAX_LENGTH))
+	goReason, _, _ := strings.Cut(rawReason, "\x00")
+	goAction := AppliedAction{
+		Action: uint32(act.action),
+		ID:     C.GoString(act.id),
+		Reason: goReason,
+	}
+	return C.bool(vis(uint64(idx), goAction))
+}
+
+func (orc *Orchestrator) VisitAppliedActions(vis AppliedActionVisitor) {
+	handle := cgo.NewHandle(vis)
+	defer handle.Delete()
+
+	C.VisitAppliedActions(
+		orc.Handle,
+		(C.VisitAppliedActionFn)(unsafe.Pointer(C.goVisitAppliedActions)),
+		unsafe.Pointer(&handle),
+	)
+
+	runtime.KeepAlive(handle)
+}
+
+func (orc *Orchestrator) ParseResourceSpecsFromJsonnet(content string) ([]ResourceSpec, error) {
+	manifest, err := orc.RenderAnonymousJsonnetManifest(content)
+	if err != nil {
+		return nil, fmt.Errorf("failed to evaluating manifest Jsonnet: %v", err)
+	}
+
+	var results []ResourceSpec
+	specs, err := ParseResourceSpecs(manifest)
+	if err != nil {
+		return nil, fmt.Errorf("failed to parse manifest: %v", err)
+	}
+
+	switch v := specs.(type) {
+	case []any:
+		bytes, _ := json.Marshal(v)
+		if err := json.Unmarshal(bytes, &results); err != nil {
+			return nil, err
+		}
+	case map[string]any:
+		bytes, _ := json.Marshal(v)
+		var single ResourceSpec
+		if err := json.Unmarshal(bytes, &single); err != nil {
+			return nil, err
+		}
+
+		results = append(results, single)
+	default:
+		return nil, fmt.Errorf("failed to parse resource spec")
+	}
+
+	return results, nil
+}
+
+func (orc *Orchestrator) ParseResourceSpecsFromJsonnetFile(filename string) ([]ResourceSpec, error) {
 	content, err := os.ReadFile(filename)
 	if err != nil {
 		return nil, fmt.Errorf("failed to read manifest: %v", err)
@@ -290,4 +426,27 @@ func (orc *Orchestrator) GetPlan() *Plan {
 	return &Plan{
 		Handle: cHandle,
 	}
+}
+
+func (orc *Orchestrator) ProcessDiscoveredManifests() {
+	orc.VisitDiscoveredManifests(func(idx uint64, dm DiscoveredManifest) bool {
+		var err error
+		var specs []ResourceSpec
+
+		switch dm.Kind {
+		case DiscoveredManifestPath:
+			specs, err = orc.ParseResourceSpecsFromJsonnetFile(dm.Value)
+		case DiscoveredManifestRaw:
+			specs, err = orc.ParseResourceSpecsFromJsonnet(dm.Value)
+		}
+
+		if err != nil {
+			return false
+		}
+
+		for _, s := range specs {
+			orc.AddResource(s)
+		}
+		return true
+	})
 }

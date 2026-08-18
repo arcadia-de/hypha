@@ -27,6 +27,7 @@ hypha = static_library(
     'src/orchestrator_gvc.c',
     'src/orchestrator_lua.c',
     'src/reconcile.c',
+    'src/discovery.c',
     'src/history_log.c',
     'src/query_schema_resources.c',
     'src/package_managers.c',

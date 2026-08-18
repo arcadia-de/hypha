@@ -140,18 +140,26 @@ static inline const char* ExpandSymbol(Expander* expander, const char sym) {
 
 bool Expand(Expander* expander, const char* value, const size_t value_len, char** result, size_t* result_len) {
   bool success = false;
-  if (!expander || !value || value_len == 0)
-    goto finished;
-
+  bool buffer_initialized = false;
   ExpanderBuffer buff;
+
+  if (result)
+    *result = NULL;
+  if (result_len)
+    *result_len = 0;
+
+  if (!expander || !value || value_len == 0 || !result || !result_len) {
+    return false;
+  }
+
   InitExBuffer(&buff, 0);
+  buffer_initialized = true;
 
   size_t i = 0;
   if (value_len > 0 && value[0] == '~') {
     size_t j = 1;
     while (j < value_len && value[j] != '/' && value[j] != '\0')
       j++;
-
     const char* home = GetHomeDirForUser(value + 1, j - 1);
     if (home) {
       ExBuffAppendStr(&buff, home);
@@ -160,7 +168,7 @@ bool Expand(Expander* expander, const char* value, const size_t value_len, char*
   } else if (value_len > 0 && value[0] == '.') {
     char* cwd = getcwd(NULL, 0);
     if (!cwd)
-      goto finished;
+      goto failed;
     ExBuffAppendStr(&buff, cwd);
     i++;
     free(cwd);
@@ -168,25 +176,25 @@ bool Expand(Expander* expander, const char* value, const size_t value_len, char*
 
   for (; i < value_len; i++) {
     char c = value[i];
-
     if (c == '\\' && i + 1 < value_len) {
       ExBuffAppendChar(&buff, value[i + 1]);
       i++;
       continue;
     }
-
     if (c == '$') {
       i++;
       ExpandVar(&buff, value, &i, value_len);
       i--;
       continue;
     }
-
     if (c == '%' && i + 1 < value_len) {
       char sym = value[i + 1];
       if (sym == 'h') {
+        const char* home = GetHomeDir();
+        if (!home)
+          goto failed;
         char resolved[PATH_MAX];
-        snprintf(resolved, PATH_MAX, "%s/.config/hypha", GetHomeDir());
+        snprintf(resolved, PATH_MAX, "%s/.config/hypha", home);
         ExBuffAppendStr(&buff, resolved);
       } else {
         const char* resolved = ExpandSymbol(expander, sym);
@@ -197,17 +205,27 @@ bool Expand(Expander* expander, const char* value, const size_t value_len, char*
           ExBuffAppendChar(&buff, sym);
         }
       }
-
       i++;
       continue;
     }
-
     ExBuffAppendChar(&buff, c);
   }
 
-  (*result) = buff.data;
-  (*result_len) = buff.len;
+  *result = buff.data;
+  *result_len = buff.len;
   success = true;
+  goto finished;
+
+failed:
+  if (buffer_initialized) {
+    if (buff.data) {
+      free(buff.data);
+    }
+  }
+  *result = NULL;
+  *result_len = 0;
+  success = false;
+
 finished:
   return success;
 }

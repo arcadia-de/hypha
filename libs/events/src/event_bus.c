@@ -30,7 +30,8 @@ static inline void OnEventBusTriggered(uv_async_t* handle) {
   while (EventBusPop(bus, &next)) {
     Publish(bus->root, next.event, (void*)next.data);
 
-    free((void*)next.event);
+    // TODO(@s0cks): causes double free
+    //  free((void*)next.event);
   }
 }
 
@@ -102,4 +103,6 @@ void FreeEventBus(EventBus* bus) {
 
   if (bus->queue)
     free(bus->queue);
+
+  free(bus);
 }
