@@ -238,6 +238,8 @@
   stroke-width: 1.5;
   animation: pulse 2.4s ease-out infinite;
   transform-origin: center;
+  transform-box: fill-box;
+  pointer-events: none;
 }
 
 @keyframes pulse {

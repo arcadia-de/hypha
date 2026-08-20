@@ -6,8 +6,10 @@ all_hypha_controller_deps = [
   hypha_resource_graph_dep,
 ]
 
-if tracy_dep.found()
-  all_hypha_controller_deps += tracy_dep
+if enable_profiling
+  if tracy_dep.found()
+    all_hypha_controller_deps += tracy_dep
+  endif
 endif
 
 hypha_controller_inc = include_directories('include/')
