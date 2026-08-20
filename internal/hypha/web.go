@@ -1,6 +1,7 @@
 package hypha
 
 import (
+	"encoding/json"
 	"io/fs"
 	"net/http"
 	"time"
@@ -8,14 +9,27 @@ import (
 	dashboard "github.com/arcadia-de/hypha/dashboard"
 )
 
+type DataResponse struct {
+	Data any `json:"data"`
+}
+
 func StartDashboardServer(addr string) error {
 	subFS, _ := fs.Sub(dashboard.DashboardFS, "dist")
 
 	mux := http.NewServeMux()
 	mux.Handle("/", http.FileServer(http.FS(subFS)))
-	// mux.HandleFunc("/", func(res http.ResponseWriter, request *http.Request) {
-	// 	res.Header().Set("Content-Type", "text/plain")
-	// })
+	mux.HandleFunc("/api/kinds", func(res http.ResponseWriter, request *http.Request) {
+		res.Header().Set("Content-Type", "application/json")
+		res.WriteHeader(http.StatusOK)
+
+		data := DataResponse{
+			Data: GetAllControllerKinds(),
+		}
+		if err := json.NewEncoder(res).Encode(data); err != nil {
+			http.Error(res, err.Error(), http.StatusInternalServerError)
+			return
+		}
+	})
 
 	server := &http.Server{
 		Addr:         addr,
