@@ -86,6 +86,19 @@ typedef struct _Resource Resource;
 
 typedef void* OrchestratorHandle;
 
+#define FOR_EACH_SCHEDULING_STRATEGY(V) \
+  V(PriorityWeightedKahn)               \
+  V(DepthFirst)
+
+// clang-format off
+typedef enum {
+#define DEFINE_KIND(Name) k##Name##Scheduling,
+  FOR_EACH_SCHEDULING_STRATEGY(DEFINE_KIND)
+#undef DEFINE_KIND
+  kTotalNumberOfSchedulingStrategies,
+} SchedulingStrategy;
+// clang-format on
+
 #define FOR_EACH_CONTROLLER_STATUS(V) \
   V(Ok)                               \
   V(NoOp)                             \

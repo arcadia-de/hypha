@@ -1,6 +1,7 @@
 #include <stdlib.h>
 #include <string.h>
 
+#include "hypha/state.h"
 #include "state_store.h"
 
 typedef struct {
@@ -15,8 +16,9 @@ static inline bool CollectForCompact(const StateEntry* entry, void* data) {
   if (c->count == c->capacity)
     return true;
 
-  uint32_t value_len = 0;
-  uint8_t* value = EncodeEntry(entry, &value_len);
+  uint8_t* value = NULL;
+  size_t value_len = 0;
+  EncodeStateEntry(entry, &value, &value_len);
 
   c->entries[c->count].key = strdup(entry->id);
   c->entries[c->count].value = value;

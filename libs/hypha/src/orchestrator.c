@@ -111,11 +111,17 @@ static inline void ExecInit(Orchestrator* orc) {
 static void DispatchReadyResources(Orchestrator* orc);
 static inline bool OnGraphSubmitted(const char* p, const void* event, void* data) {
   Orchestrator* orc = (Orchestrator*)data;
-  if (!ComputeExecutionSchedule(orc->graph)) {
+  if (!ComputeExecutionSchedule(orc->graph, kDepthFirstScheduling)) {
     orc->failed = true;
     OrchestratorPublish(orc, RECONCILE_FAILED_EVENT, NewReconcileFailedEvent(kStatusInvalidSpec));
     goto finished;
   }
+
+  fprintf(stdout, "order: ");
+  for (ResourceGraphIndex i = 0; i < GetNumberOfResourcesInResourceGraph(orc->graph); i++) {
+    fprintf(stdout, "%lu", ResourceGraphGetAtOrderIndex(orc->graph, i));
+  }
+  fprintf(stdout, "\n");
 
   if (IsResourceGraphEmpty(orc->graph)) {
     OrchestratorPublish(orc, RECONCILE_COMPLETE_EVENT, NewReconcileCompleteEvent(kStatusOk));
@@ -449,7 +455,7 @@ static inline void WriteResourceState(Orchestrator* orc, const Resource* res) {
       .last_status = res->state,
       .orphaned = false,
       .hash = res->spec.hash,
-      .observed_json = res->spec.raw,
+      .observed_json = res->spec.raw ? res->spec.raw : "",
   };
   LOG_ERROR_IF(!StateStorePut(orc->state, &entry), "failed to write state entry for %s", res->id);
 }

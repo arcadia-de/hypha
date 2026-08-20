@@ -3,6 +3,7 @@
 
 #include <stdint.h>
 
+#include "hypha.h"
 #include "hypha/resource.h"
 #include "hypha/resource_selector.h"
 
@@ -17,7 +18,15 @@ Resource* AllocNewResouceInGraph(ResourceGraph*);
 Resource* GetResourceInGraph(ResourceGraph*, const uint64_t idx);
 uint64_t GetNumberOfResourcesInResourceGraph(ResourceGraph*);
 bool DependenciesAreSatisfied(ResourceGraph* graph, Resource* res);
-bool ComputeExecutionSchedule(ResourceGraph* graph);
+
+ResourceGraphIndex ResourceGraphGetAtOrderIndex(ResourceGraph* graph, const ResourceGraphIndex);
+
+#define DECLARE_SCHEDULING_STRATEGY(Name) \
+  bool ComputeSchedule##Name(const Resource* resources, const size_t num_resources, ResourceGraphIndex** order);
+FOR_EACH_SCHEDULING_STRATEGY(DECLARE_SCHEDULING_STRATEGY)
+#undef DECLARE_SCHEDULING_STRATEGY
+
+bool ComputeExecutionSchedule(ResourceGraph* graph, const SchedulingStrategy strategy);
 
 typedef bool (*ResourceVisitorFn)(const Resource*, void*);
 bool VisitAllResources(const ResourceGraph* rg, ResourceVisitorFn fn, void* data);

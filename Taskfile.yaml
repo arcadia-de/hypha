@@ -41,6 +41,17 @@ tasks:
       # npm install
       # npm run build
       # cd ../
+  go:build-debug:
+    cmds:
+      - |
+        PKG_CONFIG_PATH="$(pwd)/build/meson-uninstalled:$PKG_CONFIG_PATH" \
+          go build {{.GO_BUILD_FLAGS}} \
+          -o {{.BIN_DIR}}/{{.GO_TARGET_NAME}} \
+          {{.GO_SOURCE_FILE}}
+    vars:
+      GO_BUILD_FLAGS: -ldflags="-linkmode=external -extldflags=-Wl,--gc-sections"
+      GO_TARGET_NAME: hypha
+      GO_SOURCE_FILE: cmd/hypha/main.go
   go:build:
     cmds:
       - |
@@ -61,7 +72,7 @@ tasks:
       - task: meson:reconfigure
       - task: meson:build
       - task: build:dashboard
-      - task: go:build
+      - task: go:build-debug
   test:
     deps:
       - build

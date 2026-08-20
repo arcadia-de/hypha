@@ -1,6 +1,10 @@
 #ifndef HYPHA_STATE_H
 #define HYPHA_STATE_H
 
+#ifdef __cplusplus
+extern "C" {
+#endif  // __cplusplus
+
 #include <stdint.h>
 #include <time.h>
 
@@ -30,6 +34,9 @@ bool StateStoreCompact(StateStore* store);
 bool StateStoreFlush(StateStore* store);
 typedef bool (*StateStoreVisitFn)(const StateEntry* entry, void* data);
 bool StateStoreVisitAll(StateStore* store, StateStoreVisitFn visit, void* data);
+
+void DecodeStateEntry(const uint8_t* buf, StateEntry* out);
+void EncodeStateEntry(const StateEntry* entry, uint8_t** buff, size_t* len);
 
 typedef struct {
   uint64_t offset;
@@ -61,5 +68,9 @@ uint64_t StateLogSizeBytes(StateLog* log);
 typedef bool (*StateLogReplayValueFn)(const char* key, bool tombstone, const uint8_t* value, uint32_t value_len,
                                       void* data);
 void StateLogReplayWithValues(StateLog* log, StateLogReplayValueFn fn, void* data);
+
+#ifdef __cplusplus
+};
+#endif  // __cplusplus
 
 #endif  // HYPHA_STATE_H

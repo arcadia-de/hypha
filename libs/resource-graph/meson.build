@@ -13,6 +13,8 @@ hypha_resource_graph = static_library(
     'src/resource_selector.c',
     'src/resource_graph.c',
     'src/resource_graph_gvc.c',
+    'src/resource_scheduler_dfs.c',
+    'src/resource_scheduler_khan.c',
   ],
   dependencies: hypha_resource_graph_deps,
   include_directories: [

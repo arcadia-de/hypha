@@ -288,8 +288,8 @@ func (orc *Orchestrator) AddResource(res ResourceSpec) {
 			return
 		}
 		cRawSpec = C.CString(string(specBytes))
-		defer C.free(unsafe.Pointer(cRawSpec))
 	}
+	defer C.free(unsafe.Pointer(cRawSpec))
 
 	spec := C.Resource{
 		id:             cID,

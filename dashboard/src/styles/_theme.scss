@@ -1,0 +1,96 @@
+@use "light";
+@use "dark";
+
+@use "variables";
+
+@mixin generate-theme($theme-map) {
+  @each $key, $value in $theme-map {
+    --color-#{$key}: #{$value};
+  }
+
+  --action-create: var(--color-gr);
+  --action-create-fill: #24312a;
+  --action-update: var(--color-pu);
+  --action-update-fill: #362c1e;
+  --action-delete: var(--color-re);
+  --action-delete-fill: #342223;
+  --action-none: var(--color-ui);
+
+  @each $key, $value in variables.$kinds {
+    --kind-#{$key}: #{$value};
+  }
+}
+
+:root {
+  color-scheme: dark light;
+
+  --surface: #161e22;
+  --surface-raised: #1d272c;
+  --surface-line: #2a363b;
+
+  --text-primary: #e7edee;
+  --text-muted: #8fa3a9;
+  --text-faint: #5c6f75;
+
+  --thread-dormant: #3a4a4f;
+  --thread-dormant-fill: #2a3539;
+
+  --focus: #7ec8e3;
+
+  --radius-sm: 6px;
+  --radius-md: 10px;
+
+  --font-display: "Space Grotesk", "Inter", sans-serif;
+  --font-body: "Inter", system-ui, sans-serif;
+  --font-mono: "JetBrains Mono", ui-monospace, monospace;
+
+  @include generate-theme(dark.$dark-theme);
+}
+
+html[data-theme="light"] {
+  --surface: #161e22;
+  --surface-raised: #1d272c;
+  --surface-line: #2a363b;
+
+  --text-primary: #e7edee;
+  --text-muted: #8fa3a9;
+  --text-faint: #5c6f75;
+
+  --thread-dormant: #3a4a4f;
+  --thread-dormant-fill: #2a3539;
+
+  --focus: #7ec8e3;
+
+  --radius-sm: 6px;
+  --radius-md: 10px;
+
+  --font-display: "Space Grotesk", "Inter", sans-serif;
+  --font-body: "Inter", system-ui, sans-serif;
+  --font-mono: "JetBrains Mono", ui-monospace, monospace;
+
+  @include generate-theme(light.$light-theme);
+}
+
+html[data-theme="dark"] {
+  --surface: #161e22;
+  --surface-raised: #1d272c;
+  --surface-line: #2a363b;
+
+  --text-primary: #e7edee;
+  --text-muted: #8fa3a9;
+  --text-faint: #5c6f75;
+
+  --thread-dormant: #3a4a4f;
+  --thread-dormant-fill: #2a3539;
+
+  --focus: #7ec8e3;
+
+  --radius-sm: 6px;
+  --radius-md: 10px;
+
+  --font-display: "Space Grotesk", "Inter", sans-serif;
+  --font-body: "Inter", system-ui, sans-serif;
+  --font-mono: "JetBrains Mono", ui-monospace, monospace;
+
+  @include generate-theme(dark.$dark-theme);
+}
