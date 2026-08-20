@@ -21,23 +21,6 @@ LUA_FN(PackageManagerReadOnly) {
   if (!mgr)                                                      \
     return luaL_error(L, "PackageManager _handle was null");
 
-LUA_FN(PackageManagerUninstall) {
-  UNWRAP_PACKAGE_MANAGER(L, 1, mgr);
-  const char* pkg = luaL_checkstring(L, 2);
-  PackageStatus status = PackageManagerUninstall(mgr, pkg);
-  lua_pushstring(L, PackageStatusName(status));
-  return 1;
-}
-
-LUA_FN(PackageManagerInstall) {
-  UNWRAP_PACKAGE_MANAGER(L, 1, mgr);
-  const char* pkg = luaL_checkstring(L, 2);
-  LOG_INFO("installing %s", pkg);
-  PackageStatus status = PackageManagerInstall(mgr, pkg);
-  lua_pushstring(L, PackageStatusName(status));
-  return 1;
-}
-
 LUA_FN(PackageManagerStatus) {
   UNWRAP_PACKAGE_MANAGER(L, 1, mgr);
   const char* pkg = luaL_checkstring(L, 2);
@@ -67,12 +50,6 @@ static inline void CreatePackageManagerTable(lua_State* L, PackageManager* pkg) 
 
     lua_pushcfunction(L, &lua_PackageManagerStatus);
     lua_setfield(L, -2, "status");
-
-    lua_pushcfunction(L, &lua_PackageManagerInstall);
-    lua_setfield(L, -2, "install");
-
-    lua_pushcfunction(L, &lua_PackageManagerUninstall);
-    lua_setfield(L, -2, "uninstall");
   }
 
   lua_setmetatable(L, -2);

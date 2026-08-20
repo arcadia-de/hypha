@@ -1,12 +1,12 @@
 ---@meta
 -- resource.lua
 
----@class hypha.Resource
+---@module "hypha.query"
 local M = {}
 
 --- Query the resource graph using QL
 ---@param query string The query to use
 ---@return table
-function query(query) end
+function M.query(query) end
 
 return M

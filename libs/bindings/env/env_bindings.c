@@ -7,15 +7,42 @@
 #include <string.h>
 
 LUA_FN(get) {
-  return luaL_error(L, "error: '%s' not implemented", __PRETTY_FUNCTION__);
+  const char* name = luaL_checkstring(L, 1);
+  char* value = getenv(name);
+  if (value) {
+    lua_pushstring(L, value);
+  } else {
+    lua_pushnil(L);
+  }
+
+  return 1;
 }
 
 LUA_FN(has) {
-  return luaL_error(L, "error: '%s' not implemented", __PRETTY_FUNCTION__);
+  const char* name = luaL_checkstring(L, 1);
+  char* value = getenv(name);
+  lua_pushboolean(L, value != NULL);
+  return 1;
 }
 
+extern char** environ;
+
 LUA_FN(all) {
-  return luaL_error(L, "error: '%s' not implemented", __PRETTY_FUNCTION__);
+  const char delims[] = "=";
+
+  lua_newtable(L);
+
+  for (char** env = environ; *env != NULL; env++) {
+    char* str = (*env);
+
+    char* key = strtok(str, delims);
+    char* value = strtok(NULL, delims);
+
+    lua_pushstring(L, value);
+    lua_setfield(L, -2, key);
+  }
+
+  return 1;
 }
 
 // clang-format off

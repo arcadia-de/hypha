@@ -4,7 +4,7 @@ bindings_matrix = {
       hypha_utils_dep,
     ],
   },
-  'manifest': {
+  'sources': {
     'deps': [
       hypha_utils_dep,
     ],
@@ -23,7 +23,6 @@ bindings_matrix = {
       hypha_resource_graph_dep,
     ],
   },
-  'jsonnet': {},
   'log': {},
   'packages': {
     'deps': [
@@ -32,7 +31,7 @@ bindings_matrix = {
       pkg_manager_deps,
     ],
   },
-  'resource': {
+  'query': {
     'deps': [
       hypha_dep,
       hypha_utils_dep,
@@ -42,7 +41,6 @@ bindings_matrix = {
       hypha_controller_dep,
     ],
   },
-  'template': {},
 }
 
 base_override_opts = [

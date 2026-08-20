@@ -1,16 +1,16 @@
 ---@meta
 -- env.lua
 
----@class hypha.Env
+---@module "hypha.env"
 local M = {}
 
 --- Get an environment variable value
 ---@param name string
----@return string
+---@return string?
 function M.get(name) end
 
 --- Get all the environment variables
----@return string
+---@return table<string, string>
 function M.all() end
 
 --- Check whether or not an environment variable exists

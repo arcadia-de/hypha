@@ -1,71 +1,63 @@
 ---@meta
 -- host.lua
 
----@class hypha.Host
+---@module "hypha.host"
 local M = {}
 
----@alias hypha.Host.OS
----| "linux"
----| "darwin"
-
---- Get the name of the host OS
----@return hypha.Host.OS
-function M.getOS() end
-
---- Get the name of the user
----@return string
-function M.getUsername() end
-
---- Get the hostname
----@return string
-function M.getHostname() end
-
----@class hypha.Host.KernelInfo
+---@class hypha.host.KernelInfo
 ---@field version string
 ---@field release string
 ---@field sysname string
 ---@field machine string
 ---@field nodename string
 
---- Get the kernel info
----@return string
-function M.getKernelInfo() end
+---@class hypha.host.HostInfo
+---@field os string
+---@field arch string
+---@field hostname string
+---@field username string
 
---- Get the kernel version
+---@alias hypha.host.OS
+---| "linux"
+---| "darwin"
+---| "windows"
+
+--- Get all the info about the host
+---@return hypha.host.HostInfo
+function M.info() end
+
+--- Get the name of the host OS
+---@return hypha.host.OS
+function M.os() end
+
+--- Get the name of the user
 ---@return string
-function M.getKernelVersion() end
+function M.username() end
+
+--- Get the hostname
+---@return string
+function M.hostname() end
+
+--- Get the kernel info
+---@return hypha.host.KernelInfo
+function M.kernel() end
 
 --- Get the arch
 ---@return string
-function M.getArch() end
+function M.arch() end
 
 --- Get the OS distribution
 ---@return string
-function M.getDistro() end
-
---- Check whether or not the system is OSX
----@return boolean
-function M.isOSX() end
-
---- Check whether or not the system is Linux
----@return boolean
-function M.isLinux() end
-
---- Check whether or not the system is Unix
----@return boolean
-function M.isUnix() end
-
---- Check whether or not the system is Windows
----@return boolean
-function M.isWindows() end
-
---- Check whether or not the system is FreeBSD
----@return boolean
-function M.isFreeBSD() end
+function M.distro() end
 
 --- Check whether or not the system has a package
 ---@param pkg string
 ---@return boolean
 function M.has(pkg) end
+
+--- Execute /usr/bin/which for a specific bin
+---@param bin string The binary to search for
+---@return string
+function M.find(bin) end
 
 return M

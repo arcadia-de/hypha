@@ -1,4 +1,4 @@
-#include "resource_bindings.h"
+#include "query_bindings.h"
 
 #include <lauxlib.h>
 #include <lua.h>

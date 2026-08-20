@@ -4,27 +4,19 @@
 ---@module "hypha.packages"
 local M = {}
 
----@alias hypha.PackageStatus
+---@alias hypha.packages.PackageStatus
 ---| "Installed"
 ---| "Uninstalled"
 ---| "Error"
 ---| "Skipped"
 
----@alias hypha.PackageManager.StatusFunction fun(pkg: string): hypha.PackageStatus
----@alias hypha.PackageManager.InstallFunction fun(pkg: string): hypha.PackageStatus
----@alias hypha.PackageManager.UninstallFunction fun(pkg: string): hypha.PackageStatus
-
----@class hypha.PackageManager
+---@class hypha.packages.PackageManager
 ---@field name string The name of the package manager
 ---@field path string The exec path of the package manager
----@field status hypha.PackageManager.StatusFunction Status a package using the package manager
----@field install hypha.PackageManager.InstallFunction Install a package using the package manager
----@field uninstall hypha.PackageManager.UninstallFunction Uninstall a package using the package manager
-
----@alias hypha.PackageManagerList table<hypha.PackageManager>
+---@field status fun(pkg: string): hypha.packages.PackageStatus Status a package using the package manager
 
 --- Get a list of package managers
----@return hypha.PackageManagerList
+---@return hypha.packages.PackageManager[]
 function M.getAllPackageManagers() end
 
 return M

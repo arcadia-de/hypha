@@ -1,7 +1,7 @@
 ---@meta
 -- The line above tells the LSP this is a definition-only file.
 
----@class hypha.Log
+---@module "hypha.log"
 local M = {}
 
 --- Write an info log

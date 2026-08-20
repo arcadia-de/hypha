@@ -1,4 +1,4 @@
-#include "manifest_bindings.h"
+#include "sources_bindings.h"
 
 #include <ctype.h>
 #include <stdio.h>
@@ -190,4 +190,4 @@ static const struct luaL_Reg kFuncs[] = {
 };
 // clang-format on
 
-DEFINE_LUA_BINDINGS(hypha_manifest, kFuncs);
+DEFINE_LUA_BINDINGS(hypha_sources, kFuncs);

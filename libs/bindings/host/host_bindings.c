@@ -10,7 +10,16 @@
 
 #include "hypha/process.h"
 
-LUA_FN(getOS) {
+// --- Get all the info about the host
+// ---@return hypha.host.HostInfo
+// function M.info() end
+//
+// --- Execute /usr/bin/which for a specific bin
+// ---@param bin string The binary to search for
+// ---@return string
+// function M.find(bin) end
+
+LUA_FN(os) {
 #if defined(_WIN32) || defined(_WIN64)
   lua_pushstring(L, "windows");
 #elif defined(__APPLE__) || defined(__MACH__)
@@ -27,52 +36,7 @@ LUA_FN(getOS) {
   return 1;
 }
 
-LUA_FN(isWindows) {
-#if defined(_WIN32) || defined(_WIN64)
-  lua_pushboolean(L, true);
-#else
-  lua_pushboolean(L, false);
-#endif
-  return 1;
-}
-
-LUA_FN(isFreeBSD) {
-#if defined(__FreeBSD__)
-  lua_pushboolean(L, true);
-#else
-  lua_pushboolean(L, false);
-#endif
-  return 1;
-}
-
-LUA_FN(isUnix) {
-#if defined(__unix__) || defined(__unix)
-  lua_pushboolean(L, true);
-#else
-  lua_pushboolean(L, false);
-#endif
-  return 1;
-}
-
-LUA_FN(isLinux) {
-#if defined(__linux__)
-  lua_pushboolean(L, true);
-#else
-  lua_pushboolean(L, false);
-#endif
-  return 1;
-}
-
-LUA_FN(isOSX) {
-#if defined(__APPLE__) || defined(__MACH__)
-  lua_pushboolean(L, true);
-#else
-  lua_pushboolean(L, false);
-#endif
-  return 1;
-}
-
-LUA_FN(getHostname) {
+LUA_FN(hostname) {
   char hostname[HOST_NAME_MAX + 1];
   if (gethostname(hostname, HOST_NAME_MAX + 1) != 0)
     return luaL_error(L, "error: failed to get hostname");
@@ -80,7 +44,7 @@ LUA_FN(getHostname) {
   return 1;
 }
 
-LUA_FN(getUsername) {
+LUA_FN(username) {
 #if defined(_WIN32) || defined(_WIN64)
   lua_pushstring(L, getenv("USERNAME"));
 #else
@@ -89,7 +53,7 @@ LUA_FN(getUsername) {
   return 1;
 }
 
-LUA_FN(getKernelInfo) {
+LUA_FN(kernel) {
   struct utsname kernel;
   if (uname(&kernel) != 0)
     return luaL_error(L, "error: failed to get kernel info");
@@ -109,7 +73,7 @@ LUA_FN(getKernelInfo) {
   return 1;
 }
 
-LUA_FN(getArch) {
+LUA_FN(arch) {
 #if defined(__x86_64__) || defined(_M_X64)
   lua_pushstring(L, "x86_64");
 #elif defined(__i386__) || defined(_M_IX86)
@@ -124,17 +88,9 @@ LUA_FN(getArch) {
   return 1;
 }
 
-LUA_FN(getKernelVersion) {
-  struct utsname kernel;
-  if (uname(&kernel) != 0)
-    return luaL_error(L, "error: failed to get kernel version");
-  lua_pushstring(L, kernel.version);
-  return 1;
-}
-
 #define OS_RELEASE_FILENAME "/etc/os-release"
 
-LUA_FN(getDistro) {
+LUA_FN(distro) {
   FILE* fp = fopen(OS_RELEASE_FILENAME, "r");
   if (fp == NULL)
     return luaL_error(L, "error: unable to open %s", OS_RELEASE_FILENAME);
@@ -171,22 +127,26 @@ LUA_FN(has) {
   return 1;
 }
 
+LUA_FN(find) {
+  return luaL_error(L, "`%s` is not implemented yet", __PRETTY_FUNCTION__);
+}
+
+LUA_FN(info) {
+  return luaL_error(L, "`%s` is not implemented yet", __PRETTY_FUNCTION__);
+}
+
 // clang-format off
 static const struct luaL_Reg kFuncs[] = {
 #define BIND(Name) {#Name, &lua_##Name},
-  BIND(getOS)
-  BIND(getUsername)
-  BIND(getHostname)
-  BIND(getKernelInfo)
-  BIND(getKernelVersion)
-  BIND(getArch)
-  BIND(getDistro)
-  BIND(isOSX)
-  BIND(isLinux)
-  BIND(isWindows)
-  BIND(isFreeBSD)
-  BIND(isUnix)
+  BIND(os)
+  BIND(username)
+  BIND(hostname)
+  BIND(kernel)
+  BIND(arch)
+  BIND(distro)
   BIND(has)
+  BIND(info)
+  BIND(find)
 #undef BIND
   {NULL, NULL},  // NOLINT(modernize-use-nullptr)
 };
