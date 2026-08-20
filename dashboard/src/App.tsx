@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useMemo, useState, useEffect } from "react";
 import "./App.css";
 import { GraphCanvas } from "./components/GraphCanvas";
 import { Sidebar } from "./components/Sidebar";
@@ -6,15 +6,6 @@ import { NodeDetail } from "./components/NodeDetail";
 import { resources } from "./data/mockGraph";
 import { layoutGraph } from "./layout";
 import type { ResourceKind } from "./types";
-
-const ALL_KINDS: ResourceKind[] = [
-  "PackageManager",
-  "Package",
-  "Symlink",
-  "Repository",
-  "Font",
-  "Controller",
-];
 
 function computeRelated(selectedId: string, edges: { source: string; target: string }[]) {
   const upstream = new Set<string>();
@@ -49,14 +40,46 @@ function computeRelated(selectedId: string, edges: { source: string; target: str
 }
 
 export default function App() {
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+
   const { nodes, edges } = useMemo(() => layoutGraph(resources), []);
   const resourceById = useMemo(() => new Map(resources.map((r) => [r.id, r])), []);
 
   const [search, setSearch] = useState("");
-  const [activeKinds, setActiveKinds] = useState<Set<ResourceKind>>(new Set(ALL_KINDS));
+  const [activeKinds, setActiveKinds] = useState<Set<ResourceKind>>(new Set());
   const [labelFilter, setLabelFilter] = useState<string | null>(null);
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [hoveredId, setHoveredId] = useState<string | null>(null);
+
+  useEffect(() => {
+    fetch('/api/kinds')
+      .then((res) => {
+        if(!res.ok)
+          throw new Error("failed to get kinds");
+        return res.json();
+      })
+      .then((json) => {
+        setActiveKinds(new Set(json.data || []));
+        setLoading(false);
+      })
+      .catch(async(err) => {
+        console.error(`failed to get kinds from api: `, err);
+        setError(err.message);
+        setLoading(false);
+
+        if(import.meta.env.DEV || process.env.ENV == "development") {
+          try {
+            const {default: kinds } = await import("./kinds.json");
+            setActiveKinds(new Set(kinds));
+          } catch(importErr) {
+            setActiveKinds(new Set());
+          }
+        } else {
+          setActiveKinds(new Set());
+        }
+      });
+  }, []);
 
   const labelOptions = useMemo(() => {
     const set = new Set<string>();

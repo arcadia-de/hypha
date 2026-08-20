@@ -4,7 +4,10 @@
   "description": "",
   "main": "index.js",
   "scripts": {
-    "build": "vite build"
+    "build": "vite build",
+    "dev": "vite",
+    "lint": "eslint .",
+    "preview": "vite preview"
   },
   "keywords": [],
   "author": "",
