@@ -50,7 +50,6 @@ DEFINE_CONTROLLER_OBSERVE_FN(Symlink) {
     LOG_ERROR("failed to get source field");
     return kStatusInternalError;
   }
-  LOG_DEBUG("source: %s", source);
 
   char* target = NULL;
   size_t target_len = 0;
@@ -58,7 +57,6 @@ DEFINE_CONTROLLER_OBSERVE_FN(Symlink) {
     LOG_ERROR("failed to get target field");
     return kStatusInternalError;
   }
-  LOG_DEBUG("target: %s", target);
   return kStatusOk;
 }
 
