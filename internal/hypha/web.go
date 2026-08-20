@@ -13,23 +13,25 @@ type DataResponse struct {
 	Data any `json:"data"`
 }
 
+func HandleGetKinds(res http.ResponseWriter, request *http.Request) {
+	res.Header().Set("Content-Type", "application/json")
+	res.WriteHeader(http.StatusOK)
+
+	data := DataResponse{
+		Data: GetAllControllerKinds(),
+	}
+	if err := json.NewEncoder(res).Encode(data); err != nil {
+		http.Error(res, err.Error(), http.StatusInternalServerError)
+		return
+	}
+}
+
 func StartDashboardServer(addr string) error {
 	subFS, _ := fs.Sub(dashboard.DashboardFS, "dist")
 
 	mux := http.NewServeMux()
 	mux.Handle("/", http.FileServer(http.FS(subFS)))
-	mux.HandleFunc("/api/kinds", func(res http.ResponseWriter, request *http.Request) {
-		res.Header().Set("Content-Type", "application/json")
-		res.WriteHeader(http.StatusOK)
-
-		data := DataResponse{
-			Data: GetAllControllerKinds(),
-		}
-		if err := json.NewEncoder(res).Encode(data); err != nil {
-			http.Error(res, err.Error(), http.StatusInternalServerError)
-			return
-		}
-	})
+	mux.HandleFunc("/api/kinds", HandleGetKinds)
 
 	server := &http.Server{
 		Addr:         addr,
