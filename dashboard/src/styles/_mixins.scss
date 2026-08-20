@@ -1,0 +1,43 @@
+@mixin dot($name, $size) {
+  .dot-#{$name} {
+    width: $size;
+    height: $size;
+    border-radius: 50%;
+    flex-shrink: 0;
+  }
+}
+
+$dot-sizes: (
+  "sm": 8px,
+  "md": 16px,
+);
+
+@each $name, $size in $dot-sizes {
+  @include dot($name, $size);
+}
+
+$default-kinds:
+  packagemanager,
+  package,
+  symlink,
+  repository,
+  font,
+  controller;
+
+@each $kind in $default-kinds {
+  .kind-#{$kind} {
+    background-color: var(--kind-#{$kind});
+  }
+}
+
+$default-actions:
+  create,
+  update,
+  delete,
+  none;
+
+@each $action in $default-actions {
+  .action-#{$action} {
+    background-color: var(--action-#{$action});
+  }
+}

@@ -1,5 +1,4 @@
 import { useMemo, useState, useEffect } from "react";
-import "./App.css";
 import { GraphCanvas } from "./components/GraphCanvas";
 import { Sidebar } from "./components/Sidebar";
 import { NodeDetail } from "./components/NodeDetail";
@@ -149,6 +148,7 @@ export default function App() {
   return (
     <div className={`app ${selectedResource ? "with-detail" : ""}`}>
       <Sidebar
+        kinds={Array.from(activeKinds)}
         search={search}
         onSearch={setSearch}
         activeKinds={activeKinds}
@@ -157,8 +157,7 @@ export default function App() {
         labelFilter={labelFilter}
         onLabelFilter={setLabelFilter}
         counts={counts}
-        actionCounts={actionCounts}
-      />
+        actionCounts={actionCounts} />
 
       <main className="canvas-wrap">
         <GraphCanvas
@@ -169,8 +168,7 @@ export default function App() {
           hoveredId={hoveredId}
           relatedIds={relatedIds}
           onSelect={setSelectedId}
-          onHover={setHoveredId}
-        />
+          onHover={setHoveredId} />
         {hoveredId && hoveredId !== selectedId && (
           <div className="hover-chip">
             {resourceById.get(hoveredId)?.kind} · {resourceById.get(hoveredId)?.name}
@@ -183,8 +181,7 @@ export default function App() {
         dependsOnNames={dependsOnNames}
         dependentsNames={dependentsNames}
         onSelect={setSelectedId}
-        onClose={() => setSelectedId(null)}
-      />
+        onClose={() => setSelectedId(null)} />
     </div>
   );
 }

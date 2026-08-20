@@ -1,4 +1,5 @@
 import type { HyphaResource } from "../types";
+import styles from './NodeDetail.module.scss';
 
 interface Props {
   resource: HyphaResource | null;
@@ -15,26 +16,26 @@ export function NodeDetail({ resource, dependsOnNames, dependentsNames, onSelect
   const annotationEntries = Object.entries(resource.annotations);
 
   return (
-    <aside className="detail-panel" aria-live="polite">
-      <button className="detail-close" onClick={onClose} aria-label="Close detail panel">
+    <aside className={styles['detail-panel']} aria-live="polite">
+      <button className={styles['detail-close']} onClick={onClose} aria-label="Close detail panel">
         ×
       </button>
 
-      <div className="detail-kind">{resource.kind}</div>
-      <h2 className="detail-name">{resource.name}</h2>
-      <div className="detail-id">{resource.id}</div>
+      <div className={styles['detail-kind']}>{resource.kind}</div>
+      <h2 className={styles['detail-name']}>{resource.name}</h2>
+      <div className={styles['detail-id']}>{resource.id}</div>
 
-      <div className={`detail-action detail-action-${resource.action.toLowerCase()}`}>
-        <span className="detail-action-label">{resource.action}</span>
-        <span className="detail-action-reason">{resource.reason}</span>
+      <div className={`${styles[`detail-action`]} ${styles[`detail-action-${resource.action.toLowerCase()}`]}`}>
+        <span className={styles['detail-action-label']}>{resource.action}</span>
+        <span className={styles['detail-action-reason']}>{resource.reason}</span>
       </div>
 
       {labelEntries.length > 0 && (
-        <section className="detail-section">
+        <section className={styles['detail-section']}>
           <h3>Labels</h3>
           <dl className="kv-list">
             {labelEntries.map(([k, v]) => (
-              <div className="kv-row" key={k}>
+              <div className={styles['kv-row']} key={k}>
                 <dt>{k}</dt>
                 <dd>{v}</dd>
               </div>
@@ -44,11 +45,11 @@ export function NodeDetail({ resource, dependsOnNames, dependentsNames, onSelect
       )}
 
       {annotationEntries.length > 0 && (
-        <section className="detail-section">
+        <section className={styles['detail-section']}>
           <h3>Annotations</h3>
-          <dl className="kv-list">
+          <dl className={styles['kv-list']}>
             {annotationEntries.map(([k, v]) => (
-              <div className="kv-row" key={k}>
+              <div className={styles['kv-row']} key={k}>
                 <dt>{k}</dt>
                 <dd>{v}</dd>
               </div>
@@ -57,20 +58,20 @@ export function NodeDetail({ resource, dependsOnNames, dependentsNames, onSelect
         </section>
       )}
 
-      <section className="detail-section">
+      <section className={styles['detail-section']}>
         <h3>Spec</h3>
-        <pre className="spec-block">{JSON.stringify(resource.spec, null, 2)}</pre>
+        <pre className={styles['spec-block']}>{JSON.stringify(resource.spec, null, 2)}</pre>
       </section>
 
-      <section className="detail-section">
+      <section className={styles['detail-section']}>
         <h3>Depends on ({dependsOnNames.length})</h3>
         {dependsOnNames.length === 0 ? (
-          <p className="detail-empty">nothing — this is a root of the graph</p>
+          <p className={styles['detail-empty']}>nothing — this is a root of the graph</p>
         ) : (
-          <ul className="link-list">
+          <ul className={styles['link-list']}>
             {dependsOnNames.map((d) => (
               <li key={d.id}>
-                <button className="link-item" onClick={() => onSelect(d.id)}>
+                <button className={styles['link-item']} onClick={() => onSelect(d.id)}>
                   {d.name}
                 </button>
               </li>
@@ -79,15 +80,15 @@ export function NodeDetail({ resource, dependsOnNames, dependentsNames, onSelect
         )}
       </section>
 
-      <section className="detail-section">
+      <section className={styles['detail-section']}>
         <h3>Depended on by ({dependentsNames.length})</h3>
         {dependentsNames.length === 0 ? (
-          <p className="detail-empty">nothing schedules after this resource</p>
+          <p className={styles['detail-empty']}>nothing schedules after this resource</p>
         ) : (
-          <ul className="link-list">
+          <ul className={styles['link-list']}>
             {dependentsNames.map((d) => (
               <li key={d.id}>
-                <button className="link-item" onClick={() => onSelect(d.id)}>
+                <button className={styles['link-item']} onClick={() => onSelect(d.id)}>
                   {d.name}
                 </button>
               </li>

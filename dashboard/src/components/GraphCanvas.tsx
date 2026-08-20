@@ -114,12 +114,6 @@ export function GraphCanvas({
 
   return (
     <svg ref={svgRef} className="graph-canvas" role="img" aria-label="Hypha resource dependency graph">
-      <defs>
-        <radialGradient id="node-glow" cx="50%" cy="35%" r="65%">
-          <stop offset="0%" stopColor="rgba(255,255,255,0.16)" />
-          <stop offset="100%" stopColor="rgba(255,255,255,0)" />
-        </radialGradient>
-      </defs>
       <g ref={gRef}>
         <g className="layer-guides">
           {Array.from({ length: layerCount }).map((_, l) => (
@@ -164,7 +158,7 @@ export function GraphCanvas({
           {nodes.map((n) => {
             const isSelected = n.id === selectedId;
             const isHovered = n.id === hoveredId;
-            const ringColor = KIND_COLOR[n.kind] ?? "var(--text-muted)";
+            const ringColor = KIND_COLOR[n.kind] ?? "var(--color-tx-2)";
             const fillColor = ACTION_COLOR[n.action] ?? "var(--action-none)";
             const radius = n.kind === "Package" || n.kind === "Symlink" ? NODE_RADIUS - 4 : NODE_RADIUS;
             return (
@@ -192,7 +186,7 @@ export function GraphCanvas({
                 )}
                 <circle
                   r={radius}
-                  fill="var(--surface-raised)"
+                  fill="var(--color-ui)"
                   stroke={ringColor}
                   strokeWidth={isSelected || isHovered ? 3 : 2}
                 />
