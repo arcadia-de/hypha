@@ -1,5 +1,6 @@
 #include "symlink_controller.h"
 
+#include <bits/time.h>
 #include <errno.h>
 #include <jansson.h>
 #include <linux/limits.h>
@@ -10,6 +11,7 @@
 #include "hypha.h"
 #include "hypha/expander.h"
 #include "hypha/log.h"
+#include "hypha/validation_log.h"
 
 static inline bool GetSpecField(const Resource* res, const char* field, char** result, size_t* result_len) {
   Expander expander;
@@ -18,24 +20,26 @@ static inline bool GetSpecField(const Resource* res, const char* field, char** r
 }
 
 DEFINE_CONTROLLER_VALIDATE_FN(Symlink) {
-  ControllerValidationResult valid = kValidationkFailed;
+  bool valid = true;
 
   char* source = NULL;
   size_t source_len = 0;
   if (!GetSpecField(desired, "source", &source, &source_len)) {
-    snprintf(*reason, HYPHA_REASON_MAX_LENGTH, "failed to get 'source' field");
-    goto finished;
+    valid = false;
+    ValidationResult* new_result = NewValidationResult(vlog);
+    new_result->kind = kValidationFailed;
+    snprintf(new_result->reason, HYPHA_REASON_MAX_LENGTH, "failed to get 'source' field");
   }
 
   char* target = NULL;
   size_t target_len = 0;
   if (!GetSpecField(desired, "target", &target, &target_len)) {
-    snprintf(*reason, HYPHA_REASON_MAX_LENGTH, "failed to get 'target' field");
-    goto finished;
+    ValidationResult* new_result = NewValidationResult(vlog);
+    valid = false;
+    new_result->kind = kValidationFailed;
+    snprintf(new_result->reason, HYPHA_REASON_MAX_LENGTH, "failed to get 'target' field");
   }
 
-  valid = true;
-finished:
   return valid;
 }
 
@@ -62,9 +66,6 @@ DEFINE_CONTROLLER_OBSERVE_FN(Symlink) {
 
 DEFINE_CONTROLLER_PLAN_FN(Symlink) {
   ASSERT(desired);
-
-  char message[PATH_MAX];
-
   json_t* doc = desired->spec.doc;
   ASSERT(doc);
   ControllerAction action = kNoAction;
@@ -75,7 +76,11 @@ DEFINE_CONTROLLER_PLAN_FN(Symlink) {
 
   struct stat source_stat;
   if (stat(source, &source_stat) != 0) {
-    snprintf(message, HYPHA_REASON_MAX_LENGTH, "source '%s' does not exist", source);
+    PlannedAction* action = NewPlannedAction(pl);
+    action->id = strdup(desired->id);
+    action->action = kNoAction;
+    clock_gettime(CLOCK_REALTIME, &action->timestamp);
+    snprintf(action->reason, HYPHA_REASON_MAX_LENGTH, "source '%s' does not exist", source);
     goto finished;
   }
 
@@ -86,15 +91,15 @@ DEFINE_CONTROLLER_PLAN_FN(Symlink) {
   struct stat target_stat;
   if (lstat(target, &target_stat) == 0) {
     if (S_ISLNK(target_stat.st_mode)) {
-      snprintf(message, HYPHA_REASON_MAX_LENGTH, "target '%s' exists and is a symlink", target);
+      // snprintf(message, HYPHA_REASON_MAX_LENGTH, "target '%s' exists and is a symlink", target);
       goto finished;
     }
 
-    snprintf(message, HYPHA_REASON_MAX_LENGTH, "target %s exists but is not a symlink", target);
+    // snprintf(message, HYPHA_REASON_MAX_LENGTH, "target %s exists but is not a symlink", target);
     goto finished;
   }
 
-  snprintf(message, HYPHA_REASON_MAX_LENGTH, "target %s does not exist", target);
+  // snprintf(message, HYPHA_REASON_MAX_LENGTH, "target %s does not exist", target);
   action = kCreateAction;
 finished:
   return action;

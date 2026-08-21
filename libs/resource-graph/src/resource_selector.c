@@ -55,6 +55,7 @@ ResourceSelector* NewResourceSelector(ResourceSelectorFn fn, void* data, void (*
     selector->data = data;
     selector->free_data = free_data;
   }
+
   return selector;
 }
 

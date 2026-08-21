@@ -20,6 +20,8 @@ typedef struct {
   StateEntry last_applied;
   struct timespec start;
   Reason reason;
+  Plan plan;
+  ValidationLog vlog;
 } ReconcileTask;
 
 OrchestratorRunMode GetReconcileTaskRunMode(ReconcileTask* rhs);

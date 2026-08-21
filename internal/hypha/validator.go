@@ -52,19 +52,19 @@ func NewSchemaValidator() (*SchemaValidator, error) {
 	}, nil
 }
 
-type ValidationResult struct {
+type SchemaValidationResult struct {
 	Filename string
 	IsValid  bool
 	Error    error
 }
 
-func (validator *SchemaValidator) ValidateSchemas(vm *jsonnet.VM, filenames []string) []ValidationResult {
-	results := make([]ValidationResult, 0)
+func (validator *SchemaValidator) ValidateSchemas(vm *jsonnet.VM, filenames []string) []SchemaValidationResult {
+	results := make([]SchemaValidationResult, 0)
 	for _, filename := range filenames {
 		if strings.HasSuffix(filename, ".jsonnet") {
 			specs, err := ParseSpecsFromJsonnet(vm, filename)
 			if err != nil {
-				results = append(results, ValidationResult{
+				results = append(results, SchemaValidationResult{
 					Filename: filename,
 					IsValid:  false,
 					Error:    err,
@@ -75,7 +75,7 @@ func (validator *SchemaValidator) ValidateSchemas(vm *jsonnet.VM, filenames []st
 			for _, spec := range specs {
 				err = validator.ValidateSchema(spec.Content)
 				if err != nil {
-					results = append(results, ValidationResult{
+					results = append(results, SchemaValidationResult{
 						Filename: spec.Filename,
 						IsValid:  false,
 						Error:    err,
@@ -83,7 +83,7 @@ func (validator *SchemaValidator) ValidateSchemas(vm *jsonnet.VM, filenames []st
 					continue
 				}
 
-				results = append(results, ValidationResult{
+				results = append(results, SchemaValidationResult{
 					Filename: spec.Filename,
 					IsValid:  true,
 				})
@@ -93,7 +93,7 @@ func (validator *SchemaValidator) ValidateSchemas(vm *jsonnet.VM, filenames []st
 			continue
 		} else if strings.HasSuffix(filename, "yaml") || strings.HasSuffix(filename, "yml") {
 			//TODO(@s0cks): implement
-			results = append(results, ValidationResult{
+			results = append(results, SchemaValidationResult{
 				Filename: filename,
 				IsValid:  false,
 				Error:    fmt.Errorf("validate yaml files is not implemented"),
@@ -102,7 +102,7 @@ func (validator *SchemaValidator) ValidateSchemas(vm *jsonnet.VM, filenames []st
 		} else if strings.HasSuffix(filename, "json") {
 			manifestBytes, err := os.ReadFile(filename)
 			if err != nil {
-				results = append(results, ValidationResult{
+				results = append(results, SchemaValidationResult{
 					Filename: filename,
 					IsValid:  false,
 					Error:    fmt.Errorf("failed to read manifest: %v", err),
@@ -113,7 +113,7 @@ func (validator *SchemaValidator) ValidateSchemas(vm *jsonnet.VM, filenames []st
 			var manifest any
 			err = json.Unmarshal(manifestBytes, &manifest)
 			if err != nil {
-				results = append(results, ValidationResult{
+				results = append(results, SchemaValidationResult{
 					Filename: filename,
 					IsValid:  false,
 					Error:    fmt.Errorf("failed to unmarhsal manifest: %v", err),
@@ -123,7 +123,7 @@ func (validator *SchemaValidator) ValidateSchemas(vm *jsonnet.VM, filenames []st
 
 			err = validator.ValidateSchema(manifest)
 			if err != nil {
-				results = append(results, ValidationResult{
+				results = append(results, SchemaValidationResult{
 					Filename: filename,
 					IsValid:  false,
 					Error:    err,
@@ -131,7 +131,7 @@ func (validator *SchemaValidator) ValidateSchemas(vm *jsonnet.VM, filenames []st
 				continue
 			}
 
-			results = append(results, ValidationResult{
+			results = append(results, SchemaValidationResult{
 				Filename: filename,
 				IsValid:  true,
 				Error:    nil,

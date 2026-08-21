@@ -1,5 +1,6 @@
 subdir('api/')
 subdir('lua-runtime/')
+subdir('wasm-runtime/')
 
 controllers_matrix = {
   'test': {},
@@ -36,6 +37,9 @@ base_controller_deps = [
   hypha_utils_dep,
   hypha_resource_graph_dep,
   hypha_controller_dep,
+  hypha_planner_dep,
+  hypha_action_dep,
+  hypha_validation_dep,
 ]
 controllers_deps = []
 foreach name, cfg : controllers_matrix

@@ -4,17 +4,12 @@
 #include <lua.h>
 
 #include "hypha.h"
+#include "hypha/action_log.h"
 #include "hypha/discovery.h"
 #include "hypha/event.h"
 #include "hypha/planner.h"
 #include "hypha/resource_graph.h"
-
-typedef struct {
-  uint32_t action;
-  struct timespec timestamp;
-  char* id;
-  Reason reason;
-} AppliedAction;
+#include "hypha/validation_log.h"
 
 typedef struct _Orchestrator Orchestrator;
 
@@ -26,28 +21,14 @@ typedef struct {
   char* cache_dir;
 } OrchestratorConfig;
 
-typedef struct {
-  bool success;
-  char* message;
-} EvalResult;
-
-typedef struct {
-  OrchestratorRunMode mode;
-  char* id;
-  Reason reason;
-} OrchestratorRunConfig;
-
 OrchestratorHandle NewOrchestrator(OrchestratorConfig config);
 ResourceGraph* OrchestratorGetResourceGraph(OrchestratorHandle);
 HistoryLog* OrchestratorGetHistoryLog(OrchestratorHandle);
 lua_State* OrchestratorGetLuaState(OrchestratorHandle);
 EventRoute* GetOrchestratorRootEventRoute(OrchestratorHandle);
 EventBus* OrchestratorGetEventBus(OrchestratorHandle);
-
-AppliedAction* NewAppliedAction(OrchestratorHandle);
-
-typedef bool (*VisitAppliedActionFn)(size_t, AppliedAction*, void*);
-void VisitAppliedActions(OrchestratorHandle, VisitAppliedActionFn, void*);
+ValidationLog* OrchestratorGetValidationLog(OrchestratorHandle);
+ActionLog* OrchestratorGetActionLog(OrchestratorHandle);
 
 void OrchestratorAddResource(OrchestratorHandle, Resource*);
 void OrchestratorSubscribe(OrchestratorHandle, const char* p, EventCallbackFn cb, void* data, void (*free_data)(void*));

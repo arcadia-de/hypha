@@ -2,6 +2,7 @@ package hypha
 
 /*
 #cgo pkg-config: hypha-uninstalled
+
 #include <stdlib.h>
 #include "hypha/planner.h"
 #include "hypha/orchestrator.h"
@@ -13,6 +14,7 @@ import "C"
 import (
 	"runtime"
 	"runtime/cgo"
+	"strings"
 	"unsafe"
 )
 
@@ -33,10 +35,12 @@ func goVisitPlannedActions(idx C.size_t, action *C.PlannedAction, data unsafe.Po
 	handle := *(*cgo.Handle)(data)
 	vis := handle.Value().(PlannedActionVisitor)
 
+	rawReason := C.GoStringN(&action.reason[0], C.int(C.HYPHA_REASON_MAX_LENGTH))
+	goReason, _, _ := strings.Cut(rawReason, "\x00")
 	goAction := PlannedAction{
 		ID:     C.GoString(action.id),
 		Action: C.GoString(C.ControllerActionToCString(action.action)),
-		Reason: C.GoString((*C.char)(unsafe.Pointer(&action.reason[0]))),
+		Reason: goReason,
 	}
 	return C.bool(vis(uint64(idx), goAction))
 }

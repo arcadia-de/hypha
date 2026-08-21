@@ -10,6 +10,7 @@ hypha_resource_graph = static_library(
   'hypha-resource-graph',
   [
     'src/resource.c',
+    'src/resource_decorator.c',
     'src/resource_selector.c',
     'src/resource_graph.c',
     'src/resource_graph_gvc.c',

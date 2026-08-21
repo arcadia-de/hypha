@@ -9,21 +9,10 @@ extern "C" {
 #include <stdio.h>
 
 #include "hypha.h"
+#include "hypha/planner.h"
 #include "hypha/resource.h"
-
-#define FOR_EACH_CONTROLLER_VALIDATION_RESULT(V) \
-  V(kFailed)                                     \
-  V(kPassed)                                     \
-  V(kSkipped)
-
-// clang-format off
-typedef enum {
-#define DEFINE_KIND(Name) kValidation##Name,
-  FOR_EACH_CONTROLLER_VALIDATION_RESULT(DEFINE_KIND)
-#undef DEFINE_KIND
-  kTotalNumberOfControllerValidationResults,
-} ControllerValidationResult;
-// clang-format on
+#include "hypha/validation_log.h"
+#include "hypha/validation_result.h"
 
 // init controller
 typedef void (*ControllerInitFn)(void* data);
@@ -34,9 +23,9 @@ typedef ControllerStatus (*ControllerObserveFn)(const Resource*, Resource*, void
 // normalize the changes with standardized metadata
 typedef ControllerStatus (*ControllerNormalizeFn)(const Resource*, void*);
 // reject malformed specs before planning
-typedef ControllerValidationResult (*ControllerValidateFn)(const Resource*, Reason*, void*);
+typedef bool (*ControllerValidateFn)(const Resource*, ValidationLog* log, void*);
 // compute the change set
-typedef ControllerAction (*ControllerPlanFn)(const Resource*, const Resource*, Reason*, void*);
+typedef ControllerAction (*ControllerPlanFn)(const Resource*, const Resource*, Plan*, void*);
 // execute the changes
 typedef ControllerStatus (*ControllerApplyFn)(const Resource*, const ControllerAction, void*);
 // remove the resources cleanly
@@ -59,7 +48,7 @@ typedef ControllerStatus (*ControllerRollbackFn)(const Resource*, void*);
   static inline ControllerStatus Name##Observe(const Resource* desired, Resource* out, void* data)
 
 #define DEFINE_CONTROLLER_PLAN_FN(Name) \
-  static inline ControllerAction Name##Plan(const Resource* current, const Resource* desired, Reason* reason, void* data)
+  static inline ControllerAction Name##Plan(const Resource* current, const Resource* desired, Plan* pl, void* data)
 
 #define DEFINE_CONTROLLER_APPLY_FN(Name) \
   static inline ControllerStatus Name##Apply(const Resource* desired, const ControllerAction action, void* data)
@@ -71,7 +60,7 @@ typedef ControllerStatus (*ControllerRollbackFn)(const Resource*, void*);
   static inline ControllerStatus Name##Status(const Resource* current, void* data)
 
 #define DEFINE_CONTROLLER_VALIDATE_FN(Name) \
-  static inline ControllerValidationResult Name##Validate(const Resource* desired, Reason* reason, void* data)
+  static inline bool Name##Validate(const Resource* desired, ValidationLog* vlog, void* data)
 // clang-format on
 
 typedef struct {
@@ -103,9 +92,9 @@ const char* GetControllerKind(const Controller* ctrl);
 void ControllerInit(Controller*);
 void ControllerDeInit(Controller*);
 void ControllerObserve(Controller* ctrl, const Resource* desired, Resource* res);
-ControllerAction ControllerPlan(Controller* ctrl, const Resource* current, const Resource* desired, Reason* reason);
+ControllerAction ControllerPlan(Controller* ctrl, const Resource* current, const Resource* desired, Plan* pl);
 ControllerStatus ControllerApply(Controller* ctrl, const Resource* current, const ControllerAction action);
-ControllerValidationResult ControllerValidate(Controller* ctrl, const Resource* current, Reason* reason);
+bool ControllerValidate(Controller* ctrl, const Resource* current, ValidationLog* vl);
 ControllerStatus ControllerRollback(Controller* ctrl, const Resource* current);
 ControllerStatus ControllerDestroy(Controller* ctrl, const Resource* current);
 ControllerStatus ControllerDiff(Controller* ctrl, const Resource* current);

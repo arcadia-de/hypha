@@ -8,6 +8,7 @@ package hypha
 #include "hypha.h"
 #include "hypha/planner.h"
 #include "hypha/resource.h"
+#include "hypha/action_log.h"
 #include "hypha/annotation.h"
 #include "hypha/orchestrator.h"
 
@@ -393,9 +394,9 @@ func (orc *Orchestrator) VisitAppliedActions(vis AppliedActionVisitor) {
 	handle := cgo.NewHandle(vis)
 	defer handle.Delete()
 
-	C.VisitAppliedActions(
-		orc.Handle,
-		(C.VisitAppliedActionFn)(unsafe.Pointer(C.goVisitAppliedActions)),
+	C.VisitAllActions(
+		C.OrchestratorGetActionLog(orc.Handle),
+		(C.VisitActionFn)(unsafe.Pointer(C.goVisitAppliedActions)),
 		unsafe.Pointer(&handle),
 	)
 
@@ -498,6 +499,10 @@ func (orc *Orchestrator) GetPlan() *Plan {
 	return &Plan{
 		Handle: cHandle,
 	}
+}
+
+func (orc *Orchestrator) GetValidationLog() ValidationLog {
+	return GetValidationLog(C.OrchestratorGetValidationLog(orc.Handle))
 }
 
 func (orc *Orchestrator) ProcessDiscoveredManifests() {

@@ -2,7 +2,6 @@ package cli
 
 import (
 	"fmt"
-	"strings"
 
 	lg "charm.land/lipgloss/v2"
 	"github.com/arcadia-de/hypha/internal/hypha"
@@ -25,8 +24,6 @@ func handlePlan(cmd *cobra.Command, args []string) error {
 	defer orc.Close()
 
 	orc.ProcessDiscoveredManifests()
-
-	// orc.Run(hypha.OrchestratorPlanMode)
 
 	const (
 		idWidth      = 20
@@ -62,8 +59,26 @@ func handlePlan(cmd *cobra.Command, args []string) error {
 
 	orc.Run(hypha.OrchestratorPlanMode)
 
-	borderStyle := lg.NewStyle().
-		Foreground(lg.Color("#282726"))
+	fmt.Println()
+	vlog := orc.GetValidationLog()
+	if !vlog.IsEmpty() {
+		vlog.Print()
+	}
+	fmt.Println()
+	fmt.Println()
+
+	rowStyle := lg.NewStyle().
+		PaddingLeft(2)
+
+	fmt.Println(rowStyle.Render("Plan:"))
+	fmt.Println()
+
+	rowStyle = rowStyle.
+		MarginLeft(8)
+	headerRowStyle := rowStyle.
+		BorderBottom(true).
+		BorderStyle(lg.NormalBorder()).
+		BorderForeground(lg.Color("#282726"))
 	headerStyle := lg.NewStyle().
 		Bold(true).
 		Foreground(lg.Color("#CECDC3"))
@@ -80,9 +95,14 @@ func handlePlan(cmd *cobra.Command, args []string) error {
 		Align(lg.Left).
 		Render("Reason")
 
-	fmt.Println()
-	fmt.Printf("  %s  %s  %s\n", headerID, headerAction, headerReason)
-	fmt.Printf("%s\n", borderStyle.Align(lg.Center).Render(strings.Repeat("─", totalSize)))
+	fmt.Println(headerRowStyle.Render(
+		lg.JoinHorizontal(
+			lg.Left,
+			headerID,
+			headerAction,
+			headerReason,
+		),
+	))
 
 	plan := orc.GetPlan()
 	if plan == nil {
@@ -119,7 +139,14 @@ func handlePlan(cmd *cobra.Command, args []string) error {
 			act = action.Action
 		}
 
-		fmt.Printf("  %s  %s  %s\n", id, style.Render(fmt.Sprintf("%s %s", ind, act)), reason)
+		fmt.Println(rowStyle.Render(
+			lg.JoinHorizontal(
+				lg.Left,
+				id,
+				style.Render(fmt.Sprintf("%s %s", ind, act)),
+				reason,
+			),
+		))
 		summary.Total++
 		return true
 	})
@@ -127,8 +154,6 @@ func handlePlan(cmd *cobra.Command, args []string) error {
 	// ╭─────────╮
 	// │ Summary │
 	// ╰─────────╯
-	fmt.Println()
-	fmt.Printf("%s\n", borderStyle.Render(strings.Repeat("─", totalSize)))
 	fmt.Println()
 	printSummary(summary)
 	fmt.Println()

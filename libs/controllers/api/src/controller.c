@@ -108,7 +108,7 @@ finished:
 #endif  // HYPHA_ENABLE_PROFILING
 }
 
-ControllerAction ControllerPlan(Controller* ctrl, const Resource* current, const Resource* desired, Reason* reason) {
+ControllerAction ControllerPlan(Controller* ctrl, const Resource* current, const Resource* desired, Plan* pl) {
 #ifdef HYPHA_ENABLE_PROFILING
   TracyCZone(ctx, 1);
   TracyCZoneName(ctx, "ControllerPlan", 14);
@@ -119,7 +119,7 @@ ControllerAction ControllerPlan(Controller* ctrl, const Resource* current, const
   if (!current || !desired || !ctrl || !ctrl->config.plan)
     goto finished;
 
-  result = ctrl->config.plan(current, desired, reason, ctrl->data);
+  result = ctrl->config.plan(current, desired, pl, ctrl->data);
 finished:
 #ifdef HYPHA_ENABLE_PROFILING
   TracyCZoneEnd(ctx);
@@ -165,19 +165,18 @@ finished:
   return status;
 }
 
-ControllerValidationResult ControllerValidate(Controller* ctrl, const Resource* desired, Reason* reason) {
+bool ControllerValidate(Controller* ctrl, const Resource* desired, ValidationLog* vl) {
 #ifdef HYPHA_ENABLE_PROFILING
   TracyCZone(ctx, 1);
   TracyCZoneName(ctx, "ControllerValidate", 18);
   TracyCZoneText(ctx, GetControllerKind(ctrl), strlen(GetControllerKind(ctrl)));
 #endif  // HYPHA_ENABLE_PROFILING
-  ControllerValidationResult valid = kValidationkSkipped;
+  bool valid = false;
 
-  if (!desired || !ctrl || !ctrl->config.validate) {
+  if (!desired || !ctrl || !ctrl->config.validate)
     goto finished;
-  }
 
-  valid = ctrl->config.validate(desired, reason, ctrl->data);
+  valid = ctrl->config.validate(desired, vl, ctrl->data);
 finished:
 #ifdef HYPHA_ENABLE_PROFILING
   TracyCZoneEnd(ctx);

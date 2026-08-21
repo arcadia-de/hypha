@@ -1,5 +1,4 @@
 subdir('api/')
-
 pkg_manager_matrix = {
   'luarocks': {
     'deps': [],
@@ -79,3 +78,5 @@ foreach name, cfg : pkg_manager_matrix
     ],
   )
 endforeach
+
+subdir('all/')

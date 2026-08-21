@@ -191,8 +191,8 @@ static inline const char* OrchestratorRunModeName(const OrchestratorRunMode rhs)
 typedef uint64_t ControllerActionCounts[kTotalNumberOfControllerActions];
 
 typedef struct {
-  uint64_t run_start;
-  uint64_t run_finished;
+  time_t run_start;
+  time_t run_finished;
   uint64_t num_processed;
   ControllerActionCounts num_actions;
 } OrchestratorMetrics;

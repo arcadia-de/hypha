@@ -1,5 +1,3 @@
-#include "package_managers.h"
-
 #include <stdlib.h>
 
 #include "apt_pkg_manager.h"

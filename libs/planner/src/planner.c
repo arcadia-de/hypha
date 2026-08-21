@@ -47,6 +47,28 @@ void AppendPlan(Plan* pl, const Plan* rhs) {
   pl->actions_len++;
 }
 
+PlannedAction* NewPlannedAction(Plan* pl) {
+  ASSERT(pl);
+  if (!pl)
+    return NULL;
+
+  if ((pl->actions_len + 1) >= pl->actions_cap) {
+    const size_t new_cap = pl->actions_cap * 2;
+    const size_t new_total_size = sizeof(PlannedAction) * new_cap;
+    PlannedAction* new_actions = (PlannedAction*)realloc(pl->actions, new_total_size);
+    if (!new_actions)
+      return NULL;
+
+    pl->actions = new_actions;
+    pl->actions_cap = new_cap;
+  }
+
+  PlannedAction* pa = &pl->actions[pl->actions_len];
+  pl->actions_len++;
+  memset(pa, 0, sizeof(PlannedAction));
+  return pa;
+}
+
 void AppendPlannedAction(Plan* pl, PlannedAction* action) {
   if (!pl || !action)
     return;

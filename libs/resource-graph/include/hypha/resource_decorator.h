@@ -6,9 +6,19 @@
 
 typedef void (*ResourceDecoratorFn)(Resource* res, void* data);
 
-typedef struct _ResourceDecoratorPipeline ResourceDecoratorPipeline;
+typedef struct {
+  ResourceDecoratorFn fn;
+  void* data;
+  void (*free_data)(void* data);
+} ResourceDecoratorPipelineStage;
 
-ResourceDecoratorPipeline* NewResourceDecoratorPipeline();
+typedef struct {
+  ResourceDecoratorPipelineStage* stages;
+  size_t stages_len;
+  size_t stages_cap;
+} ResourceDecoratorPipeline;
+
+void InitResourceDecoratorPipeline(ResourceDecoratorPipeline* pipe, const size_t init_cap);
 void ResourceDecoratorPipelineAdd(ResourceDecoratorPipeline* pipe, ResourceDecoratorFn fn, void* data,
                                   void (*free_data)(void*));
 void ResourceDecoratorPipelineLabel(ResourceDecoratorPipeline* pipe, const Label* label);

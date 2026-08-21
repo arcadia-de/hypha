@@ -105,4 +105,6 @@ int ExecPackageManager(PackageManager* mgr, const char** args, const uint64_t nu
 
 #define DEFINE_PACKAGE_MANAGER_CONFIG(Name) static const PackageManagerConfig k##Name##Config =
 
+void InitPackageManagers(const char* luarocks_dir);
+
 #endif  // HYPHA_PACKAGE_MANAGER_H

@@ -1,4 +1,4 @@
-#include "hypha/decorator.h"
+#include "hypha/resource_decorator.h"
 
 #include <stdlib.h>
 #include <string.h>
@@ -6,18 +6,6 @@
 #include "hypha/label.h"
 #include "hypha/log.h"
 #include "hypha/resource.h"
-
-typedef struct {
-  ResourceDecoratorFn fn;
-  void* data;
-  void (*free_data)(void* data);
-} ResourceDecoratorPipelineStage;
-
-struct _ResourceDecoratorPipeline {
-  ResourceDecoratorPipelineStage* stages;
-  uint64_t stages_len;
-  uint64_t stages_cap;
-};
 
 #define BEGIN_FOREACH_DECORATOR_PIPELINE_STAGE(Pipeline, Stage) \
   for (int i = 0; i < (Pipeline)->stages_len; i++) {            \

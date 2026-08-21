@@ -10,6 +10,8 @@ lua_controller = static_library(
     hypha_log_dep,
     hypha_controller_dep,
     hypha_resource_graph_dep,
+    hypha_planner_dep,
+    hypha_validation_dep,
   ],
   include_directories: [
     lua_controller_inc,

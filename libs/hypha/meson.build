@@ -10,11 +10,15 @@ hypha_deps = [
   gvc,
   hypha_api_dep,
   pkg_manager_api_dep,
+  pkg_managers_dep,
   hypha_query_dep,
   hypha_events_dep,
   hypha_state_dep,
   hypha_utils_dep,
   hypha_controller_dep,
+  hypha_planner_dep,
+  hypha_action_dep,
+  hypha_validation_dep,
   hypha_resource_graph_dep,
 ]
 hypha_deps += pkg_manager_deps
@@ -23,17 +27,15 @@ hypha = static_library(
   'hypha',
   [
     'src/hypha.c',
-    'src/decorator.c',
+    'src/orchestrator_add.c',
     'src/orchestrator.c',
+    'src/orchestrator_init.c',
     'src/orchestrator_gvc.c',
     'src/orchestrator_lua.c',
     'src/reconcile.c',
     'src/discovery.c',
     'src/history_log.c',
     'src/query_schema_resources.c',
-    'src/package_managers.c',
-    'src/planner.c',
-    'src/planned_action.c',
   ],
   dependencies: hypha_deps,
   link_with: [
@@ -44,6 +46,7 @@ hypha = static_library(
     hypha_log_inc,
     hypha_inc,
   ],
+  c_args: [ '-Wno-unused-variable' ],
   install: true
 )
 hypha_dep = declare_dependency(

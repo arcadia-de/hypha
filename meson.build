@@ -68,7 +68,6 @@ endif
 gtest_dep = dependency('gtest', main: true, required: false)
 
 subdir('libs/')
-subdir('test/')
 
 cc = meson.get_compiler('c')
 m_dep = cc.find_library('m', required: false)

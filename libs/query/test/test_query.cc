@@ -2,12 +2,12 @@
 
 #include "hypha/query.h"
 
-class QueryTest : public ::testing::Test {  // NOLINT(cppcoreguidelines-special-member-functions)
+class PlannerTest : public ::testing::Test {  // NOLINT(cppcoreguidelines-special-member-functions)
  public:
-  QueryTest() = default;
-  ~QueryTest() override = default;
+  PlannerTest() = default;
+  ~PlannerTest() override = default;
 };
 
-TEST_F(QueryTest, Test) {
+TEST_F(PlannerTest, Test) {
   ASSERT_TRUE(true);
 }

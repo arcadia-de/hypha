@@ -41,7 +41,7 @@ tasks:
       # npm install
       # npm run build
       # cd ../
-  go:build-debug:
+  go:build:dev:
     cmds:
       - |
         PKG_CONFIG_PATH="$(pwd)/build/meson-uninstalled:$PKG_CONFIG_PATH" \
@@ -67,12 +67,18 @@ tasks:
     dir: "dashboard/"
     cmds:
       - pnpm build
-  build:
+  build:lib:dev:
     cmds:
       - task: meson:reconfigure
       - task: meson:build
-      - task: build:dashboard
-      - task: go:build-debug
+  build:dev:
+    cmds:
+      - task: build:lib:dev
+      - task: go:build:dev
+  build:
+    cmds:
+      - task: build:lib:dev
+      - task: go:build
   test:
     deps:
       - build
@@ -149,4 +155,4 @@ tasks:
       # - clean:journal
   default:
     cmds:
-      - task: build
+      - task: build:dev

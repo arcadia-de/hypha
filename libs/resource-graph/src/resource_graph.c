@@ -30,8 +30,8 @@ bool VisitAllResources(const ResourceGraph* rg, ResourceVisitorFn fn, void* data
     return false;
 
   for (ResourceGraphIndex i = 0; i < rg->count; i++) {
-    const Resource* res = &rg->resources[i];
-    if (!fn(res, data))
+    Resource* res = &rg->resources[i];
+    if (!fn(i, res, data))
       return false;
   }
 
@@ -44,11 +44,11 @@ bool VisitAllNonMatchingResources(const ResourceGraph* rg, const ResourceSelecto
     return false;
 
   for (ResourceGraphIndex i = 0; i < rg->count; i++) {
-    const Resource* res = &rg->resources[i];
+    Resource* res = &rg->resources[i];
     if (ResourceSelectorMatch(rs, res))
       continue;
 
-    if (!fn(res, data))
+    if (!fn(i, res, data))
       return false;
   }
 
@@ -60,11 +60,11 @@ bool VisitAllMatchingResources(const ResourceGraph* rg, const ResourceSelector* 
     return false;
 
   for (ResourceGraphIndex i = 0; i < rg->count; i++) {
-    const Resource* res = &rg->resources[i];
+    Resource* res = &rg->resources[i];
     if (!ResourceSelectorMatch(rs, res))
       continue;
 
-    if (!fn(res, data))
+    if (!fn(i, res, data))
       return false;
   }
 
