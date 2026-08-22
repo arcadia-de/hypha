@@ -10,7 +10,20 @@
 bool ResourceHasId(const Resource* res, const char* id) {
   if (!res || !id)
     return false;
-  return strcmp(res->id, id) == 0;
+
+  ResourceIdStr str;
+  ResourceIdCStr(&res->id, str);
+  return strcmp(str, id) == 0;
+}
+
+bool ResourceMatchesRef(const Resource* res, const char* ref) {
+  if (!res || !ref)
+    return false;
+
+  if (res->info.name && strcmp(res->info.name, ref) == 0)
+    return true;
+
+  return ResourceHasId(res, ref);
 }
 
 bool ResourceHasLabel(const Resource* res, const Label* rhs) {
@@ -175,6 +188,9 @@ void ResourcePushAnnotation(Resource* res, const AnnotationKey* k, const Annotat
 void FreeResourceInfo(ResourceInfo* info) {
   if (!info)
     return;
+
+  if (info->name)
+    free(info->name);
 
   if (info->annotations)
     free(info->annotations);

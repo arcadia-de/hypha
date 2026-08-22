@@ -10,7 +10,9 @@
 static inline bool CheckPending(ResourceGraphIndex idx, Resource* res, void* data) {
   Orchestrator* orc = (Orchestrator*)data;
   if (IsResourcePending(res)) {
-    LOG_ERROR("resource %s unreachable: upstream dependency failed", res->id);
+    ResourceIdStr id_str;
+    ResourceIdCStr(&res->id, id_str);
+    LOG_ERROR("resource %s unreachable: upstream dependency failed", id_str);
     res->state = kResourceFailed;
     orc->run.success = false;
   }
@@ -42,7 +44,11 @@ static inline void MaybeFinishReconciliation(Orchestrator* orc) {
 
 static inline bool Validate(Controller* ctrl, const Resource* desired, ValidationLog* vlog) {
   const bool result = ControllerValidate(ctrl, desired, vlog);
-  LOG_ERROR_IF(!result, "validation failed for `%s`", desired->id);
+  if (!result) {
+    ResourceIdStr id_str;
+    ResourceIdCStr(&desired->id, id_str);
+    LOG_ERROR("validation failed for `%s`", id_str);
+  }
   return result;
 }
 
@@ -65,7 +71,9 @@ static inline void ReconcileWork(uv_work_t* req) {
     desired->spec.doc = doc;
   }
 
-  SetLogResourceContext(desired->id, desired->kind);
+  ResourceIdStr desired_id_str;
+  ResourceIdCStr(&desired->id, desired_id_str);
+  SetLogResourceContext(desired_id_str, desired->kind);
   ControllerObserve(ctrl, desired, observed);
 
   if (!Validate(ctrl, desired, &task->vlog))
@@ -84,22 +92,37 @@ finished:
 
 static inline void WriteResourceState(Orchestrator* orc, const Resource* res) {
   ASSERT(res->spec.raw);
+  ResourceIdStr id_str;
+  ResourceIdCStr(&res->id, id_str);
+
   StateEntry entry = {
-      .id = strdup(res->id),
+      .id = strdup(id_str),
       .kind = strdup(res->kind),
+      .name = res->info.name ? strdup(res->info.name) : NULL,
       .applied_at = orc->metrics.run_start,
       .last_status = res->state,
       .orphaned = false,
       .hash = res->spec.hash,
       .observed_json = res->spec.raw,
+      .labels = res->info.labels,
+      .labels_len = res->info.labels_len,
+      .annotations = res->info.annotations,
+      .annotations_len = res->info.annotations_len,
   };
-  LOG_ERROR_IF(!StateStorePut(orc->state, &entry), "failed to write state entry for %s", res->id);
+  LOG_ERROR_IF(!StateStorePut(orc->state, &entry), "failed to write state entry for %s", id_str);
+  free(entry.id);
+  free(entry.kind);
+  free(entry.name);
+  // entry.labels/entry.annotations/entry.observed_json alias res's storage; not owned here.
 }
 
 static inline void WriteHistory(Orchestrator* orc, const Resource* res, const ControllerAction action,
                                 const ControllerStatus status) {
+  ResourceIdStr id_str;
+  ResourceIdCStr(&res->id, id_str);
+
   HistoryRecord record = {
-      .id = strdup(res->id),
+      .id = strdup(id_str),
       .kind = strdup(res->kind),
       .action = action,
       .status = status,
@@ -109,7 +132,7 @@ static inline void WriteHistory(Orchestrator* orc, const Resource* res, const Co
       .applied_at = (int64_t)orc->metrics.run_finished,
   };
   memcpy(record.reason, orc->run.reason, sizeof(Reason));  // TODO(@s0cks): should check if reason is not empty first
-  LOG_ERROR_IF(!HistoryLogAppend(orc->history, &record), "failed to write to history for: %s", res->id);
+  LOG_ERROR_IF(!HistoryLogAppend(orc->history, &record), "failed to write to history for: %s", id_str);
 }
 
 static inline void ReconcileAfterWork(uv_work_t* req, int status) {
@@ -118,14 +141,16 @@ static inline void ReconcileAfterWork(uv_work_t* req, int status) {
   Orchestrator* orc = task->orc;
   Resource* res = GetResourceInGraph(orc->graph, task->index);
 
-  SetLogResourceContext(res->id, res->kind);
+  ResourceIdStr res_id_str;
+  ResourceIdCStr(&res->id, res_id_str);
+  SetLogResourceContext(res_id_str, res->kind);
   orc->metrics.num_actions[task->action]++;
 
   AppendValidationLog(&orc->vlog, &task->vlog);
   AppendPlan(&orc->plan, &task->plan);
   if (IsApplyReconcileTask(task)) {
     AppliedAction* action = NewAppliedAction(&orc->actions);
-    action->id = strdup(res->id);
+    action->id = strdup(res_id_str);
     memcpy(action->reason, task->reason, sizeof(Reason));
     action->action = task->action;
     memcpy(&action->timestamp, &task->start, sizeof(struct timespec));
@@ -161,7 +186,9 @@ static inline bool QueueReconcileTaskForResource(const ResourceGraphIndex idx, R
 
   Controller* ctrl = GetControllerForKind(res->kind);
   if (!ctrl) {
-    LOG_ERROR("no controller registered for kind '%s' (resource: %s)", res->kind, res->id);
+    ResourceIdStr id_str;
+    ResourceIdCStr(&res->id, id_str);
+    LOG_ERROR("no controller registered for kind '%s' (resource: %s)", res->kind, id_str);
     res->state = kResourceFailed;
     orc->run.success = false;
     return true;
@@ -183,8 +210,10 @@ void DispatchReadyResources(Orchestrator* orc) {
 void QueueReconcileTask(Orchestrator* orc, Controller* ctrl, const ResourceGraphIndex index, Resource* res) {
   ReconcileTask* task = (ReconcileTask*)malloc(sizeof(ReconcileTask));
   memset(task, 0, sizeof(ReconcileTask));
-  LOG_WARN_IF(!StateStoreGet(orc->state, res->id, &task->last_applied),
-              "failed to get last state store value for: %s (%s)", res->id, res->kind);
+  ResourceIdStr id_str;
+  ResourceIdCStr(&res->id, id_str);
+  LOG_WARN_IF(!StateStoreGet(orc->state, id_str, &task->last_applied),
+              "failed to get last state store value for: %s (%s)", id_str, res->kind);
   task->orc = orc;
   clock_gettime(CLOCK_REALTIME, &task->start);
   task->index = index;

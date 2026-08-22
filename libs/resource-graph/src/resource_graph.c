@@ -112,11 +112,25 @@ finished:
   return;
 }
 
-static inline ResourceGraphIndex FindResourceIndex(ResourceGraph* graph, const char* id) {
+static inline ResourceGraphIndex FindResourceIndex(ResourceGraph* graph, const char* ref) {
   ASSERT(graph);
-  ASSERT(id);
+  ASSERT(ref);
+
+  // depends_on entries may reference either a resource's name (the expected case,
+  // since that's what a manifest author writes) or its id (in case something
+  // machine-generated the reference). Id is authoritative, so try it first when
+  // it parses as one; fall back to a name scan either way.
+  ResourceId needle;
+  if (uuid_parse(ref, needle) == 0) {
+    for (ResourceGraphIndex i = 0; i < graph->count; i++) {
+      if (uuid_compare(graph->resources[i].id, needle) == 0)
+        return (ResourceGraphIndex)i;
+    }
+  }
+
   for (ResourceGraphIndex i = 0; i < graph->count; i++) {
-    if (strcmp(graph->resources[i].id, id) == 0)
+    const char* name = graph->resources[i].info.name;
+    if (name && strcmp(name, ref) == 0)
       return (ResourceGraphIndex)i;
   }
 
@@ -152,7 +166,6 @@ void FreeResourceGraph(ResourceGraph* graph) {
 
   for (ResourceGraphIndex i = 0; i < graph->count; i++) {
     Resource* res = &graph->resources[i];
-    free(res->id);
     free(res->kind);
 
     for (ResourceGraphIndex j = 0; j < res->num_depends_on; j++) {

@@ -24,10 +24,10 @@ func (selector *ResourceSelector) IsValid() bool {
 	return selector.Handle != nil
 }
 
-func NewIdFilter(kind string) ResourceSelector {
-	cId := C.CString(kind)
-	defer C.free(unsafe.Pointer(cId))
-	handle := C.NewIdResourceSelector(cId)
+func NewRefFilter(ref string) ResourceSelector {
+	cRef := C.CString(ref)
+	defer C.free(unsafe.Pointer(cRef))
+	handle := C.NewRefResourceSelector(cRef)
 	return ResourceSelector{
 		Handle: handle,
 	}
@@ -42,10 +42,13 @@ func NewKindResourceSelector(kind string) ResourceSelector {
 	}
 }
 
-func NewIdsResourceSelector(ids []string) ResourceSelector {
+// NewRefsResourceSelector selects resources matching any of the given references,
+// each of which may be a name (the expected case for something a user typed) or
+// an id (the expected case for something a controller or another command passed along).
+func NewRefsResourceSelector(refs []string) ResourceSelector {
 	var filters []ResourceSelector
-	for _, id := range ids {
-		filters = append(filters, NewIdFilter(id))
+	for _, ref := range refs {
+		filters = append(filters, NewRefFilter(ref))
 	}
 	return NewOrResourceSelector(filters)
 }

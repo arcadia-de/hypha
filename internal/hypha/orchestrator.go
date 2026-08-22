@@ -201,11 +201,11 @@ func (orc *Orchestrator) RunWithReason(mode OrchestratorRunMode, reason string) 
 }
 
 func (orc *Orchestrator) AddResource(res ResourceSpec) {
-	cID := C.CString(res.ID)
-	defer C.free(unsafe.Pointer(cID))
-
 	cKind := C.CString(res.Kind)
 	defer C.free(unsafe.Pointer(cKind))
+
+	cName := C.CString(res.Metadata.Name)
+	defer C.free(unsafe.Pointer(cName))
 
 	var cDeps **C.char
 	numDeps := len(res.DependsOn)
@@ -293,11 +293,11 @@ func (orc *Orchestrator) AddResource(res ResourceSpec) {
 	defer C.free(unsafe.Pointer(cRawSpec))
 
 	spec := C.Resource{
-		id:             cID,
 		kind:           cKind,
 		depends_on:     cDeps,
 		num_depends_on: C.size_t(numDeps),
 		info: C.ResourceInfo{
+			name:       cName,
 			labels:     cLabels,
 			labels_len: C.size_t(numLabels),
 			labels_cap: C.size_t(numLabels),

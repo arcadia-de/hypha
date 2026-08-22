@@ -27,11 +27,6 @@ func getLabelsAndAnnotations() ([]string, []hypha.ResourceAnnotation, error) {
 }
 
 func handleGenerate(kind string, args []string) error {
-	id := viper.GetString("id")
-	if id == "" {
-		//TODO(@s0cks): generate a new ID
-	}
-
 	format := viper.GetString("format")
 	name := viper.GetString("name")
 
@@ -42,7 +37,6 @@ func handleGenerate(kind string, args []string) error {
 
 	spec := hypha.ResourceSpec{
 		Kind: hypha.Capitalize(kind),
-		ID:   id,
 		Metadata: hypha.ResourceMetadata{
 			Name:        name,
 			Labels:      labels,
@@ -52,7 +46,7 @@ func handleGenerate(kind string, args []string) error {
 
 	filename := viper.GetString("output")
 	if filename == "" {
-		filename = fmt.Sprintf("%s-%s", kind, id)
+		filename = fmt.Sprintf("%s-%s", kind, name)
 	}
 
 	if !strings.HasSuffix(filename, "."+format) {

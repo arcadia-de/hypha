@@ -3,6 +3,7 @@ hypha_inc = include_directories('include/')
 hypha_deps = [
   libuv,
   threads,
+  uuid,
   jansson,
   lua54,
   wamr,

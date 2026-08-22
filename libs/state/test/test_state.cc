@@ -36,7 +36,7 @@ TEST_F(StateEntryTest, Test_EncodeDecode) {
   ASSERT_EQ(value_len, expected_len);
 
   StateEntry out;
-  DecodeStateEntry(value, &out);
+  DecodeStateEntry(value, value_len, &out);
   ASSERT_EQ(in.orphaned, out.orphaned);
   ASSERT_STREQ(in.kind, out.kind);
   ASSERT_EQ(in.hash, out.hash);

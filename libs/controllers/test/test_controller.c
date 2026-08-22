@@ -25,7 +25,9 @@ DEFINE_CONTROLLER_VALIDATE_FN(Test) {
 
 DEFINE_CONTROLLER_PLAN_FN(Test) {
   PlannedAction* new_action = NewPlannedAction(pl);
-  new_action->id = strdup(desired->id);
+  ResourceIdStr id_str;
+  ResourceIdCStr(&desired->id, id_str);
+  new_action->id = strdup(id_str);
   new_action->action = kCreateAction;
   clock_gettime(CLOCK_REALTIME, &new_action->timestamp);
   snprintf(new_action->reason, HYPHA_REASON_MAX_LENGTH, "Test resources are always created");

@@ -110,16 +110,16 @@ ResourceSelector* NewKindResourceSelector(const char* rhs) {
   return NewResourceSelector(&MatchesKind, strdup(rhs), free);
 }
 
-static inline bool MatchesId(const Resource* res, void* data) {
+static inline bool MatchesRef(const Resource* res, void* data) {
   if (!res || !data)
     return false;
-  return ResourceHasId(res, (const char*)data);
+  return ResourceMatchesRef(res, (const char*)data);
 }
 
-ResourceSelector* NewIdResourceSelector(const char* rhs) {
+ResourceSelector* NewRefResourceSelector(const char* rhs) {
   if (!rhs)
     return NULL;
-  return NewResourceSelector(&MatchesId, strdup(rhs), free);
+  return NewResourceSelector(&MatchesRef, strdup(rhs), free);
 }
 
 ResourceSelector* NewLabelResourceSelector(const Label* rhs) {

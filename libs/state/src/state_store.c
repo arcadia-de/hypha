@@ -14,8 +14,13 @@ void StateEntryFree(StateEntry* entry) {
 
   free(entry->id);
   free(entry->kind);
+  free(entry->name);
   free(entry->observed_json);
-  entry->id = entry->kind = entry->observed_json = NULL;
+  free(entry->labels);
+  free(entry->annotations);
+  entry->id = entry->kind = entry->name = entry->observed_json = NULL;
+  entry->labels = NULL;
+  entry->annotations = NULL;
 }
 
 StateStore* StateStoreOpen(const char* path) {
@@ -53,9 +58,8 @@ bool StateStoreGet(StateStore* store, const char* id, StateEntry* out) {
 
   memset(out, 0, sizeof(StateEntry));
   out->id = strdup(id);
-  DecodeStateEntry(value, out);
+  success = DecodeStateEntry(value, value_len, out);
   free(value);
-  success = true;
 finished:
   return success;
 }
@@ -99,8 +103,14 @@ bool StateStoreVisitAll(StateStore* store, StateStoreVisitFn visit, void* data) 
     StateEntry entry;
     memset(&entry, 0, sizeof(entry));
     entry.id = strdup(slot->key);
-    DecodeStateEntry(value, &entry);
+    const bool decoded = DecodeStateEntry(value, value_len, &entry);
     free(value);
+
+    if (!decoded) {
+      LOG_WARN("skipping unreadable state entry for '%s'", slot->key);
+      StateEntryFree(&entry);
+      continue;
+    }
 
     const bool keep_going = visit(&entry, data);
     StateEntryFree(&entry);
@@ -122,12 +132,16 @@ bool StateStoreFlush(StateStore* store) {
 }
 
 void EncodeStateEntry(const StateEntry* entry, uint8_t** buff, size_t* length) {
-  const size_t size = StringEncodedSize(entry->kind) +          /* kind */
+  const size_t size = sizeof(uint32_t) +                        /* version */
+                      StringEncodedSize(entry->kind) +          /* kind */
+                      StringEncodedSize(entry->name) +          /* name */
                       sizeof(uint64_t) +                        /* hash */
                       StringEncodedSize(entry->observed_json) + /* observed_json */
                       sizeof(time_t) +                          /* applied_at */
                       sizeof(uint32_t) +                        /* last_status */
-                      1;                                        /* orphaned */
+                      1 +                                       /* orphaned */
+                      sizeof(size_t) + (entry->labels_len * sizeof(Label)) +           /* labels */
+                      sizeof(size_t) + (entry->annotations_len * sizeof(Annotation));  /* annotations */
   uint8_t* buf = (uint8_t*)calloc(size, sizeof(uint8_t));
   if (!buf) {
     LOG_ERROR("failed to encode StateEntry");
@@ -135,7 +149,12 @@ void EncodeStateEntry(const StateEntry* entry, uint8_t** buff, size_t* length) {
   }
 
   uint8_t* p = &buf[0];
+  const uint32_t version = STATE_ENTRY_ENCODING_VERSION;
+  memcpy(p, &version, sizeof(uint32_t));
+  p += sizeof(uint32_t);
+
   PutString(&p, entry->kind);
+  PutString(&p, entry->name);
 
   memcpy(p, &entry->hash, 8);
   p += 8;
@@ -152,24 +171,130 @@ void EncodeStateEntry(const StateEntry* entry, uint8_t** buff, size_t* length) {
   memcpy(p, &orphaned, 1);
   p += 1;
 
+  memcpy(p, &entry->labels_len, sizeof(size_t));
+  p += sizeof(size_t);
+  if (entry->labels_len > 0) {
+    memcpy(p, entry->labels, entry->labels_len * sizeof(Label));
+    p += entry->labels_len * sizeof(Label);
+  }
+
+  memcpy(p, &entry->annotations_len, sizeof(size_t));
+  p += sizeof(size_t);
+  if (entry->annotations_len > 0) {
+    memcpy(p, entry->annotations, entry->annotations_len * sizeof(Annotation));
+    p += entry->annotations_len * sizeof(Annotation);
+  }
+
   (*buff) = buf;
   (*length) = size;
 }
 
-void DecodeStateEntry(const uint8_t* buf, StateEntry* out) {
+bool DecodeStateEntry(const uint8_t* buf, size_t buf_len, StateEntry* out) {
   const uint8_t* p = buf;
-  out->kind = GetString(&p);
+  const uint8_t* end = buf + buf_len;
 
+#define FAIL(msg)                            \
+  do {                                        \
+    LOG_ERROR("failed to decode state entry: " msg); \
+    StateEntryFree(out);                      \
+    return false;                             \
+  } while (0)
+
+  if (!HasBytesRemaining(p, end, sizeof(uint32_t)))
+    FAIL("truncated (missing version)");
+  uint32_t version = 0;
+  memcpy(&version, p, sizeof(uint32_t));
+  p += sizeof(uint32_t);
+  if (version != STATE_ENTRY_ENCODING_VERSION)
+    FAIL("unsupported encoding version -- state store likely predates a schema change and needs clearing");
+
+  if (!GetStringChecked(&p, end, &out->kind))
+    FAIL("truncated (kind)");
+  if (!GetStringChecked(&p, end, &out->name))
+    FAIL("truncated (name)");
+
+  if (!HasBytesRemaining(p, end, 8))
+    FAIL("truncated (hash)");
   memcpy(&out->hash, p, 8);
   p += 8;
 
-  out->observed_json = GetString(&p);
+  if (!GetStringChecked(&p, end, &out->observed_json))
+    FAIL("truncated (observed_json)");
 
+  if (!HasBytesRemaining(p, end, sizeof(time_t)))
+    FAIL("truncated (applied_at)");
   memcpy(&out->applied_at, p, sizeof(time_t));
   p += sizeof(time_t);
 
+  if (!HasBytesRemaining(p, end, 4))
+    FAIL("truncated (last_status)");
   memcpy(&out->last_status, p, 4);
   p += 4;
 
+  if (!HasBytesRemaining(p, end, 1))
+    FAIL("truncated (orphaned)");
   out->orphaned = *p != 0;
+  p += 1;
+
+  if (!HasBytesRemaining(p, end, sizeof(size_t)))
+    FAIL("truncated (labels_len)");
+  memcpy(&out->labels_len, p, sizeof(size_t));
+  p += sizeof(size_t);
+  if (out->labels_len > 0) {
+    if (!HasBytesRemaining(p, end, out->labels_len * sizeof(Label)))
+      FAIL("truncated (labels)");
+    out->labels = (Label*)malloc(out->labels_len * sizeof(Label));
+    if (!out->labels)
+      FAIL("allocation failure (labels)");
+    memcpy(out->labels, p, out->labels_len * sizeof(Label));
+    p += out->labels_len * sizeof(Label);
+  } else {
+    out->labels = NULL;
+  }
+
+  if (!HasBytesRemaining(p, end, sizeof(size_t)))
+    FAIL("truncated (annotations_len)");
+  memcpy(&out->annotations_len, p, sizeof(size_t));
+  p += sizeof(size_t);
+  if (out->annotations_len > 0) {
+    if (!HasBytesRemaining(p, end, out->annotations_len * sizeof(Annotation)))
+      FAIL("truncated (annotations)");
+    out->annotations = (Annotation*)malloc(out->annotations_len * sizeof(Annotation));
+    if (!out->annotations)
+      FAIL("allocation failure (annotations)");
+    memcpy(out->annotations, p, out->annotations_len * sizeof(Annotation));
+    p += out->annotations_len * sizeof(Annotation);
+  } else {
+    out->annotations = NULL;
+  }
+
+#undef FAIL
+  return true;
+}
+
+typedef struct {
+  const char* kind;
+  const char* name;
+  char* found_id;
+} FindIdByNameContext;
+
+static bool VisitFindIdByName(const StateEntry* entry, void* data) {
+  FindIdByNameContext* ctx = (FindIdByNameContext*)data;
+  if (!entry->kind || !entry->name)
+    return true;  // keep looking
+
+  if (strcmp(entry->kind, ctx->kind) != 0 || strcmp(entry->name, ctx->name) != 0)
+    return true;  // keep looking
+
+  ctx->found_id = strdup(entry->id);
+  return false;  // stop, found it
+}
+
+char* StateStoreFindIdByName(StateStore* store, const char* kind, const char* name) {
+  if (!store || !kind || !name)
+    return NULL;
+
+  FindIdByNameContext ctx = {.kind = kind, .name = name, .found_id = NULL};
+  StateStoreVisitAll(store, VisitFindIdByName, &ctx);
+  return ctx.found_id;
 }

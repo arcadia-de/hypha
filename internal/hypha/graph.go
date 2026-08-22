@@ -11,10 +11,21 @@ bool goVisitResource(Resource* res, void* data);
 import "C"
 
 import (
+	"fmt"
 	"runtime"
 	"runtime/cgo"
 	"unsafe"
 )
+
+// formatResourceID renders a raw ResourceId (uuid_t, 16 bytes) as a
+// canonical 8-4-4-4-12 lowercase hex string, matching libuuid's uuid_unparse_lower.
+func formatResourceID(id [16]C.uchar) string {
+	var raw [16]byte
+	for i := 0; i < 16; i++ {
+		raw[i] = byte(id[i])
+	}
+	return fmt.Sprintf("%x-%x-%x-%x-%x", raw[0:4], raw[4:6], raw[6:8], raw[8:10], raw[10:16])
+}
 
 type ResourceGraph struct {
 	Handle *C.ResourceGraph
@@ -39,10 +50,11 @@ func goVisitResource(res *C.Resource, data unsafe.Pointer) C.bool {
 	}
 
 	goResource := Resource{
-		ID:    C.GoString(res.id),
+		ID:    formatResourceID(res.id),
 		Kind:  C.GoString(res.kind),
 		State: C.GoString(C.ResourceStateCStr(res.state)),
 		Metadata: ResourceMetadata{
+			Name:   C.GoString(res.info.name),
 			Labels: labels,
 		},
 	}

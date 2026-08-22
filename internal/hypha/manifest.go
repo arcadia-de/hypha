@@ -22,7 +22,6 @@ type ResourceMetadata struct {
 }
 
 type ResourceSpec struct {
-	ID        string           `json:"id,omitempty" yaml:"id,omitempty"`
 	Kind      string           `json:"kind" yaml:"kind"`
 	DependsOn []string         `json:"depends_on,omitempty" yaml:"depends_on,omitempty"`
 	Metadata  ResourceMetadata `json:"metadata" yaml:"metadata"`

@@ -10,6 +10,7 @@
 #include "hypha.h"
 #include "hypha/annotation.h"
 #include "hypha/label.h"
+#include "hypha/resource_id.h"
 #include "hypha/resource_state.h"
 
 typedef struct {
@@ -49,7 +50,7 @@ typedef struct {
 } ResourceStatus;
 
 struct _Resource {
-  char* id;  // TODO(@s0cks): replace with uuid_t
+  ResourceId id;
   char* kind;
   ResourceInfo info;
   ResourceState state;  // TODO(@s0cks): replace w/ status field usage
@@ -71,6 +72,11 @@ FOR_EACH_RESOURCE_STATE(DEFINE_STATE_CHECK)
 #undef DEFINE_STATE_CHECK
 
 bool ResourceHasId(const Resource* res, const char* id);
+
+// Matches a resource against a user-supplied reference that may be either its
+// name or its id. Name is checked first since that's what a person is expected
+// to type; id (uuid) is the fallback for machine/controller-supplied references.
+bool ResourceMatchesRef(const Resource* res, const char* ref);
 void ResourcePushLabel(Resource* res, const Label* label);
 bool ResourceHasLabel(const Resource* res, const Label* label);
 bool ResourceVisitLabels(const Resource* res, bool (*vis)(const Resource*, const uint64_t, const Label*));

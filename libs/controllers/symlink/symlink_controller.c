@@ -77,7 +77,9 @@ DEFINE_CONTROLLER_PLAN_FN(Symlink) {
   struct stat source_stat;
   if (stat(source, &source_stat) != 0) {
     PlannedAction* action = NewPlannedAction(pl);
-    action->id = strdup(desired->id);
+    ResourceIdStr id_str;
+    ResourceIdCStr(&desired->id, id_str);
+    action->id = strdup(id_str);
     action->action = kNoAction;
     clock_gettime(CLOCK_REALTIME, &action->timestamp);
     snprintf(action->reason, HYPHA_REASON_MAX_LENGTH, "source '%s' does not exist", source);

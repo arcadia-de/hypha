@@ -2,10 +2,13 @@
 
 #include "hypha.h"
 #include "hypha/query.h"
+#include "hypha/resource.h"
 #include "hypha/resource_query_schema.h"
 
 static FieldResolverResult ResourceFieldId(void* obj) {
-  return (FieldResolverResult){.kind = kQueryFieldResultScalar, .scalar = strdup(((Resource*)obj)->id)};
+  ResourceIdStr id_str;
+  ResourceIdCStr(&((Resource*)obj)->id, id_str);
+  return (FieldResolverResult){.kind = kQueryFieldResultScalar, .scalar = strdup(id_str)};
 }
 
 static FieldResolverResult ResourceFieldKind(void* obj) {
@@ -96,8 +99,12 @@ static RootResult ResolveResources(const QueryArg* args, void* context) {
     if (kind_filter && strcmp(res->kind, kind_filter) != 0)
       continue;
 
-    if (id_filter && strcmp(res->id, id_filter) != 0)
-      continue;
+    if (id_filter) {
+      ResourceIdStr id_str;
+      ResourceIdCStr(&res->id, id_str);
+      if (strcmp(id_str, id_filter) != 0)
+        continue;
+    }
 
     // if (label_filter && !ResourceHasLabel(res, label_filter))
     //   continue;

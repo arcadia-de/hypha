@@ -9,12 +9,12 @@ import (
 	"github.com/spf13/cobra"
 )
 
-func CreateDescribeFilter(kind string, ids []string) hypha.ResourceSelector {
+func CreateDescribeFilter(kind string, refs []string) hypha.ResourceSelector {
 	kindFilter := hypha.NewKindResourceSelector(kind)
-	idsFilter := hypha.NewIdsResourceSelector(ids)
+	refsFilter := hypha.NewRefsResourceSelector(refs)
 	return hypha.NewAndResourceSelector([]hypha.ResourceSelector{
 		kindFilter,
-		idsFilter,
+		refsFilter,
 	})
 }
 

@@ -1,7 +1,23 @@
 #include <xxhash.h>
 
+#include "hypha/name.h"
 #include "hypha/orchestrator.h"
+#include "hypha/resource_id.h"
 #include "orc.h"
+
+static inline void ResolveOrGenerateResourceId(StateStore* store, const char* kind, const char* name,
+                                                ResourceId* out) {
+  char* existing_id = (name && kind) ? StateStoreFindIdByName(store, kind, name) : NULL;
+  if (existing_id) {
+    // a resource with this (kind, name) has been applied before; keep its identity stable.
+    if (uuid_parse(existing_id, *out) != 0)
+      GenerateResourceId(out);  // malformed persisted id, fall back to a fresh one
+    free(existing_id);
+    return;
+  }
+
+  GenerateResourceId(out);
+}
 
 void OrchestratorAddResource(OrchestratorHandle handle, Resource* res) {
   if (!handle)
@@ -12,9 +28,10 @@ void OrchestratorAddResource(OrchestratorHandle handle, Resource* res) {
   ResourceInfo* source_info = &res->info;
   ResourceInfo* dest_info = &new_res->info;
 
-  new_res->id = strdup(res->id);
-  if (!new_res->id)
-    return;  // TODO(@s0cks): probably should reclaim the allocated id
+  const bool has_explicit_name = source_info->name && source_info->name[0] != '\0';
+  dest_info->name = has_explicit_name ? strdup(source_info->name) : GenerateDefaultResourceName(res->kind);
+
+  ResolveOrGenerateResourceId(orc->state, res->kind, dest_info->name, &new_res->id);
 
   new_res->kind = strdup(res->kind);
   if (!new_res->kind)

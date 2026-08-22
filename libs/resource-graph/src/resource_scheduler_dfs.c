@@ -35,11 +35,23 @@ static inline void FreeDfsSchedulerContext(DfsSchedulerContext* ctx) {
   FreeBitSet(&ctx->visited);
 }
 
-static inline ResourceGraphIndex FindResourceIndex(DfsSchedulerContext* ctx, const char* id) {
+static inline ResourceGraphIndex FindResourceIndex(DfsSchedulerContext* ctx, const char* ref) {
   ASSERT(ctx);
-  ASSERT(id);
+  ASSERT(ref);
+
+  // See resource_graph.c's FindResourceIndex: depends_on entries may be a name
+  // (expected) or an id (also allowed); id is tried first when it parses as one.
+  ResourceId needle;
+  if (uuid_parse(ref, needle) == 0) {
+    for (ResourceGraphIndex i = 0; i < ctx->num_resources; i++) {
+      if (uuid_compare(ctx->resources[i].id, needle) == 0)
+        return (ResourceGraphIndex)i;
+    }
+  }
+
   for (ResourceGraphIndex i = 0; i < ctx->num_resources; i++) {
-    if (strcmp(ctx->resources[i].id, id) == 0)
+    const char* name = ctx->resources[i].info.name;
+    if (name && strcmp(name, ref) == 0)
       return (ResourceGraphIndex)i;
   }
 
@@ -60,7 +72,9 @@ bool topological_sort_dfs(DfsSchedulerContext* ctx, ResourceGraphIndex node_idx,
   for (ResourceGraphIndex i = 0; i < res->num_depends_on; i++) {
     ResourceGraphIndex dep_idx = FindResourceIndex(ctx, res->depends_on[i]);
     if (dep_idx == kInvalidResourceIndex) {
-      LOG_ERROR("out-of-bounds dependency: '%s' relies on missing '%s'", res->id, res->depends_on[i]);
+      ResourceIdStr id_str;
+      ResourceIdCStr(&res->id, id_str);
+      LOG_ERROR("out-of-bounds dependency: '%s' relies on missing '%s'", id_str, res->depends_on[i]);
       return false;
     }
 
