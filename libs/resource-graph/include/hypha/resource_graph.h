@@ -20,6 +20,7 @@ uint64_t GetNumberOfResourcesInResourceGraph(ResourceGraph*);
 ResourceGraphIndex ResourceGraphGetAtOrderIndex(ResourceGraph* graph, const ResourceGraphIndex);
 bool DependenciesAreSatisfied(ResourceGraph* graph, Resource* res);
 bool ComputeExecutionSchedule(ResourceGraph* graph, const SchedulingStrategy strategy);
+const char* FindNameForResourceId(const ResourceGraph* gr, const uuid_t id);
 
 #define DECLARE_SCHEDULING_STRATEGY(Name) \
   bool ComputeSchedule##Name(const Resource* resources, const size_t num_resources, ResourceGraphIndex** order);

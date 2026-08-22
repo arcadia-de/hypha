@@ -1,13 +1,12 @@
 package cli
 
 import (
-	"charm.land/log/v2"
+	"fmt"
 	"github.com/spf13/cobra"
 )
 
-func handleStatus(cmd *cobra.Command, args []string) error {
-	log.Info("status is not implemented")
-	return nil
+func HandleStatus(cmd *cobra.Command, args []string) error {
+	return fmt.Errorf("status is not implemented")
 }
 
 func init() {
@@ -15,7 +14,7 @@ func init() {
 		Use:     "status",
 		Short:   "Show resource drift",
 		GroupID: "config",
-		RunE:    handleStatus,
+		RunE:    HandleStatus,
 	}
 
 	RootCmd.AddCommand(statusCommand)

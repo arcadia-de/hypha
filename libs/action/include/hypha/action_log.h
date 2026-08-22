@@ -13,7 +13,7 @@ extern "C" {
 typedef struct {
   uint32_t action;
   struct timespec timestamp;
-  char* id;
+  Resource* resource;
   Reason reason;
 } AppliedAction;
 
@@ -53,6 +53,7 @@ AppliedAction* NewAppliedAction(ActionLog* vl);
 void AppendAction(ActionLog* vl, AppliedAction* rhs);
 void AppendActionLog(ActionLog* vl, ActionLog* rhs);
 void VisitAllActions(ActionLog* vl, VisitActionFn fn, void* data);
+void SortActionLog(ActionLog* alog);
 void FreeActionLog(ActionLog* alog, const size_t init_cap);
 
 #ifdef __cplusplus

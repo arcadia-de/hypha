@@ -19,13 +19,13 @@ typedef void (*ControllerInitFn)(void* data);
 // de-init controller
 typedef void (*ControllerDeInitFn)(void* data);
 // discover changes
-typedef ControllerStatus (*ControllerObserveFn)(const Resource*, Resource*, void*);
+typedef ControllerStatus (*ControllerObserveFn)(const Resource* current, Resource* desired, void*);
 // normalize the changes with standardized metadata
 typedef ControllerStatus (*ControllerNormalizeFn)(const Resource*, void*);
 // reject malformed specs before planning
-typedef bool (*ControllerValidateFn)(const Resource*, ValidationLog* log, void*);
+typedef bool (*ControllerValidateFn)(Resource*, ValidationLog* log, void*);
 // compute the change set
-typedef ControllerAction (*ControllerPlanFn)(const Resource*, const Resource*, Plan*, void*);
+typedef ControllerAction (*ControllerPlanFn)(const Resource* current, Resource* desired, Plan*, void*);
 // execute the changes
 typedef ControllerStatus (*ControllerApplyFn)(const Resource*, const ControllerAction, void*);
 // remove the resources cleanly
@@ -48,7 +48,7 @@ typedef ControllerStatus (*ControllerRollbackFn)(const Resource*, void*);
   static inline ControllerStatus Name##Observe(const Resource* desired, Resource* out, void* data)
 
 #define DEFINE_CONTROLLER_PLAN_FN(Name) \
-  static inline ControllerAction Name##Plan(const Resource* current, const Resource* desired, Plan* pl, void* data)
+  static inline ControllerAction Name##Plan(const Resource* current, Resource* desired, Plan* pl, void* data)
 
 #define DEFINE_CONTROLLER_APPLY_FN(Name) \
   static inline ControllerStatus Name##Apply(const Resource* desired, const ControllerAction action, void* data)
@@ -60,7 +60,7 @@ typedef ControllerStatus (*ControllerRollbackFn)(const Resource*, void*);
   static inline ControllerStatus Name##Status(const Resource* current, void* data)
 
 #define DEFINE_CONTROLLER_VALIDATE_FN(Name) \
-  static inline bool Name##Validate(const Resource* desired, ValidationLog* vlog, void* data)
+  static inline bool Name##Validate(Resource* desired, ValidationLog* vlog, void* data)
 // clang-format on
 
 typedef struct {
@@ -91,10 +91,10 @@ const char* GetControllerKind(const Controller* ctrl);
 
 void ControllerInit(Controller*);
 void ControllerDeInit(Controller*);
-void ControllerObserve(Controller* ctrl, const Resource* desired, Resource* res);
-ControllerAction ControllerPlan(Controller* ctrl, const Resource* current, const Resource* desired, Plan* pl);
-ControllerStatus ControllerApply(Controller* ctrl, const Resource* current, const ControllerAction action);
-bool ControllerValidate(Controller* ctrl, const Resource* current, ValidationLog* vl);
+ControllerStatus ControllerObserve(Controller* ctrl, const Resource* current, Resource* desired);
+ControllerAction ControllerPlan(Controller* ctrl, const Resource* current, Resource* desired, Plan* pl);
+ControllerStatus ControllerApply(Controller* ctrl, const Resource* desired, const ControllerAction action);
+bool ControllerValidate(Controller* ctrl, Resource* current, ValidationLog* vl);
 ControllerStatus ControllerRollback(Controller* ctrl, const Resource* current);
 ControllerStatus ControllerDestroy(Controller* ctrl, const Resource* current);
 ControllerStatus ControllerDiff(Controller* ctrl, const Resource* current);

@@ -6,7 +6,7 @@ import (
 )
 
 func HandleLint(cmd *cobra.Command, args []string) error {
-	return fmt.Errorf("not implemented")
+	return fmt.Errorf("lint not implemented")
 }
 
 func init() {

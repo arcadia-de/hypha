@@ -1,13 +1,12 @@
 package cli
 
 import (
-	"charm.land/log/v2"
+	"fmt"
 	"github.com/spf13/cobra"
 )
 
-func handleAdopt(cmd *cobra.Command, args []string) error {
-	log.Info("adopt is not implemented")
-	return nil
+func HandleAdopt(cmd *cobra.Command, args []string) error {
+	return fmt.Errorf("adopt is not implemented")
 }
 
 func init() {
@@ -16,7 +15,7 @@ func init() {
 		Short:   "Adopt specific resources into the resource graph",
 		Args:    cobra.MinimumNArgs(1),
 		GroupID: "config",
-		RunE:    handleAdopt,
+		RunE:    HandleAdopt,
 	}
 
 	RootCmd.AddCommand(adoptCmd)

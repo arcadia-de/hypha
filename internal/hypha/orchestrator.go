@@ -26,6 +26,7 @@ import (
 	"strings"
 	"unsafe"
 
+	lg "charm.land/lipgloss/v2"
 	"github.com/google/go-jsonnet"
 	"github.com/spf13/viper"
 )
@@ -369,7 +370,8 @@ func (orc *Orchestrator) VisitDiscoveredManifests(vis DiscoveredManifestVisitor)
 
 type AppliedAction struct {
 	Action uint32
-	ID     string
+	Name   string
+	Kind   string
 	Reason string
 }
 
@@ -380,11 +382,15 @@ func goVisitAppliedActions(idx C.uint64_t, act *C.AppliedAction, data unsafe.Poi
 	handle := *(*cgo.Handle)(data)
 	vis := handle.Value().(AppliedActionVisitor)
 
+	goName := C.GoString(act.resource.info.name)
+	goKind := C.GoString(act.resource.kind)
+
 	rawReason := C.GoStringN(&act.reason[0], C.int(C.HYPHA_REASON_MAX_LENGTH))
 	goReason, _, _ := strings.Cut(rawReason, "\x00")
 	goAction := AppliedAction{
 		Action: uint32(act.action),
-		ID:     C.GoString(act.id),
+		Name:   goName,
+		Kind:   goKind,
 		Reason: goReason,
 	}
 	return C.bool(vis(uint64(idx), goAction))
@@ -395,7 +401,7 @@ func (orc *Orchestrator) VisitAppliedActions(vis AppliedActionVisitor) {
 	defer handle.Delete()
 
 	C.VisitAllActions(
-		C.OrchestratorGetActionLog(orc.Handle),
+		C.GetOrcActionLog(orc.Handle),
 		(C.VisitActionFn)(unsafe.Pointer(C.goVisitAppliedActions)),
 		unsafe.Pointer(&handle),
 	)
@@ -487,11 +493,88 @@ func (orc *Orchestrator) CollectGarbage() error {
 }
 
 func (orc *Orchestrator) PrintRuntimeInfo() {
-	C.OrchestratorPrintRuntimeInfo(orc.Handle)
+	fmt.Println()
+	rowStyle := lg.NewStyle().
+		MarginLeft(2)
+
+	fmt.Println(rowStyle.Render("Hypha Runtime Info:"))
+
+	rowStyle = rowStyle.MarginLeft(4)
+	goConfigDir := C.GoString(C.GetOrcConfigDir(orc.Handle))
+	goStateDir := C.GoString(C.GetOrcStateDir(orc.Handle))
+	goCacheDir := C.GoString(C.GetOrcCacheDir(orc.Handle))
+
+	keyStyle := lg.NewStyle().
+		Bold(true)
+
+	valueStyle := lg.NewStyle()
+	fmt.Println(rowStyle.Render(lg.JoinHorizontal(
+		lg.Left,
+		keyStyle.Render("Config Dir"),
+		": ",
+		valueStyle.Render(goConfigDir),
+	)))
+	fmt.Println(rowStyle.Render(lg.JoinHorizontal(
+		lg.Left,
+		keyStyle.Render("State Dir"),
+		": ",
+		valueStyle.Render(goStateDir),
+	)))
+	fmt.Println(rowStyle.Render(lg.JoinHorizontal(
+		lg.Left,
+		keyStyle.Render("Cache Dir"),
+		": ",
+		valueStyle.Render(goCacheDir),
+	)))
+
+	luaVersion := C.lua_version(C.GetOrcLuaState(orc.Handle))
+	fmt.Println(rowStyle.Render(lg.JoinHorizontal(
+		lg.Left,
+		keyStyle.Render("lua version"),
+		": ",
+		valueStyle.Render(fmt.Sprintf("%.1f", luaVersion)),
+	)))
+	goLibuvVersion := C.GoString(C.uv_version_string())
+	fmt.Println(rowStyle.Render(lg.JoinHorizontal(
+		lg.Left,
+		keyStyle.Render("libuv version"),
+		": ",
+		valueStyle.Render(goLibuvVersion),
+	)))
+	fmt.Println(rowStyle.Render(lg.JoinHorizontal(
+		lg.Left,
+		keyStyle.Render("Registered Controllers"),
+		":",
+	)))
+
+	ctrlRowStyle := rowStyle.
+		MarginLeft(6)
+	VisitControllers(func(ctrl Controller) bool {
+		fmt.Println(ctrlRowStyle.Render(
+			fmt.Sprintf("- %s", ctrl.Kind),
+		))
+		return true
+	})
+
+	manifestRowStyle := rowStyle.
+		MarginLeft(6)
+	fmt.Println(rowStyle.Render(lg.JoinHorizontal(
+		lg.Left,
+		keyStyle.Render("Discovered Manifests"),
+		":",
+	)))
+	orc.VisitDiscoveredManifests(func(idx uint64, manifest DiscoveredManifest) bool {
+		fmt.Println(manifestRowStyle.Render(
+			fmt.Sprintf("- %s", manifest.Value),
+		))
+		return true
+	})
+
+	fmt.Println()
 }
 
 func (orc *Orchestrator) GetPlan() *Plan {
-	cHandle := C.GetOrchestratorPlan(orc.Handle)
+	cHandle := C.GetOrcPlan(orc.Handle)
 	if cHandle == nil {
 		return nil
 	}
@@ -502,7 +585,7 @@ func (orc *Orchestrator) GetPlan() *Plan {
 }
 
 func (orc *Orchestrator) GetValidationLog() ValidationLog {
-	return GetValidationLog(C.OrchestratorGetValidationLog(orc.Handle))
+	return GetValidationLog(C.GetOrcValidationLog(orc.Handle))
 }
 
 func (orc *Orchestrator) ProcessDiscoveredManifests() {
@@ -535,6 +618,6 @@ func (orc *Orchestrator) ProcessDiscoveredManifests() {
 
 func (orc *Orchestrator) GetResourceGraph() ResourceGraph {
 	return ResourceGraph{
-		Handle: C.OrchestratorGetResourceGraph(orc.Handle),
+		Handle: C.GetOrcResourceGraph(orc.Handle),
 	}
 }

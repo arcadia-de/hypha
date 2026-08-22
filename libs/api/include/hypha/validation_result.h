@@ -24,6 +24,7 @@ typedef enum {
 
 typedef struct {
   ValidationResultKind kind;
+  Resource* resource;
   Reason reason;
 } ValidationResult;
 

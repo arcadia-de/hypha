@@ -10,7 +10,7 @@ static inline void InitRegData(lua_State* L, Orchestrator* orc) {
   lua_pushlightuserdata(L, orc);
   lua_setfield(L, LUA_REGISTRYINDEX, LUA_REGISTRY_ORC_KEY);
 
-  lua_pushlightuserdata(L, OrchestratorGetEventBus(orc));
+  lua_pushlightuserdata(L, GetOrcEventBus(orc));
   lua_setfield(L, LUA_REGISTRYINDEX, LUA_REGISTRY_EVENTS_KEY);
 }
 
@@ -48,7 +48,7 @@ finished:
   return L;
 }
 
-#define L OrchestratorGetLuaState(handle)
+#define L GetOrcLuaState(handle)
 
 bool OrchestratorEvalExpr(OrchestratorHandle handle, const char* expr, char** err) {
   ASSERT(handle);

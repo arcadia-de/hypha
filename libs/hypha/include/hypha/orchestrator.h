@@ -22,13 +22,17 @@ typedef struct {
 } OrchestratorConfig;
 
 OrchestratorHandle NewOrchestrator(OrchestratorConfig config);
-ResourceGraph* OrchestratorGetResourceGraph(OrchestratorHandle);
-HistoryLog* OrchestratorGetHistoryLog(OrchestratorHandle);
-lua_State* OrchestratorGetLuaState(OrchestratorHandle);
-EventRoute* GetOrchestratorRootEventRoute(OrchestratorHandle);
-EventBus* OrchestratorGetEventBus(OrchestratorHandle);
-ValidationLog* OrchestratorGetValidationLog(OrchestratorHandle);
-ActionLog* OrchestratorGetActionLog(OrchestratorHandle);
+ResourceGraph* GetOrcResourceGraph(OrchestratorHandle);
+HistoryLog* GetOrcHistoryLog(OrchestratorHandle);
+lua_State* GetOrcLuaState(OrchestratorHandle);
+EventRoute* GetOrcRootEventRoute(OrchestratorHandle);
+EventBus* GetOrcEventBus(OrchestratorHandle);
+ValidationLog* GetOrcValidationLog(OrchestratorHandle);
+ActionLog* GetOrcActionLog(OrchestratorHandle);
+Plan* GetOrcPlan(OrchestratorHandle);
+const char* GetOrcConfigDir(OrchestratorHandle);
+const char* GetOrcStateDir(OrchestratorHandle);
+const char* GetOrcCacheDir(OrchestratorHandle);
 
 void OrchestratorAddResource(OrchestratorHandle, Resource*);
 void OrchestratorSubscribe(OrchestratorHandle, const char* p, EventCallbackFn cb, void* data, void (*free_data)(void*));
@@ -40,7 +44,6 @@ bool OrchestratorEvalExpr(OrchestratorHandle, const char* expr, char** err);
 bool OrchestratorEvalFile(OrchestratorHandle, const char* filename, char** err);
 void FreeOrchestrator(OrchestratorHandle);
 void OrchestratorPrintRuntimeInfo(OrchestratorHandle);
-Plan* GetOrchestratorPlan(OrchestratorHandle);
 
 typedef bool (*VisitDiscoveredManifestFn)(const uint64_t, DiscoveredManifest*, void*);
 void VisitDiscoveredManifests(OrchestratorHandle, VisitDiscoveredManifestFn, void* data);

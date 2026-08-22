@@ -132,16 +132,16 @@ bool StateStoreFlush(StateStore* store) {
 }
 
 void EncodeStateEntry(const StateEntry* entry, uint8_t** buff, size_t* length) {
-  const size_t size = sizeof(uint32_t) +                        /* version */
-                      StringEncodedSize(entry->kind) +          /* kind */
-                      StringEncodedSize(entry->name) +          /* name */
-                      sizeof(uint64_t) +                        /* hash */
-                      StringEncodedSize(entry->observed_json) + /* observed_json */
-                      sizeof(time_t) +                          /* applied_at */
-                      sizeof(uint32_t) +                        /* last_status */
-                      1 +                                       /* orphaned */
-                      sizeof(size_t) + (entry->labels_len * sizeof(Label)) +           /* labels */
-                      sizeof(size_t) + (entry->annotations_len * sizeof(Annotation));  /* annotations */
+  const size_t size = sizeof(uint32_t) +                                              /* version */
+                      StringEncodedSize(entry->kind) +                                /* kind */
+                      StringEncodedSize(entry->name) +                                /* name */
+                      sizeof(uint64_t) +                                              /* hash */
+                      StringEncodedSize(entry->observed_json) +                       /* observed_json */
+                      sizeof(time_t) +                                                /* applied_at */
+                      sizeof(uint32_t) +                                              /* last_status */
+                      1 +                                                             /* orphaned */
+                      sizeof(size_t) + (entry->labels_len * sizeof(Label)) +          /* labels */
+                      sizeof(size_t) + (entry->annotations_len * sizeof(Annotation)); /* annotations */
   uint8_t* buf = (uint8_t*)calloc(size, sizeof(uint8_t));
   if (!buf) {
     LOG_ERROR("failed to encode StateEntry");
@@ -193,11 +193,11 @@ bool DecodeStateEntry(const uint8_t* buf, size_t buf_len, StateEntry* out) {
   const uint8_t* p = buf;
   const uint8_t* end = buf + buf_len;
 
-#define FAIL(msg)                            \
-  do {                                        \
+#define FAIL(msg)                                    \
+  do {                                               \
     LOG_ERROR("failed to decode state entry: " msg); \
-    StateEntryFree(out);                      \
-    return false;                             \
+    StateEntryFree(out);                             \
+    return false;                                    \
   } while (0)
 
   if (!HasBytesRemaining(p, end, sizeof(uint32_t)))

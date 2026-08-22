@@ -58,7 +58,7 @@ func (orc *Orchestrator) HistoryReplay(vis HistoryRecordVisitor) {
 	defer handle.Delete()
 
 	C.HistoryLogReplay(
-		C.OrchestratorGetHistoryLog(orc.Handle),
+		C.GetOrcHistoryLog(orc.Handle),
 		(C.HistoryLogVisitFn)(unsafe.Pointer(C.goHistoryLogVisit)),
 		unsafe.Pointer(&handle),
 	)

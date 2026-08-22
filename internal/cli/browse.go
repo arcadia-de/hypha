@@ -9,7 +9,7 @@ import (
 	"github.com/spf13/viper"
 )
 
-func handleBrowse(cmd *cobra.Command, args []string) error {
+func HandleBrowse(cmd *cobra.Command, args []string) error {
 	web := viper.GetBool("web")
 
 	if web {
@@ -36,7 +36,7 @@ func init() {
 		Use:     "browse",
 		Short:   "Open a read-only interactive browser session",
 		GroupID: "inspection",
-		RunE:    handleBrowse,
+		RunE:    HandleBrowse,
 	}
 	browseCmd.Flags().BoolP("web", "w", false, "Serve the web dashboard")
 	browseCmd.Flags().BoolP("open", "", true, "Open the web dashboard")

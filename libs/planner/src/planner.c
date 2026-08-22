@@ -91,9 +91,6 @@ void AppendPlannedAction(Plan* pl, PlannedAction* action) {
 static inline void FreePlannedAction(PlannedAction* action) {
   if (!action)
     return;
-
-  if (action->id)
-    free(action->id);
 }
 
 void FreePlan(Plan* pl) {

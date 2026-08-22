@@ -19,15 +19,15 @@ DEFINE_CONTROLLER_VALIDATE_FN(Test) {
   ValidationResult* vr = NewValidationResult(vlog);
   ASSERT(vr);
   vr->kind = kValidationWarning;
+  vr->resource = desired;
   snprintf(vr->reason, HYPHA_REASON_MAX_LENGTH, "This message always exists for Test resources");
   return true;
 }
 
 DEFINE_CONTROLLER_PLAN_FN(Test) {
+  ASSERT(desired);
   PlannedAction* new_action = NewPlannedAction(pl);
-  ResourceIdStr id_str;
-  ResourceIdCStr(&desired->id, id_str);
-  new_action->id = strdup(id_str);
+  new_action->resource = desired;
   new_action->action = kCreateAction;
   clock_gettime(CLOCK_REALTIME, &new_action->timestamp);
   snprintf(new_action->reason, HYPHA_REASON_MAX_LENGTH, "Test resources are always created");

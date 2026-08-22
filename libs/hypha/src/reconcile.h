@@ -12,6 +12,7 @@ typedef struct {
   uv_work_t work;
 
   Orchestrator* orc;
+  OrchestratorRunMode mode;
   ResourceGraphIndex index;
   Controller* ctrl;
   Resource observed;
@@ -24,11 +25,9 @@ typedef struct {
   ValidationLog vlog;
 } ReconcileTask;
 
-OrchestratorRunMode GetReconcileTaskRunMode(ReconcileTask* rhs);
-
-#define DEFINE_RUN_MODE_CHECK(Name)                                   \
-  static inline bool Is##Name##ReconcileTask(ReconcileTask* rhs) {    \
-    return GetReconcileTaskRunMode(rhs) == kOrchestrator##Name##Mode; \
+#define DEFINE_RUN_MODE_CHECK(Name)                                \
+  static inline bool Is##Name##ReconcileTask(ReconcileTask* rhs) { \
+    return rhs && rhs->mode == kOrchestrator##Name##Mode;          \
   }
 
 FOR_EACH_ORCHESTRATOR_RUN_MODE(DEFINE_RUN_MODE_CHECK)

@@ -26,7 +26,9 @@ func getLabelsAndAnnotations() ([]string, []hypha.ResourceAnnotation, error) {
 	return labels, annotations, nil
 }
 
-func handleGenerate(kind string, args []string) error {
+func HandleGenerate(kind string, args []string) error {
+	_ = args
+
 	format := viper.GetString("format")
 	name := viper.GetString("name")
 
@@ -69,7 +71,7 @@ func createGenResourceCommand(kind string) *cobra.Command {
 		},
 		Short: fmt.Sprintf("Generate a %s manifest", hypha.Capitalize(kind)),
 		RunE: func(cmd *cobra.Command, args []string) error {
-			return handleGenerate(kind, args)
+			return HandleGenerate(kind, args)
 		},
 	}
 

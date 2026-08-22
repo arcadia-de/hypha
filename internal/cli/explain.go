@@ -1,13 +1,12 @@
 package cli
 
 import (
-	"charm.land/log/v2"
+	"fmt"
 	"github.com/spf13/cobra"
 )
 
-func handleExplain(cmd *cobra.Command, args []string) error {
-	log.Info("explain is not implemented")
-	return nil
+func HandleExplain(cmd *cobra.Command, args []string) error {
+	return fmt.Errorf("explain is not implemented")
 }
 
 func init() {
@@ -16,7 +15,7 @@ func init() {
 		Short:   "Explain why a resource exists",
 		Args:    cobra.ExactArgs(1),
 		GroupID: "inspection",
-		RunE:    handleExplain,
+		RunE:    HandleExplain,
 	}
 
 	RootCmd.AddCommand(explainCmd)

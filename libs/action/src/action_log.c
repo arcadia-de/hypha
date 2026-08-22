@@ -66,6 +66,11 @@ void VisitAllActions(ActionLog* alog, VisitActionFn fn, void* data) {
   }
 }
 
+void SortActionLog(ActionLog* alog) {
+  ASSERT(alog);
+  qsort(alog->actions, alog->actions_len, sizeof(AppliedAction), &CompareAppliedAction);
+}
+
 void FreeActionLog(ActionLog* alog, const size_t init_cap) {
   ASSERT(alog);
   if (alog->actions)

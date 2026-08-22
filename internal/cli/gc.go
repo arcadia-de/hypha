@@ -6,7 +6,7 @@ import (
 	"github.com/spf13/cobra"
 )
 
-func handleGc(cmd *cobra.Command, args []string) error {
+func HandleGc(cmd *cobra.Command, args []string) error {
 	orc, err := hypha.NewOrchestratorWithDefaultConfig()
 	if err != nil {
 		return fmt.Errorf("failed to create new Orchestrator with default config: %v", err)
@@ -26,7 +26,7 @@ func init() {
 		Use:     "gc",
 		Short:   "Cleanup orphaned resources",
 		GroupID: "config",
-		RunE:    handleGc,
+		RunE:    HandleGc,
 	}
 	gcCmd.Flags().BoolP("dry-run", "", false, "Do not actually do anything just print")
 

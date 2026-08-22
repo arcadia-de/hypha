@@ -45,10 +45,10 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 }
 
 const (
-	idWidth        = 10
+	idWidth        = 20
 	kindWidth      = 10
 	appliedAtWidth = 15
-	actionWidth    = 10
+	actionWidth    = 14
 	statusWidth    = 10
 )
 

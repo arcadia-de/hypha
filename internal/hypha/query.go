@@ -67,7 +67,7 @@ func ParseResultNode(node *C.QueryResult) any {
 // cPtr := (*C.char)(unsafe.Pointer(unsafe.StringData(goStr)))
 // cLen := C.int(len(goStr))
 func (orc *Orchestrator) Query(query string) (any, error) {
-	cResourceGraph := C.OrchestratorGetResourceGraph(orc.Handle)
+	cResourceGraph := C.GetOrcResourceGraph(orc.Handle)
 	if cResourceGraph == nil {
 		return nil, fmt.Errorf("orchestrator has no resource graph")
 	}

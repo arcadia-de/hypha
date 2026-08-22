@@ -45,7 +45,7 @@ LUA_FN(query) {
 
   lua_getfield(L, LUA_REGISTRYINDEX, LUA_REGISTRY_ORC_KEY);
   Orchestrator* orc = (Orchestrator*)lua_touserdata(L, -1);
-  ResourceGraph* graph = OrchestratorGetResourceGraph(orc);
+  ResourceGraph* graph = GetOrcResourceGraph(orc);
 
   if (!graph) {
     lua_pushnil(L);

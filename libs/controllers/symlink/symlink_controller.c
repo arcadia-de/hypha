@@ -1,16 +1,18 @@
 #include "symlink_controller.h"
 
-#include <bits/time.h>
 #include <errno.h>
 #include <jansson.h>
 #include <linux/limits.h>
 #include <stdio.h>
 #include <sys/stat.h>
+#include <time.h>
 #include <unistd.h>
 
 #include "hypha.h"
 #include "hypha/expander.h"
 #include "hypha/log.h"
+#include "hypha/planned_action.h"
+#include "hypha/planner.h"
 #include "hypha/validation_log.h"
 
 static inline bool GetSpecField(const Resource* res, const char* field, char** result, size_t* result_len) {
@@ -26,18 +28,14 @@ DEFINE_CONTROLLER_VALIDATE_FN(Symlink) {
   size_t source_len = 0;
   if (!GetSpecField(desired, "source", &source, &source_len)) {
     valid = false;
-    ValidationResult* new_result = NewValidationResult(vlog);
-    new_result->kind = kValidationFailed;
-    snprintf(new_result->reason, HYPHA_REASON_MAX_LENGTH, "failed to get 'source' field");
+    NewFailedValidationResult(vlog, desired, "failed to get `source` spec field");
   }
 
   char* target = NULL;
   size_t target_len = 0;
   if (!GetSpecField(desired, "target", &target, &target_len)) {
-    ValidationResult* new_result = NewValidationResult(vlog);
     valid = false;
-    new_result->kind = kValidationFailed;
-    snprintf(new_result->reason, HYPHA_REASON_MAX_LENGTH, "failed to get 'target' field");
+    NewFailedValidationResult(vlog, desired, "failed to get `target` spec field");
   }
 
   return valid;
@@ -61,14 +59,15 @@ DEFINE_CONTROLLER_OBSERVE_FN(Symlink) {
     LOG_ERROR("failed to get target field");
     return kStatusInternalError;
   }
+
   return kStatusOk;
 }
 
 DEFINE_CONTROLLER_PLAN_FN(Symlink) {
   ASSERT(desired);
+
   json_t* doc = desired->spec.doc;
   ASSERT(doc);
-  ControllerAction action = kNoAction;
 
   char* source = NULL;
   size_t source_len = 0;
@@ -76,14 +75,9 @@ DEFINE_CONTROLLER_PLAN_FN(Symlink) {
 
   struct stat source_stat;
   if (stat(source, &source_stat) != 0) {
-    PlannedAction* action = NewPlannedAction(pl);
-    ResourceIdStr id_str;
-    ResourceIdCStr(&desired->id, id_str);
-    action->id = strdup(id_str);
-    action->action = kNoAction;
-    clock_gettime(CLOCK_REALTIME, &action->timestamp);
-    snprintf(action->reason, HYPHA_REASON_MAX_LENGTH, "source '%s' does not exist", source);
-    goto finished;
+    PlannedAction* action = NewNoPlannedAction(pl, desired, "source `%s` does not exist", source);
+    ASSERT(action);
+    return kNoAction;
   }
 
   char* target = NULL;
@@ -94,48 +88,36 @@ DEFINE_CONTROLLER_PLAN_FN(Symlink) {
   if (lstat(target, &target_stat) == 0) {
     if (S_ISLNK(target_stat.st_mode)) {
       // snprintf(message, HYPHA_REASON_MAX_LENGTH, "target '%s' exists and is a symlink", target);
-      goto finished;
     }
 
     // snprintf(message, HYPHA_REASON_MAX_LENGTH, "target %s exists but is not a symlink", target);
-    goto finished;
   }
 
   // snprintf(message, HYPHA_REASON_MAX_LENGTH, "target %s does not exist", target);
-  action = kCreateAction;
-finished:
-  return action;
+  return kCreateAction;
 }
 
 DEFINE_CONTROLLER_APPLY_FN(Symlink) {
-  ASSERT(desired);
-  json_t* doc = desired->spec.doc;
-  ASSERT(doc);
-  ControllerStatus status = kStatusInternalError;
-
   char* source = NULL;
   size_t source_len = 0;
   if (!GetSpecField(desired, "source", &source, &source_len)) {
     LOG_ERROR("failed to get source field");
-    goto finished;
+    return kStatusInternalError;
   }
 
   char* target = NULL;
   size_t target_len = 0;
   if (!GetSpecField(desired, "target", &target, &target_len)) {
     LOG_ERROR("failed to get target field");
-    goto finished;
+    return kStatusInternalError;
   }
 
   if (symlink(source, target) != 0) {
     LOG_ERROR("failed to create symlink from '%s' to '%s': %s", source, target, strerror(errno));
-    status = kStatusInternalError;
-    goto finished;
+    return kStatusInternalError;
   }
 
-  status = kStatusOk;
-finished:
-  return status;
+  return kStatusOk;
 }
 
 DEFINE_CONTROLLER_STATUS_FN(Symlink) {

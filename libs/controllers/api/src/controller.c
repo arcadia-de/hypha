@@ -92,23 +92,25 @@ Controller* GetControllerAt(const uint32_t i) {
   return &controllers[i];
 }
 
-void ControllerObserve(Controller* ctrl, const Resource* desired, Resource* res) {
+ControllerStatus ControllerObserve(Controller* ctrl, const Resource* observed, Resource* desired) {
 #ifdef HYPHA_ENABLE_PROFILING
   TracyCZone(ctx, 1);
   TracyCZoneName(ctx, "ControllerObserve", 17);
   TracyCZoneText(ctx, GetControllerKind(ctrl), strlen(GetControllerKind(ctrl)));
 #endif  // HYPHA_ENABLE_PROFILING
-  if (!desired || !res || !ctrl || !ctrl->config.observe)
+  ControllerStatus status = kStatusInternalError;
+  if (!desired || !desired || !ctrl || !ctrl->config.observe)
     goto finished;
 
-  ctrl->config.observe(desired, res, ctrl->data);
+  status = ctrl->config.observe(observed, desired, ctrl->data);
 finished:
 #ifdef HYPHA_ENABLE_PROFILING
   TracyCZoneEnd(ctx);
 #endif  // HYPHA_ENABLE_PROFILING
+  return status;
 }
 
-ControllerAction ControllerPlan(Controller* ctrl, const Resource* current, const Resource* desired, Plan* pl) {
+ControllerAction ControllerPlan(Controller* ctrl, const Resource* current, Resource* desired, Plan* pl) {
 #ifdef HYPHA_ENABLE_PROFILING
   TracyCZone(ctx, 1);
   TracyCZoneName(ctx, "ControllerPlan", 14);
@@ -127,7 +129,7 @@ finished:
   return result;
 }
 
-ControllerStatus ControllerApply(Controller* ctrl, const Resource* current, const ControllerAction action) {
+ControllerStatus ControllerApply(Controller* ctrl, const Resource* desired, const ControllerAction action) {
 #ifdef HYPHA_ENABLE_PROFILING
   TracyCZone(ctx, 1);
   TracyCZoneName(ctx, "ControllerApply", 15);
@@ -135,10 +137,10 @@ ControllerStatus ControllerApply(Controller* ctrl, const Resource* current, cons
 #endif  // HYPHA_ENABLE_PROFILING
   ControllerStatus status = kStatusOk;
 
-  if (!current || !ctrl || !ctrl->config.apply || action == kNoAction)
+  if (!desired || !ctrl || !ctrl->config.apply || action == kNoAction)
     goto finished;
 
-  status = ctrl->config.apply(current, action, ctrl->data);
+  status = ctrl->config.apply(desired, action, ctrl->data);
 finished:
 #ifdef HYPHA_ENABLE_PROFILING
   TracyCZoneEnd(ctx);
@@ -165,7 +167,7 @@ finished:
   return status;
 }
 
-bool ControllerValidate(Controller* ctrl, const Resource* desired, ValidationLog* vl) {
+bool ControllerValidate(Controller* ctrl, Resource* desired, ValidationLog* vl) {
 #ifdef HYPHA_ENABLE_PROFILING
   TracyCZone(ctx, 1);
   TracyCZoneName(ctx, "ControllerValidate", 18);

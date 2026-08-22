@@ -163,8 +163,9 @@ static inline const char* ControllerActionToCString(const ControllerAction rhs) 
 #define FOR_EACH_ORCHESTRATOR_RUN_MODE(V) \
   V(Plan)                                 \
   V(Diff)                                 \
-  V(Destroy)                              \
-  V(Apply)
+  V(Validate)                             \
+  V(Apply)                                \
+  V(Destroy)
 
 // clang-format off
 typedef enum {

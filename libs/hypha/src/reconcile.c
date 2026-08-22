@@ -1,8 +1,10 @@
 #include "reconcile.h"
 
+#include "hypha.h"
 #include "hypha/log.h"
 #include "hypha/orchestrator.h"
 #include "hypha/planner.h"
+#include "hypha/resource.h"
 #include "hypha/resource_graph.h"
 #include "hypha/validation_log.h"
 #include "orc.h"
@@ -42,52 +44,74 @@ static inline void MaybeFinishReconciliation(Orchestrator* orc) {
   OrchestratorPublish(orc, RECONCILE_FINISHED_EVENT, NewReconcileFinishedEvent(status));
 }
 
-static inline bool Validate(Controller* ctrl, const Resource* desired, ValidationLog* vlog) {
-  const bool result = ControllerValidate(ctrl, desired, vlog);
-  if (!result) {
-    ResourceIdStr id_str;
-    ResourceIdCStr(&desired->id, id_str);
-    LOG_ERROR("validation failed for `%s`", id_str);
-  }
-  return result;
-}
-
 static inline void ReconcileWork(uv_work_t* req) {
   ReconcileTask* task = container_of(req, ReconcileTask, work);
   Controller* ctrl = task->ctrl;
-  Resource* observed = &task->observed;
-  memset(observed, 0, sizeof(Resource));
   Resource* desired = GetResourceInGraph(task->orc->graph, task->index);
 
+  Resource* observed = &task->observed;
+  memset(observed, 0, sizeof(Resource));
+
   if (desired->spec.raw) {
-    json_error_t err;
-    json_t* doc = json_loads(desired->spec.raw, 0, &err);
-    if (!doc) {
-      LOG_ERROR("invalid spec doc:\n%s", desired->spec.raw);
-      LOG_ERROR("error on line %d: %s", err.line, err.text);
-      return;
+    {
+      json_error_t err;
+      json_t* doc = json_loads(desired->spec.raw, 0, &err);
+      if (!doc) {
+        LOG_ERROR("invalid spec doc:\n%s", desired->spec.raw);
+        LOG_ERROR("error on line %d: %s", err.line, err.text);
+        return;
+      }
+      desired->spec.doc = doc;
     }
 
-    desired->spec.doc = doc;
+    observed->spec.raw = strdup(desired->spec.raw);
+    {
+      json_error_t err;
+      json_t* doc = json_loads(observed->spec.raw, 0, &err);
+      if (!doc) {
+        LOG_ERROR("invalid spec doc:\n%s", observed->spec.raw);
+        LOG_ERROR("error on line %d: %s", err.line, err.text);
+        return;
+      }
+      observed->spec.doc = doc;
+    }
   }
+  ASSERT(desired->spec.doc);
 
   ResourceIdStr desired_id_str;
   ResourceIdCStr(&desired->id, desired_id_str);
   SetLogResourceContext(desired_id_str, desired->kind);
-  ControllerObserve(ctrl, desired, observed);
+  {
+    {
+      const ControllerStatus status = ControllerObserve(ctrl, observed, desired);
+      if (status != kStatusOk)
+        goto finished;
+    }
 
-  if (!Validate(ctrl, desired, &task->vlog))
-    goto finished;
-  task->action = ControllerPlan(ctrl, observed, desired, &task->plan);
-  if (IsApplyReconcileTask(task))
-    task->status = ControllerApply(ctrl, desired, task->action);
+    if (!ControllerValidate(ctrl, desired, &task->vlog))
+      goto finished;
+    if (IsValidateReconcileTask(task))
+      goto finished;
 
+    task->action = ControllerPlan(ctrl, observed, desired, &task->plan);
+    if (IsPlanReconcileTask(task))
+      goto finished;
+    if (task->action == kNoAction)
+      goto finished;
+
+    if (IsApplyReconcileTask(task))
+      task->status = ControllerApply(ctrl, desired, task->action);
+  }
 finished:
   ClearLogResourceContext();
 
   if (desired->spec.doc)
     json_decref(desired->spec.doc);
   desired->spec.doc = NULL;
+
+  if (observed->spec.doc)
+    json_decref(observed->spec.doc);
+  observed->spec.doc = NULL;
 }
 
 static inline void WriteResourceState(Orchestrator* orc, const Resource* res) {
@@ -113,7 +137,6 @@ static inline void WriteResourceState(Orchestrator* orc, const Resource* res) {
   free(entry.id);
   free(entry.kind);
   free(entry.name);
-  // entry.labels/entry.annotations/entry.observed_json alias res's storage; not owned here.
 }
 
 static inline void WriteHistory(Orchestrator* orc, const Resource* res, const ControllerAction action,
@@ -150,7 +173,8 @@ static inline void ReconcileAfterWork(uv_work_t* req, int status) {
   AppendPlan(&orc->plan, &task->plan);
   if (IsApplyReconcileTask(task)) {
     AppliedAction* action = NewAppliedAction(&orc->actions);
-    action->id = strdup(res_id_str);
+    ASSERT(action);
+    action->resource = res;
     memcpy(action->reason, task->reason, sizeof(Reason));
     action->action = task->action;
     memcpy(&action->timestamp, &task->start, sizeof(struct timespec));
@@ -161,8 +185,7 @@ static inline void ReconcileAfterWork(uv_work_t* req, int status) {
     orc->run.success = false;
   } else {
     res->state = (task->status == kStatusOk) ? kResourceReady : kResourceFailed;
-    if (res->state == kResourceFailed)
-      orc->run.success = false;
+    orc->run.success = (task->status == kStatusOk);
   }
 
   WriteResourceState(orc, res);
@@ -216,11 +239,13 @@ void QueueReconcileTask(Orchestrator* orc, Controller* ctrl, const ResourceGraph
               "failed to get last state store value for: %s (%s)", id_str, res->kind);
   task->orc = orc;
   clock_gettime(CLOCK_REALTIME, &task->start);
+  task->mode = orc->run.mode;
   task->index = index;
   task->ctrl = ctrl;
   task->action = kNoAction;
   task->status = kStatusOk;
   memset(&task->observed, 0, sizeof(Resource));
+  InitPlan(&task->plan, 3);
   InitValidationLog(&task->vlog, 3);
 
   uv_queue_work(orc->loop, &task->work, ReconcileWork, ReconcileAfterWork);

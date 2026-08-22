@@ -75,24 +75,15 @@ static inline bool OnGraphSubmitted(const char* p, const void* event, void* data
     goto finished;
   }
 
-  fprintf(stdout, "order: ");
-  for (ResourceGraphIndex i = 0; i < GetNumberOfResourcesInResourceGraph(orc->graph); i++) {
-    fprintf(stdout, "%lu", ResourceGraphGetAtOrderIndex(orc->graph, i));
-  }
-  fprintf(stdout, "\n");
-
   if (IsResourceGraphEmpty(orc->graph)) {
     OrchestratorPublish(orc, RECONCILE_COMPLETE_EVENT, NewReconcileCompleteEvent(kStatusOk));
     goto finished;
   }
 
-  const size_t num_resources = GetNumberOfResourcesInResourceGraph(orc->graph);
+  const size_t num_resources = GetNumberOfResourcesInResourceGraph(orc->graph) + 1;
   InitValidationLog(&orc->vlog, num_resources);
-  if (orc->run.mode == kOrchestratorPlanMode) {
-    InitPlan(&orc->plan, num_resources);
-  } else if (orc->run.mode == kOrchestratorApplyMode) {
-    InitActionLog(&orc->actions, num_resources + 1);
-  }
+  InitPlan(&orc->plan, num_resources);
+  InitActionLog(&orc->actions, num_resources);
 
   DispatchReadyResources(orc);
 finished:

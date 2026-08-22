@@ -203,6 +203,34 @@ ResourceGraphIndex ResourceGraphGetAtOrderIndex(ResourceGraph* graph, const Reso
   return graph->execution_order[idx];
 }
 
+typedef struct {
+  uuid_t target;
+  Resource* value;
+} MatchResult;
+
+static inline bool MatchResourceToId(const ResourceGraphIndex idx, Resource* res, void* data) {
+  ASSERT(res);
+  MatchResult* result = (MatchResult*)data;
+  if (uuid_compare(res->id, result->target) != 0)
+    return true;  // skip
+
+  result->value = res;
+  return false;  // finish iterating
+}
+
+const char* FindNameForResourceId(const ResourceGraph* gr, const uuid_t id) {
+  ASSERT(gr);
+  MatchResult result;
+  uuid_copy(result.target, id);
+  VisitAllResources(gr, &MatchResourceToId, (void*)&result);
+
+  Resource* value = result.value;
+  if (!value)
+    return NULL;
+
+  return value->info.name;
+}
+
 Resource* GetResourceInGraph(ResourceGraph* rg, const uint64_t idx) {
   if (!rg || idx >= rg->count)
     return NULL;

@@ -23,37 +23,29 @@
 #include "orc.h"
 #include "reconcile.h"
 
-ValidationLog* OrchestratorGetValidationLog(OrchestratorHandle handle) {
-  return handle ? &((Orchestrator*)handle)->vlog : NULL;
-}
+#define __DEFINE_GETTER(Type, Name, Value)        \
+  Type* GetOrc##Name(OrchestratorHandle handle) { \
+    return handle ? (Value) : NULL;               \
+  }
 
-ActionLog* OrchestratorGetActionLog(OrchestratorHandle handle) {
-  return handle ? &((Orchestrator*)handle)->actions : NULL;
-}
+#define _DEFINE_GETTER(Type, Value) __DEFINE_GETTER(Type, Type, Value);
 
-ResourceGraph* OrchestratorGetResourceGraph(OrchestratorHandle handle) {
-  if (!handle)
-    return NULL;
-  return ((Orchestrator*)handle)->graph;
-}
+#define DEFINE_GETTER(Type, Field)  _DEFINE_GETTER(Type, &((Orchestrator*)handle)->Field)
 
-HistoryLog* OrchestratorGetHistoryLog(OrchestratorHandle handle) {
-  if (!handle)
-    return NULL;
-  return ((Orchestrator*)handle)->history;
-}
+_DEFINE_GETTER(ResourceGraph, ((Orchestrator*)handle)->graph);
+_DEFINE_GETTER(HistoryLog, ((Orchestrator*)handle)->history);
+_DEFINE_GETTER(EventBus, ((Orchestrator*)handle)->bus);
+__DEFINE_GETTER(const char, ConfigDir, ((Orchestrator*)handle)->config.root);
+__DEFINE_GETTER(const char, StateDir, ((Orchestrator*)handle)->config.state_dir);
+__DEFINE_GETTER(const char, CacheDir, ((Orchestrator*)handle)->config.cache_dir);
+DEFINE_GETTER(ValidationLog, vlog);
+DEFINE_GETTER(ActionLog, actions);
+__DEFINE_GETTER(lua_State, LuaState, ((Orchestrator*)handle)->L);
+DEFINE_GETTER(Plan, plan);
 
-lua_State* OrchestratorGetLuaState(OrchestratorHandle handle) {
-  return handle ? ((Orchestrator*)handle)->L : NULL;
-}
-
-EventBus* OrchestratorGetEventBus(OrchestratorHandle handle) {
-  return handle ? ((Orchestrator*)handle)->bus : NULL;
-}
-
-Plan* GetOrchestratorPlan(OrchestratorHandle handle) {
-  return handle ? &((Orchestrator*)handle)->plan : NULL;
-}
+#undef DEFINE_GETTER
+#undef _DEFINE_GETTER
+#undef __DEFINE_GETTER
 
 void GetOrchestratorMetrics(OrchestratorHandle handle, OrchestratorMetrics* out) {
   Orchestrator* orc = (Orchestrator*)handle;
@@ -132,9 +124,7 @@ bool OrchestratorRunWithReason(OrchestratorHandle handle, const OrchestratorRunM
   uv_run(orc->loop, UV_RUN_DEFAULT);
   RunInfoFinish(&orc->run);
   success = orc->run.success;
-
-  ActionLog* actions = &orc->actions;
-  qsort(actions->actions, actions->actions_len, sizeof(AppliedAction), &CompareAppliedAction);
+  SortActionLog(&orc->actions);
 
 finished:
   return success;

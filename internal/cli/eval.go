@@ -9,7 +9,7 @@ import (
 var expr string
 var file string
 
-func handleEval(cmd *cobra.Command, args []string) error {
+func HandleEval(cmd *cobra.Command, args []string) error {
 	orc, err := hypha.NewOrchestratorWithDefaultConfig()
 	if err != nil {
 		return fmt.Errorf("failed to create new Orchestrator with default config: %v", err)
@@ -35,9 +35,8 @@ func init() {
 		Use:     "eval",
 		Short:   "Evaluate a lua expression or file",
 		GroupID: "development",
-		RunE:    handleEval,
+		RunE:    HandleEval,
 	}
-
 	evalCmd.Flags().StringVarP(&file, "file", "f", "", "The lua file to evaluate")
 	evalCmd.Flags().StringVarP(&expr, "expr", "e", "", "The lua expression to evaluate")
 	evalCmd.MarkFlagsOneRequired("file", "expr")

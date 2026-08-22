@@ -5,13 +5,12 @@
 #include "hypha/resource_id.h"
 #include "orc.h"
 
-static inline void ResolveOrGenerateResourceId(StateStore* store, const char* kind, const char* name,
-                                                ResourceId* out) {
+static inline void ResolveOrGenerateResourceId(StateStore* store, const char* kind, const char* name, ResourceId* out) {
   char* existing_id = (name && kind) ? StateStoreFindIdByName(store, kind, name) : NULL;
   if (existing_id) {
-    // a resource with this (kind, name) has been applied before; keep its identity stable.
     if (uuid_parse(existing_id, *out) != 0)
-      GenerateResourceId(out);  // malformed persisted id, fall back to a fresh one
+      GenerateResourceId(out);
+
     free(existing_id);
     return;
   }

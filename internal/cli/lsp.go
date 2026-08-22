@@ -1,14 +1,12 @@
 package cli
 
 import (
+	"fmt"
 	"github.com/spf13/cobra"
-
-	"charm.land/log/v2"
 )
 
 func handleLsp(cmd *cobra.Command, args []string) error {
-	log.Info("lsp is not implemented")
-	return nil
+	return fmt.Errorf("lsp is not implemented")
 }
 
 func init() {

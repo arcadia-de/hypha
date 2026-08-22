@@ -62,10 +62,14 @@ func goVisitValidationResult(idx C.uint64_t, rec *C.ValidationResult, data unsaf
 	handle := *(*cgo.Handle)(data)
 	vis := handle.Value().(ValidationResultVisitor)
 
+	goName := C.GoString(rec.resource.info.name)
+
 	rawReason := C.GoStringN(&rec.reason[0], C.int(C.HYPHA_REASON_MAX_LENGTH))
 	goReason, _, _ := strings.Cut(rawReason, "\x00")
+
 	goKind := ValidationResultKind(rec.kind)
 	goResult := ValidationResult{
+		Name:   goName,
 		Kind:   goKind,
 		Reason: goReason,
 	}
@@ -157,7 +161,7 @@ func GetValidationResultKindIcon(kind ValidationResultKind) string {
 	}
 }
 
-func (vlog *ValidationLog) Print() {
+func (vlog *ValidationLog) Print(cs ColorScheme) {
 	verbose := viper.GetBool("verbose")
 	if vlog.IsValid() || vlog.IsSkipped() {
 		if !verbose {
@@ -166,120 +170,32 @@ func (vlog *ValidationLog) Print() {
 	}
 
 	rowStyle := lg.NewStyle().
-		PaddingLeft(2)
-
-	fmt.Println()
-	rowStyle = rowStyle.MarginLeft(8)
-
-	headerStyle := lg.NewStyle().
-		Padding(0, 2).
-		Foreground(lg.Color("#CECDC3"))
-
-	headerKindStyle := headerStyle.Width(14).
-		Align(lg.Right)
-
-	headerNameStyle := headerStyle.Width(20).
-		Align(lg.Center)
-
-	headerReasonStyle := headerStyle.Width(50).
-		Align(lg.Left)
-
-	headerRowStyle := rowStyle.
-		BorderBottom(true).
-		BorderStyle(lg.NormalBorder()).
-		BorderForeground(lg.Color("#282726"))
-
-	fmt.Println(headerRowStyle.Render(
+		MarginLeft(2)
+	style := NewValidationLogStyle(&rowStyle, &cs)
+	fmt.Println(style.HeaderRowStyle.Render(
 		lg.JoinHorizontal(
 			lg.Left,
-			headerKindStyle.Render("Kind"),
-			headerNameStyle.Render("Name"),
-			headerReasonStyle.Render("Reason"),
+			style.HeaderKindStyle.Render("Status"),
+			style.HeaderKindStyle.Render("Name"),
+			style.HeaderKindStyle.Render("Reason"),
 		),
 	))
 
-	kindStyle := lg.NewStyle().
-		Align(lg.Right).
-		Padding(0, 2).
-		Width(14)
-
-	skippedKindStyle := kindStyle.
-		Foreground(lg.Color("#3AA99F"))
-
-	passedKindStyle := kindStyle.
-		Foreground(lg.Color("#879A39"))
-
-	failedKindStyle := kindStyle.
-		Foreground(lg.Color("#D14D41"))
-
-	warningKindStyle := kindStyle.
-		Foreground(lg.Color("#DA702C"))
-
-	unknownKindStyle := kindStyle.
-		Foreground(lg.Color("#CECDC3"))
-
-	nameStyle := lg.NewStyle().
-		Foreground(lg.Color("#CECDC3")).
-		Align(lg.Center).
-		Padding(0, 2).
-		Width(20)
-
-	reasonStyle := lg.NewStyle().
-		Foreground(lg.Color("#878580")).
-		Align(lg.Left).
-		Padding(0, 2).
-		MaxWidth(50)
-
 	for _, result := range vlog.Results {
-		kind := result.Kind
-		if kind == PassedValidationResult {
-			if !verbose {
-				continue
-			}
-		}
-
-		var style lg.Style
-
-		switch kind {
-		case SkippedValidationResult:
-			style = skippedKindStyle
-		case PassedValidationResult:
-			style = passedKindStyle
-		case FailedValidationResult:
-			style = failedKindStyle
-		case WarningValidationResult:
-			style = warningKindStyle
-		default:
-			style = unknownKindStyle
-		}
-
-		fmt.Println(rowStyle.Render(
-			lg.JoinHorizontal(
-				lg.Left,
-				style.Render(fmt.Sprintf("%s %s", GetValidationResultKindIcon(kind), GetValidationResultKindName(kind))),
-				nameStyle.Render(result.Name),
-				reasonStyle.Render(result.Reason),
-			),
-		))
+		style.PrintRow(&result, verbose)
 	}
-
 	fmt.Println()
-	rowStyle = rowStyle.Align(lg.Left).MarginLeft(0)
+
 	skippedRowStyle := rowStyle.
-		Foreground(lg.Color("#3AA99F"))
-
+		Foreground(cs.GetSkippedColor())
 	passedRowStyle := rowStyle.
-		Foreground(lg.Color("#879A39"))
-
+		Foreground(cs.GetPassedColor())
 	failedRowStyle := rowStyle.
-		Foreground(lg.Color("#D14D41"))
-
+		Foreground(cs.GetFailedColor())
 	warningRowStyle := rowStyle.
-		Foreground(lg.Color("#DA702C"))
-
+		Foreground(cs.GetWarningColor())
 	unknownRowStyle := rowStyle.
-		Foreground(lg.Color("#CECDC3"))
-
+		Foreground(cs.GetUnknownColor())
 	if vlog.Passed > 0 && verbose {
 		fmt.Println(skippedRowStyle.Render(
 			fmt.Sprintf("%s %d/%d %s", GetValidationResultKindIcon(SkippedValidationResult), vlog.Skipped, len(vlog.Results), GetValidationResultKindName(SkippedValidationResult)),
