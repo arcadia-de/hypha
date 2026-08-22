@@ -4,6 +4,7 @@
 #include <stdlib.h>
 #include <string.h>
 
+#include "hypha/annotation.h"
 #include "hypha/log.h"
 #include "hypha/state.h"
 #include "state_log.h"
@@ -131,62 +132,71 @@ bool StateStoreFlush(StateStore* store) {
   return StateLogFlush(store->log);
 }
 
+static inline size_t PutBit(uint8_t* ptr, const bool rhs) {
+  ASSERT(ptr);
+  const uint8_t orphaned = rhs ? 1 : 0;
+  memcpy(ptr, &orphaned, 1);
+  return 1;
+}
+
+#define DEFINE_PUT(Name, Type)                                   \
+  static inline size_t Put##Name(uint8_t* ptr, const Type rhs) { \
+    ASSERT(ptr);                                                 \
+    const size_t total_size = sizeof(Type);                      \
+    memcpy(ptr, &rhs, total_size);                               \
+    return total_size;                                           \
+  }
+
+DEFINE_PUT(UInt32, uint32_t);
+DEFINE_PUT(UInt64, uint64_t);
+#undef DEFINE_PUT
+
+static inline size_t PutArray(uint8_t* dst, void* src, size_t len, size_t stride) {
+  ASSERT(dst);
+  memcpy(dst, &len, sizeof(size_t));
+  dst += sizeof(size_t);
+  const size_t total_array_size = len * stride;
+  if (len > 0) {
+    ASSERT(src);
+    memcpy(dst, src, total_array_size);
+  }
+  return sizeof(size_t) + total_array_size;
+}
+
+static inline size_t PutString(uint8_t* dst, const char* src) {
+  return PutArray(dst, (void*)src, strlen(src), sizeof(char));
+}
+
 void EncodeStateEntry(const StateEntry* entry, uint8_t** buff, size_t* length) {
-  const size_t size = sizeof(uint32_t) +                                              /* version */
-                      StringEncodedSize(entry->kind) +                                /* kind */
-                      StringEncodedSize(entry->name) +                                /* name */
-                      sizeof(uint64_t) +                                              /* hash */
-                      StringEncodedSize(entry->observed_json) +                       /* observed_json */
-                      sizeof(time_t) +                                                /* applied_at */
-                      sizeof(uint32_t) +                                              /* last_status */
-                      1 +                                                             /* orphaned */
-                      sizeof(size_t) + (entry->labels_len * sizeof(Label)) +          /* labels */
-                      sizeof(size_t) + (entry->annotations_len * sizeof(Annotation)); /* annotations */
-  uint8_t* buf = (uint8_t*)calloc(size, sizeof(uint8_t));
+  const size_t total_len = sizeof(uint32_t) +                                              /* version */
+                           StringEncodedSize(entry->kind) +                                /* kind */
+                           StringEncodedSize(entry->name) +                                /* name */
+                           sizeof(uint64_t) +                                              /* hash */
+                           StringEncodedSize(entry->observed_json) +                       /* observed_json */
+                           sizeof(time_t) +                                                /* applied_at */
+                           sizeof(uint32_t) +                                              /* last_status */
+                           1 +                                                             /* orphaned */
+                           sizeof(size_t) + (entry->labels_len * sizeof(Label)) +          /* labels */
+                           sizeof(size_t) + (entry->annotations_len * sizeof(Annotation)); /* annotations */
+  uint8_t* buf = (uint8_t*)calloc(total_len, sizeof(uint8_t));
   if (!buf) {
     LOG_ERROR("failed to encode StateEntry");
     return;
   }
 
   uint8_t* p = &buf[0];
-  const uint32_t version = STATE_ENTRY_ENCODING_VERSION;
-  memcpy(p, &version, sizeof(uint32_t));
-  p += sizeof(uint32_t);
-
-  PutString(&p, entry->kind);
-  PutString(&p, entry->name);
-
-  memcpy(p, &entry->hash, 8);
-  p += 8;
-
-  PutString(&p, entry->observed_json);
-
-  memcpy(p, &entry->applied_at, sizeof(time_t));
-  p += sizeof(time_t);
-
-  memcpy(p, &entry->last_status, 4);
-  p += 4;
-
-  const uint8_t orphaned = entry->orphaned ? 1 : 0;
-  memcpy(p, &orphaned, 1);
-  p += 1;
-
-  memcpy(p, &entry->labels_len, sizeof(size_t));
-  p += sizeof(size_t);
-  if (entry->labels_len > 0) {
-    memcpy(p, entry->labels, entry->labels_len * sizeof(Label));
-    p += entry->labels_len * sizeof(Label);
-  }
-
-  memcpy(p, &entry->annotations_len, sizeof(size_t));
-  p += sizeof(size_t);
-  if (entry->annotations_len > 0) {
-    memcpy(p, entry->annotations, entry->annotations_len * sizeof(Annotation));
-    p += entry->annotations_len * sizeof(Annotation);
-  }
-
+  p += PutUInt32(p, STATE_ENTRY_ENCODING_VERSION);
+  p += PutString(p, entry->kind);
+  p += PutString(p, entry->name);
+  p += PutUInt64(p, entry->hash);
+  p += PutString(p, entry->observed_json);
+  p += PutUInt64(p, (uint64_t)entry->applied_at);
+  p += PutUInt32(p, entry->last_status);
+  p += PutBit(p, entry->orphaned);
+  p += PutArray(p, entry->labels, entry->labels_len, sizeof(Label));
+  p += PutArray(p, entry->annotations, entry->annotations_len, sizeof(Annotation));
   (*buff) = buf;
-  (*length) = size;
+  (*length) = total_len;
 }
 
 bool DecodeStateEntry(const uint8_t* buf, size_t buf_len, StateEntry* out) {

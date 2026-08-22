@@ -14,6 +14,7 @@
 #include "hypha/event.h"
 #include "hypha/history.h"
 #include "hypha/log.h"
+#include "hypha/planned_action.h"
 #include "hypha/planner.h"
 #include "hypha/resource_decorator.h"
 #include "hypha/resource_graph.h"
@@ -114,17 +115,19 @@ bool OrchestratorRunWithReason(OrchestratorHandle handle, const OrchestratorRunM
     goto finished;
 
   Orchestrator* orc = (Orchestrator*)handle;
-  orc->run.mode = mode;
-  orc->run.success = true;
-  memcpy(orc->run.reason, reason, sizeof(Reason));
-
   OrchestratorPublish(orc, GRAPH_SUBMITTED_EVENT, NewGraphSubmittedEvent());
+
+  uuid_t id;
+  uuid_generate_random(id);
+  InitRunInfoWithReason(&orc->run, mode, id, reason);
 
   RunInfoStart(&orc->run);
   uv_run(orc->loop, UV_RUN_DEFAULT);
-  RunInfoFinish(&orc->run);
-  success = orc->run.success;
-  SortActionLog(&orc->actions);
+  success = RunInfoFinish(&orc->run);
+  // TODO(@s0cks):
+  //  SortPlan(&orc->plan, &DefaultPlannedActionComparator);
+  //  SortActionLog(&orc->actions);
+  //  SortValidationLog(&orc->vlog, &DefaultPlannedActionComparator);
 
 finished:
   return success;

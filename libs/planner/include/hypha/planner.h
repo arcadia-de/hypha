@@ -25,6 +25,7 @@ PlannedAction* NewPlannedAction(Plan* pl);
 void AppendPlannedAction(Plan* pl, PlannedAction* rhs);
 void AppendPlan(Plan* pl, const Plan* rhs);
 void FreePlan(Plan* pl);
+void SortPlan(Plan* pl, PlannedActionComparator compare);
 
 #define DEFINE_NEW_PLANNED_ACTION(Name)                                                                  \
   static inline PlannedAction* New##Name##PlannedAction(Plan* pl, Resource* res, const char* fmt, ...) { \

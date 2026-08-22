@@ -88,6 +88,12 @@ void AppendPlannedAction(Plan* pl, PlannedAction* action) {
   pl->actions_len++;
 }
 
+void SortPlan(Plan* pl, PlannedActionComparator compare) {
+  ASSERT(pl);
+  ASSERT(compare);
+  qsort(pl->actions, pl->actions_len, sizeof(PlannedAction), compare);
+}
+
 static inline void FreePlannedAction(PlannedAction* action) {
   if (!action)
     return;

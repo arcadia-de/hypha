@@ -15,16 +15,6 @@ struct _StateStore {
   Index index;
 };
 
-static inline void PutString(uint8_t** p, const char* s) {
-  const size_t len = s ? strlen(s) : 0;
-  memcpy(*p, &len, sizeof(size_t));
-  (*p) += sizeof(size_t);
-  if (len > 0) {
-    memcpy(*p, s, len);
-    (*p) += len;
-  }
-}
-
 static inline size_t StringEncodedSize(const char* s) {
   size_t size = sizeof(size_t);
   size_t len = s ? strlen(s) : 0;

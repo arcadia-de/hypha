@@ -47,11 +47,13 @@ static inline void InitRunInfoWithReason(RunInfo* info, const OrchestratorRunMod
 static inline void RunInfoStart(RunInfo* info) {
   ASSERT(info);
   clock_gettime(CLOCK_REALTIME, &info->start);
+  info->success = true;
 }
 
-static inline void RunInfoFinish(RunInfo* info) {
+static inline bool RunInfoFinish(RunInfo* info) {
   ASSERT(info);
   clock_gettime(CLOCK_REALTIME, &info->finish);
+  return info->success;
 }
 
 static inline void FreeRunInfo(RunInfo* info) {

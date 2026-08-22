@@ -17,6 +17,10 @@ typedef struct {
   Resource* resource;
 } PlannedAction;
 
+typedef int (*PlannedActionComparator)(const void* lhs, const void* rhs);
+
+int DefaultPlannedActionComparator(const void* lhs, const void* rhs);
+
 #ifdef __cplusplus
 };
 #endif  // __cplusplus

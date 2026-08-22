@@ -169,8 +169,8 @@ static inline void ReconcileAfterWork(uv_work_t* req, int status) {
   SetLogResourceContext(res_id_str, res->kind);
   orc->metrics.num_actions[task->action]++;
 
-  AppendValidationLog(&orc->vlog, &task->vlog);
   AppendPlan(&orc->plan, &task->plan);
+  AppendValidationLog(&orc->vlog, &task->vlog);
   if (IsApplyReconcileTask(task)) {
     AppliedAction* action = NewAppliedAction(&orc->actions);
     ASSERT(action);
@@ -245,8 +245,9 @@ void QueueReconcileTask(Orchestrator* orc, Controller* ctrl, const ResourceGraph
   task->action = kNoAction;
   task->status = kStatusOk;
   memset(&task->observed, 0, sizeof(Resource));
-  InitPlan(&task->plan, 3);
-  InitValidationLog(&task->vlog, 3);
+  const size_t init_cap = 3;
+  InitPlan(&task->plan, init_cap);
+  InitValidationLog(&task->vlog, init_cap);
 
   uv_queue_work(orc->loop, &task->work, ReconcileWork, ReconcileAfterWork);
 }

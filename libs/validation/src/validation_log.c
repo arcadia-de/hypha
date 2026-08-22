@@ -3,6 +3,7 @@
 #include <string.h>
 
 #include "hypha/log.h"
+#include "hypha/resource.h"
 #include "hypha/validation_result.h"
 
 void InitValidationLog(ValidationLog* vl, const size_t init_cap) {
@@ -36,6 +37,7 @@ ValidationResult* NewValidationResult(ValidationLog* vl) {
   ASSERT(vl->results_cap > (vl->results_len + 1));
   ValidationResult* next = &vl->results[vl->results_len];
   vl->results_len++;
+  ASSERT(next);
   memset(next, 0, sizeof(ValidationResult));
   return next;
 }
@@ -74,4 +76,28 @@ void FreeValidationLog(ValidationLog* vl, const size_t init_cap) {
 
   if (init_cap > 0)
     InitValidationLog(vl, init_cap);
+}
+
+void SortValidationLog(ValidationLog* vl, ValidationResultComparator compare) {
+  ASSERT(vl);
+  ASSERT(compare);
+  qsort(vl->results, vl->results_len, sizeof(ValidationResult), compare);
+}
+
+ValidationResult* NewValidationResultWithKind(ValidationLog* vlog, const ValidationResultKind kind, Resource* res,
+                                              const char* fmt, ...) {
+  ASSERT(vlog);
+  ASSERT(res);
+  ValidationResult* new_result = NewValidationResult(vlog);
+  if (new_result) {
+    new_result->kind = kind;
+    new_result->resource = res;
+    if (fmt) {
+      va_list args;
+      va_start(args, fmt);
+      snprintf(new_result->reason, HYPHA_REASON_MAX_LENGTH, fmt, args);
+      va_end(args);
+    }
+  }
+  return new_result;
 }

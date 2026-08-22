@@ -28,6 +28,10 @@ typedef struct {
   Reason reason;
 } ValidationResult;
 
+typedef int (*ValidationResultComparator)(const void*, const void*);
+
+int DefaultValidationResultComparator(const void*, const void*);
+
 #ifdef __cplusplus
 };
 #endif  // __cplusplus

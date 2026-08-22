@@ -5,6 +5,7 @@ hypha_planner_deps = [
   hypha_api_dep,
   hypha_log_dep,
   hypha_utils_dep,
+  hypha_resource_graph_dep,
 ]
 hypha_planner = static_library(
   'hypha-planner',
