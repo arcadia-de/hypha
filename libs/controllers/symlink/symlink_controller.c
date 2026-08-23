@@ -59,7 +59,6 @@ DEFINE_CONTROLLER_OBSERVE_FN(Symlink) {
     LOG_ERROR("failed to get target field");
     return kStatusInternalError;
   }
-
   return kStatusOk;
 }
 
@@ -87,13 +86,20 @@ DEFINE_CONTROLLER_PLAN_FN(Symlink) {
   struct stat target_stat;
   if (lstat(target, &target_stat) == 0) {
     if (S_ISLNK(target_stat.st_mode)) {
-      // snprintf(message, HYPHA_REASON_MAX_LENGTH, "target '%s' exists and is a symlink", target);
+      PlannedAction* action =
+          NewNoPlannedAction(pl, desired, "target `%s` already exists and is a valid symlink", target);
+      // TODO(@s0cks): check symlink dest
+      ASSERT(action);
+      return kNoAction;
     }
 
-    // snprintf(message, HYPHA_REASON_MAX_LENGTH, "target %s exists but is not a symlink", target);
+    PlannedAction* action = NewNoPlannedAction(pl, desired, "target `%s` already exists but is not a symlink", target);
+    ASSERT(action);
+    return kNoAction;
   }
 
-  // snprintf(message, HYPHA_REASON_MAX_LENGTH, "target %s does not exist", target);
+  PlannedAction* action = NewCreatePlannedAction(pl, desired, "target `%s` doesn't exist", target);
+  ASSERT(action);
   return kCreateAction;
 }
 

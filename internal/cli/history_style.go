@@ -18,6 +18,7 @@ type HistoryStyle struct {
 	HeaderKindStyle      lg.Style
 	HeaderIdStyle        lg.Style
 	HeaderAppliedAtStyle lg.Style
+	HeaderReasonStyle    lg.Style
 	StatusStyle          lg.Style
 	NoActionStyle        lg.Style
 	CreateActionStyle    lg.Style
@@ -25,6 +26,7 @@ type HistoryStyle struct {
 	DestroyActionStyle   lg.Style
 	KindStyle            lg.Style
 	IdStyle              lg.Style
+	ReasonStyle          lg.Style
 }
 
 func NewHistoryStyle(rowStyle *lg.Style, cs *hypha.ColorScheme) *HistoryStyle {
@@ -33,6 +35,7 @@ func NewHistoryStyle(rowStyle *lg.Style, cs *hypha.ColorScheme) *HistoryStyle {
 		ActionWidth = 15
 		KindWidth   = 15
 		IdWidth     = 50
+		ReasonWidth = 50
 	)
 
 	colStyle := lg.NewStyle().
@@ -65,6 +68,9 @@ func NewHistoryStyle(rowStyle *lg.Style, cs *hypha.ColorScheme) *HistoryStyle {
 		HeaderIdStyle: colStyle.
 			Align(lg.Left).
 			Width(IdWidth),
+		HeaderReasonStyle: colStyle.
+			Align(lg.Left).
+			Width(ReasonWidth),
 
 		StatusStyle: statusStyle,
 		NoActionStyle: actionStyle.
@@ -81,6 +87,9 @@ func NewHistoryStyle(rowStyle *lg.Style, cs *hypha.ColorScheme) *HistoryStyle {
 		IdStyle: colStyle.
 			Align(lg.Left).
 			Width(IdWidth),
+		ReasonStyle: colStyle.
+			Align(lg.Left).
+			Width(ReasonWidth),
 	}
 }
 
@@ -122,6 +131,7 @@ func (style *HistoryStyle) PrintTo(records []hypha.HistoryRecord, selected int, 
 		style.HeaderActionStyle.Render("Action"),
 		style.HeaderKindStyle.Render("Kind"),
 		style.HeaderIdStyle.Render("ID"),
+		style.HeaderReasonStyle.Render("Reason"),
 	)))
 
 	for i, record := range records[0:min(len(records), num)] {
@@ -132,6 +142,7 @@ func (style *HistoryStyle) PrintTo(records []hypha.HistoryRecord, selected int, 
 			actionStyle.Render(fmt.Sprintf("%s %s", style.GetActionIcon(record.Action), record.Action)),
 			style.KindStyle.Render(record.Kind),
 			style.IdStyle.Render(record.ID),
+			style.ReasonStyle.Render(record.Reason),
 		)
 
 		var rowStyle lg.Style

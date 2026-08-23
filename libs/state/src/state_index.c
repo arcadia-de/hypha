@@ -116,6 +116,6 @@ void IndexGrow(Index* idx) {
   *idx = bigger;
 }
 
-bool IsIndexSlotKeyValid(IndexSlot* rhs) {
+bool IsIndexSlotEmpty(IndexSlot* rhs) {
   return !rhs->key || rhs->key == DELETED_MARKER;
 }

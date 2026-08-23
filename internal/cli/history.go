@@ -52,6 +52,23 @@ func (m model) View() tea.View {
 	return tea.View{
 		Content: s.String(),
 	}
+	//	const (
+	//		idWidth        = 20
+	//		kindWidth      = 10
+	//   - appliedAtWidth = 15
+	//   - appliedAtWidth = 19
+	//     actionWidth    = 14
+	//     statusWidth    = 10
+	//     )
+	//
+	//	@@ -79,7 +80,7 @@ func (m model) View() tea.View {
+	//	 	for i, record := range m.records {
+	//	 		recordID := recordIDStyle.Render(record.ID)
+	//	 		recordKind := recordKindStyle.Render(record.Kind)
+	//   - recordAppliedAt := recordAppliedAtStyle.Render(string(record.AppliedAt))
+	//   - recordAppliedAt := recordAppliedAtStyle.Render(time.Unix(record.AppliedAt, 0).Format("2006-01-02 15:04:05"))
+	//     recordAction := recordActionStyle.Render(record.Action)
+	//     recordStatus := recordStatusStyle.Render(record.Status
 }
 
 func handleHistory(cmd *cobra.Command, args []string) error {
@@ -65,12 +82,6 @@ func handleHistory(cmd *cobra.Command, args []string) error {
 	orc.HistoryReplay(func(rec hypha.HistoryRecord) bool {
 		if kindFilter != "" {
 			if rec.Kind != kindFilter {
-				return true // skip
-			}
-		}
-
-		if runidFilter >= 0 {
-			if rec.RunID != uint64(runidFilter) {
 				return true // skip
 			}
 		}

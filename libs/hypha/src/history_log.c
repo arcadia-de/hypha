@@ -9,9 +9,12 @@ void HistoryRecordFree(HistoryRecord* rec) {
 
   free(rec->id);
   free(rec->kind);
-  free(rec->hash_before);
-  free(rec->hash_after);
-  rec->id = rec->kind = rec->hash_before = rec->hash_after;
+  free(rec->name);
+  free(rec->labels);
+  free(rec->annotations);
+  rec->id = rec->kind = rec->name = NULL;
+  rec->labels = NULL;
+  rec->annotations = NULL;
 }
 
 static inline void RotatedPath(const char* path, uint32_t n, char* out, size_t out_len) {
@@ -93,12 +96,13 @@ static inline bool ForwardToVisitor(const char* key, bool tombstone, const uint8
   if (tombstone)
     return true;
 
-  (void)value_len;
   ReplayForward* fwd = (ReplayForward*)data;
 
   HistoryRecord rec;
-  memset(&rec, 0, sizeof(rec));
-  DecodeHistoryRecord(key, value, &rec);
+  if (!DecodeHistoryRecord(key, value, value_len, &rec)) {
+    LOG_WARN("skipping unreadable history record for: %s", key);
+    return true;  // keep replaying the rest of the log rather than aborting on one bad record
+  }
 
   const bool keep_going = fwd->visit(&rec, fwd->data);
   HistoryRecordFree(&rec);

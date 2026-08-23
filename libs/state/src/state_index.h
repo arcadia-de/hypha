@@ -22,6 +22,8 @@ void IndexSet(Index* idx, const char* key, StateLogLocation loc);
 bool IndexGet(Index* idx, const char* key, StateLogLocation* out_loc);
 void IndexRemove(Index* idx, const char* key);
 
-bool IsIndexSlotKeyValid(IndexSlot* rhs);
+// True when the slot holds neither a live key nor a tombstone (i.e. it has never been used,
+// or a resize just reset it) -- callers scanning all slots should skip these.
+bool IsIndexSlotEmpty(IndexSlot* rhs);
 
 #endif  // HYPHA_STATE_INDEX_H

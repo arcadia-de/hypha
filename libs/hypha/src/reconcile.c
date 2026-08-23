@@ -34,9 +34,11 @@ static inline void MaybeFinishReconciliation(Orchestrator* orc) {
 
   ControllerStatus status = kStatusInternalError;
   if (orc->run.success) {
+    DLOG_INFO("reconcile complete");
     status = kStatusOk;
     OrchestratorPublish(orc, RECONCILE_COMPLETE_EVENT, NewReconcileCompleteEvent(status));
   } else {
+    DLOG_INFO("reconcile failed");
     status = kStatusInternalError;
     OrchestratorPublish(orc, RECONCILE_FAILED_EVENT, NewReconcileFailedEvent(status));
   }
@@ -112,7 +114,10 @@ finished:
   observed->spec.doc = NULL;
 }
 
-static inline void WriteResourceState(Orchestrator* orc, const Resource* res) {
+// Persists the post-apply state of `res`. Only ever called for apply-mode tasks: state is
+// the serialized record of what was actually applied, and plan/validate runs never touch it
+// (there is no plan artifact to serialize -- plan is always recomputed as the gate for apply).
+static inline void WriteResourceState(Orchestrator* orc, const Resource* res, const ControllerStatus status) {
   ASSERT(res->spec.raw);
   ResourceIdStr id_str;
   ResourceIdCStr(&res->id, id_str);
@@ -122,7 +127,7 @@ static inline void WriteResourceState(Orchestrator* orc, const Resource* res) {
       .kind = strdup(res->kind),
       .name = res->info.name ? strdup(res->info.name) : NULL,
       .applied_at = orc->metrics.run_start,
-      .last_status = res->state,
+      .last_status = status,
       .orphaned = false,
       .hash = res->spec.hash,
       .observed_json = res->spec.raw,
@@ -137,23 +142,38 @@ static inline void WriteResourceState(Orchestrator* orc, const Resource* res) {
   free(entry.name);
 }
 
-static inline void WriteHistory(Orchestrator* orc, const Resource* res, const ControllerAction action,
-                                const ControllerStatus status) {
+// Appends one HistoryRecord for `task`. Only ever called for apply-mode tasks that actually
+// took an action -- history is an audit trail of applied changes, not a per-run log of every
+// resource that was checked and found to already match. Field-for-field this mirrors
+// WriteResourceState above: id/kind/name/labels/annotations carry the same values a StateEntry
+// for this resource would, just captured for this one applied action rather than "latest known."
+static inline void WriteHistory(Orchestrator* orc, const Resource* res, const ReconcileTask* task) {
   ResourceIdStr id_str;
   ResourceIdCStr(&res->id, id_str);
 
   HistoryRecord record = {
       .id = strdup(id_str),
       .kind = strdup(res->kind),
-      .action = action,
-      .status = status,
-      .run_id = 0,
-      // char* hash_before;
-      // char* hash_after;
+      .name = res->info.name ? strdup(res->info.name) : NULL,
+      .action = task->action,
+      .status = task->status,
+      .hash_before = task->has_last_applied ? task->last_applied.hash : 0,
+      .hash_after = res->spec.hash,
       .applied_at = (int64_t)orc->metrics.run_finished,
+      .labels = res->info.labels,
+      .labels_len = res->info.labels_len,
+      .annotations = res->info.annotations,
+      .annotations_len = res->info.annotations_len,
   };
-  memcpy(record.reason, orc->run.reason, sizeof(Reason));  // TODO(@s0cks): should check if reason is not empty first
+  uuid_copy(record.run_id, orc->run.id);
+  memcpy(record.reason, task->reason, sizeof(Reason));  // TODO(@s0cks): should check if reason is not empty first
   LOG_ERROR_IF(!HistoryLogAppend(orc->history, &record), "failed to write to history for: %s", id_str);
+
+  // labels/annotations are borrowed from res->info (owned by the resource graph), matching
+  // WriteResourceState -- only the strdup'd scalar fields need freeing here.
+  free(record.id);
+  free(record.kind);
+  free(record.name);
 }
 
 static inline void ReconcileAfterWork(uv_work_t* req, int status) {
@@ -186,8 +206,16 @@ static inline void ReconcileAfterWork(uv_work_t* req, int status) {
     orc->run.success = (task->status == kStatusOk);
   }
 
-  WriteResourceState(orc, res);
-  WriteHistory(orc, res, task->action, task->status);
+  // Only apply is the deterministic execution phase whose outcome gets persisted -- plan and
+  // validate runs are read-only with respect to state/history (state/history record what was
+  // actually applied, not what a dry run determined would happen).
+  if (IsApplyReconcileTask(task)) {
+    WriteResourceState(orc, res, task->status);
+    // A NoAction result means observed already matched desired -- nothing was actually
+    // applied, so it doesn't belong in an audit trail of applied changes.
+    if (task->action != kNoAction)
+      WriteHistory(orc, res, task);
+  }
   free(task);
   orc->pending--;
   orc->metrics.num_processed++;
@@ -233,8 +261,10 @@ void QueueReconcileTask(Orchestrator* orc, Controller* ctrl, const ResourceGraph
   memset(task, 0, sizeof(ReconcileTask));
   ResourceIdStr id_str;
   ResourceIdCStr(&res->id, id_str);
-  LOG_WARN_IF(!StateStoreGet(orc->state, id_str, &task->last_applied),
-              "failed to get last state store value for: %s (%s)", id_str, res->kind);
+  // No prior entry is the normal case for a resource's first reconcile, not a failure --
+  // only note it at debug level rather than warning on every first-time apply.
+  task->has_last_applied = StateStoreGet(orc->state, id_str, &task->last_applied);
+  LOG_DEBUG_IF(!task->has_last_applied, "no prior state for: %s (%s)", id_str, res->kind);
   task->orc = orc;
   clock_gettime(CLOCK_REALTIME, &task->start);
   task->mode = orc->run.mode;

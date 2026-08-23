@@ -93,7 +93,7 @@ finished:
 bool StateStoreVisitAll(StateStore* store, StateStoreVisitFn visit, void* data) {
   for (uint32_t i = 0; i < store->index.capacity; i++) {
     IndexSlot* slot = &store->index.slots[i];
-    if (IsIndexSlotKeyValid(slot))
+    if (IsIndexSlotEmpty(slot))
       continue;
 
     uint8_t* value = NULL;

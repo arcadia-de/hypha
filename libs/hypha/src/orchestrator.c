@@ -144,6 +144,7 @@ void FreeOrchestrator(OrchestratorHandle handle) {
   FreeValidationLog(&orc->vlog, 0);
   FreeEventBus(orc->bus);
   StateStoreClose(orc->state);
+  HistoryLogClose(orc->history);
   if (orc->L)
     lua_close(orc->L);
 

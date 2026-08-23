@@ -1,19 +1,30 @@
 #ifndef HYPHA_HISTORY_H
 #define HYPHA_HISTORY_H
 
+#include <uuid/uuid.h>
+
 #include "hypha.h"
+#include "hypha/annotation.h"
 #include "hypha/controller.h"
+#include "hypha/label.h"
 
 typedef struct {
   char* id;
   char* kind;
+  char* name;
   ControllerAction action;
   ControllerStatus status;
-  char* hash_before;
-  char* hash_after;
+  uint64_t hash_before;
+  uint64_t hash_after;
   Reason reason;
-  uint64_t run_id;
+  uuid_t run_id;
   int64_t applied_at;
+
+  Label* labels;
+  size_t labels_len;
+
+  Annotation* annotations;
+  size_t annotations_len;
 } HistoryRecord;
 
 void HistoryRecordFree(HistoryRecord* rec);
