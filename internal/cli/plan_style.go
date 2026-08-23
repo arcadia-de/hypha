@@ -25,7 +25,7 @@ func NewPlanStyle(rowStyle *lg.Style, cs *hypha.ColorScheme) *PlanStyle {
 	headerStyle := lg.NewStyle().
 		Bold(true)
 	actionStyle := lg.NewStyle().
-		Width(actionWidth).
+		Width(15).
 		Padding(0, 1).
 		Align(lg.Right)
 	return &PlanStyle{
@@ -39,7 +39,7 @@ func NewPlanStyle(rowStyle *lg.Style, cs *hypha.ColorScheme) *PlanStyle {
 			Padding(0, 1).
 			Align(lg.Center),
 		HeaderActionStyle: headerStyle.
-			Width(actionWidth).
+			Width(15).
 			Padding(0, 1).
 			Align(lg.Right),
 		HeaderReasonStyle: headerStyle.

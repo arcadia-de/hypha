@@ -7,6 +7,7 @@ require (
 	charm.land/lipgloss/v2 v2.0.1
 	charm.land/log/v2 v2.0.0
 	github.com/google/go-jsonnet v0.22.0
+	github.com/lrstanley/go-nf v0.0.0-20260418212552-215ab243b591
 	github.com/santhosh-tekuri/jsonschema/v6 v6.0.3
 	github.com/spf13/cobra v1.10.2
 	github.com/spf13/viper v1.21.0

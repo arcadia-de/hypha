@@ -42,45 +42,6 @@ func GetControllerActionName(action ControllerAction) string {
 	}
 }
 
-type ControllerStatus int
-
-const (
-	kOkStatus ControllerStatus = iota
-	kNoOpStatus
-	kInvalidSpecStatus
-	kNotFoundStatus
-	kConflictStatus
-	kUnsupportedStatus
-	kTransientErrorStatus
-	kPermanentErrorStatus
-	kInternalErrorStatus
-)
-
-func GetControllerStatusName(status ControllerStatus) string {
-	switch status {
-	case kOkStatus:
-		return "Ok"
-	case kNoOpStatus:
-		return "NoOp"
-	case kInvalidSpecStatus:
-		return "Invalid Spec"
-	case kNotFoundStatus:
-		return "Not Found"
-	case kConflictStatus:
-		return "Conflict"
-	case kUnsupportedStatus:
-		return "Unsupported"
-	case kTransientErrorStatus:
-		return "Transient Error"
-	case kPermanentErrorStatus:
-		return "Permanent Error"
-	case kInternalErrorStatus:
-		return "Internal Error"
-	default:
-		return "Unknown"
-	}
-}
-
 type Controller struct {
 	Index  uint64
 	Kind   string

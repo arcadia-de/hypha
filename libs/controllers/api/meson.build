@@ -6,6 +6,7 @@ all_hypha_controller_deps = [
   hypha_resource_graph_dep,
   hypha_validation_dep,
   hypha_planner_dep,
+  hypha_service_dep,
 ]
 
 if enable_profiling

@@ -20,6 +20,7 @@ hypha_deps = [
   hypha_planner_dep,
   hypha_action_dep,
   hypha_validation_dep,
+  hypha_service_dep,
   hypha_resource_graph_dep,
 ]
 hypha_deps += pkg_manager_deps

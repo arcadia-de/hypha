@@ -2,7 +2,7 @@ package cli
 
 import (
 	tea "charm.land/bubbletea/v2"
-	"charm.land/lipgloss/v2"
+	lg "charm.land/lipgloss/v2"
 	"fmt"
 	"github.com/spf13/cobra"
 	"os"
@@ -17,6 +17,7 @@ var actionFilter string
 var statusFilter string
 
 type model struct {
+	Style   *HistoryStyle
 	records []hypha.HistoryRecord
 	cursor  int
 }
@@ -44,56 +45,10 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	return m, nil
 }
 
-const (
-	idWidth        = 20
-	kindWidth      = 10
-	appliedAtWidth = 15
-	actionWidth    = 14
-	statusWidth    = 10
-)
-
 func (m model) View() tea.View {
 	var s strings.Builder
-
-	headerStyle := lipgloss.NewStyle().Bold(true).Foreground(lipgloss.Color("#888888"))
-	headerID := headerStyle.Width(idWidth).Render("ID")
-	headerKind := headerStyle.Width(kindWidth).Render("Kind")
-	headerAppliedAt := headerStyle.Width(appliedAtWidth).Render("Applied At")
-	headerAction := headerStyle.Width(actionWidth).Render("Action")
-	headerStatus := headerStyle.Width(statusWidth).Render("Status")
-
-	s.WriteString(fmt.Sprintf("  %s  %s  %s  %s  %s\n", headerID, headerKind, headerAppliedAt, headerAction, headerStatus))
-	s.WriteString(headerStyle.Render(strings.Repeat("─", (idWidth+kindWidth+appliedAtWidth+actionWidth+statusWidth+(2*5)))) + "\n")
-
-	selectedStyle := lipgloss.NewStyle().
-		Background(lipgloss.Color("#333333")).
-		Bold(true)
-
-	recordStyle := lipgloss.NewStyle()
-	recordIDStyle := recordStyle.Width(idWidth)
-	recordKindStyle := recordStyle.Width(kindWidth)
-	recordAppliedAtStyle := recordStyle.Width(appliedAtWidth)
-	recordActionStyle := recordStyle.Width(actionWidth)
-	recordStatusStyle := recordStyle.Width(statusWidth)
-
-	for i, record := range m.records {
-		recordID := recordIDStyle.Render(record.ID)
-		recordKind := recordKindStyle.Render(record.Kind)
-		recordAppliedAt := recordAppliedAtStyle.Render(string(record.AppliedAt))
-		recordAction := recordActionStyle.Render(record.Action)
-		recordStatus := recordStatusStyle.Render(record.Status)
-
-		rowText := fmt.Sprintf("  %s  %s  %s  %s  %s", recordID, recordKind, recordAppliedAt, recordAction, recordStatus)
-
-		if i == m.cursor {
-			s.WriteString(selectedStyle.Render(rowText) + "\n")
-		} else {
-			s.WriteString(rowText + "\n")
-		}
-	}
-
+	m.Style.PrintTo(m.records, m.cursor, 10, &s)
 	s.WriteString("\n  (Press j/k to navigate • q to quit)\n")
-
 	return tea.View{
 		Content: s.String(),
 	}
@@ -127,7 +82,7 @@ func handleHistory(cmd *cobra.Command, args []string) error {
 		}
 
 		if statusFilter != "" {
-			if rec.Status != statusFilter {
+			if rec.Status.GetName() != statusFilter {
 				return true // skip
 			}
 		}
@@ -140,8 +95,12 @@ func handleHistory(cmd *cobra.Command, args []string) error {
 		return nil
 	}
 
+	cs := hypha.GetDefaultColorScheme()
+	rowStyle := lg.NewStyle().
+		MarginLeft(4)
 	p := tea.NewProgram(model{
 		records: records,
+		Style:   NewHistoryStyle(&rowStyle, &cs),
 	})
 
 	if _, err := p.Run(); err != nil {

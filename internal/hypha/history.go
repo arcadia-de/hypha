@@ -29,7 +29,7 @@ type HistoryRecord struct {
 	RunID      uint64
 	AppliedAt  int64
 	Action     string
-	Status     string
+	Status     ControllerStatus
 }
 
 type HistoryRecordVisitor func(HistoryRecord) bool
@@ -48,7 +48,7 @@ func goHistoryLogVisit(rec *C.HistoryRecord, data unsafe.Pointer) C.bool {
 		RunID:      uint64(rec.run_id),
 		AppliedAt:  int64(rec.applied_at),
 		Action:     GetControllerActionName(ControllerAction(rec.action)),
-		Status:     GetControllerStatusName(ControllerStatus(rec.status)),
+		Status:     ControllerStatus(rec.status),
 	}
 	return C.bool(vis(goRec))
 }

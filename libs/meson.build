@@ -10,6 +10,7 @@ subdir('pkg-manager/')
 subdir('planner/')
 subdir('validation/')
 subdir('action/')
+subdir('service/')
 
 subdir('controllers/')
 subdir('hypha/')
