@@ -1,5 +1,12 @@
 package hypha
 
+type ResourceStatus struct {
+	State     ResourceState
+	Action    ControllerAction
+	Timestamp uint64
+	Reason    string
+}
+
 type Resource struct {
 	ID       string `json:"id,omitempty" yaml:"id,omitempty"`
 	Kind     string `json:"kind,omitempty" yaml:"kind,omitempty"`
@@ -8,4 +15,13 @@ type Resource struct {
 	Reason   string
 	Metadata ResourceMetadata `json:"metadata" yaml:"metadata"`
 	Spec     string
+	Status   ResourceStatus
+}
+
+func (res *Resource) HasLabels() bool {
+	return len(res.Metadata.Labels) > 0
+}
+
+func (res *Resource) HasAnnotations() bool {
+	return len(res.Metadata.Annotations) > 0
 }

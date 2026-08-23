@@ -18,74 +18,11 @@ func CreateDescribeFilter(kind string, refs []string) hypha.ResourceSelector {
 	})
 }
 
-var (
-	SummaryTitleStyle = lg.NewStyle()
-
-	SummaryFieldStyle = lg.NewStyle().
-				Width(15).
-				PaddingLeft(2)
-
-	SummaryValueStyle = lg.NewStyle()
-
-	SummaryLabelStyle = lg.NewStyle().
-				PaddingLeft(4)
-
-	SummaryAnnotationStyle = lg.NewStyle().
-				PaddingLeft(4)
-)
-
-func PrintResourceSummaryField(name string, value string) {
-	fmt.Printf("%s %s\n", SummaryFieldStyle.Render(fmt.Sprintf("%s:", name)), SummaryValueStyle.Render(value))
-}
-
-func PrintResourceAnnotations(annotations []hypha.ResourceAnnotation) {
-	fmt.Printf("%s\n", SummaryFieldStyle.Render("annotations:"))
-	for _, annotation := range annotations {
-		annot := fmt.Sprintf("%s=%s", annotation.Key, annotation.Value)
-		fmt.Printf("%s\n", SummaryAnnotationStyle.Render(annot))
-	}
-}
-
-func PrintResourceLabels(labels []string) {
-	fmt.Printf("%s\n", SummaryFieldStyle.Render("labels:"))
-	for _, label := range labels {
-		fmt.Printf("%s\n", SummaryLabelStyle.Render(label))
-	}
-}
-
-func PrintResourceSummary(resource hypha.Resource) {
-	// TestRawManifest2
-	//	kind:        test
-	//	id:          0
-	//	labels:      env=dev, owner=tazz
-	//	annotations: source-kind=raw, hypha.io/managed-by=controller-x
-	//	spec:
-	//	  <jsonnet-resolved fields>
-	//	state:
-	//	  last action:  Create
-	//	  last status:  ok
-	//	  last applied: 2026-08-14T09:12:03Z
-	fmt.Printf("%s\n", SummaryTitleStyle.Render(resource.ID))
-	PrintResourceSummaryField("kind", resource.Kind)
-	PrintResourceSummaryField("id", resource.ID)
-
-	if len(resource.Metadata.Labels) > 0 {
-		PrintResourceLabels(resource.Metadata.Labels)
-	}
-
-	if len(resource.Metadata.Annotations) > 0 {
-		PrintResourceAnnotations(resource.Metadata.Annotations)
-	}
-
-	if len(resource.Spec) > 0 {
-		fmt.Printf("%s\n", SummaryFieldStyle.Render(fmt.Sprintf("spec: %s", resource.Spec)))
-	}
-
-	// TODO(@s0cks): fmt.Printf("%s\n", SummaryFieldStyle.Render("state:"))
-}
-
 func handleDescribe(kind string, args []string) error {
 	_ = kind
+
+	rowStyle := lg.NewStyle().MarginLeft(2)
+	style := NewDescribeStyle(&rowStyle)
 
 	orc, err := hypha.NewOrchestratorWithDefaultConfig()
 	if err != nil {
@@ -104,7 +41,7 @@ func handleDescribe(kind string, args []string) error {
 	resources := rg.ListResourcesWithSelector(filter)
 	for _, r := range resources {
 		fmt.Println()
-		PrintResourceSummary(r)
+		style.Print(r)
 	}
 	fmt.Println()
 

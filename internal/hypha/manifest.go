@@ -8,6 +8,8 @@ import (
 	"gopkg.in/yaml.v3"
 	"os"
 	"runtime"
+
+	lib "github.com/arcadia-de/hypha/jsonnet"
 )
 
 type ResourceAnnotation struct {
@@ -82,7 +84,10 @@ func GetOperatingSystemName() *jsonnet.NativeFunction {
 
 func CreateJsonnetVM() *jsonnet.VM {
 	vm := jsonnet.MakeVM()
-	vm.Importer(&MemoryImporter{})
+	vm.Importer(&EmbedImporter{
+		FS: lib.LibsonnetFiles,
+	})
+
 	vm.ExtVar("env", "production")
 	vm.ExtCode("features", `{"enableBeta": true, "maxUsers": 100}`)
 

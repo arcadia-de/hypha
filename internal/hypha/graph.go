@@ -2,6 +2,7 @@ package hypha
 
 /*
 #cgo pkg-config: hypha-uninstalled
+#include <stdlib.h>
 #include "hypha.h"
 #include "hypha/resource_state.h"
 #include "hypha/resource_graph.h"
@@ -14,6 +15,7 @@ import (
 	"fmt"
 	"runtime"
 	"runtime/cgo"
+	"strings"
 	"unsafe"
 )
 
@@ -49,13 +51,42 @@ func goVisitResource(idx C.ResourceGraphIndex, res *C.Resource, data unsafe.Poin
 		labels = append(labels, C.GoStringN(ptr, C.int(labelSize)))
 	}
 
+	annotations := []ResourceAnnotation{}
+	num_annotations := int(res.info.annotations_len)
+	annotationSize := unsafe.Sizeof(C.Annotation{})
+	annotationsStart := uintptr(unsafe.Pointer(res.info.annotations))
+
+	for i := range num_annotations {
+		offset := annotationsStart + (uintptr(i) * annotationSize)
+		namePtr := offset
+		valuePtr := offset + uintptr(C.HYPHA_ANNOTATION_KEY_SIZE)
+
+		annotations = append(annotations, ResourceAnnotation{
+			Key:   C.GoStringN((*C.char)(unsafe.Pointer(namePtr)), C.HYPHA_ANNOTATION_KEY_SIZE),
+			Value: C.GoStringN((*C.char)(unsafe.Pointer(valuePtr)), C.HYPHA_ANNOTATION_VALUE_SIZE),
+		})
+	}
+
+	rawReason := C.GoStringN(&res.status.reason[0], C.int(C.HYPHA_REASON_MAX_LENGTH))
+	goReason, _, _ := strings.Cut(rawReason, "\x00")
+
 	goResource := Resource{
 		ID:    formatResourceID(res.id),
 		Kind:  C.GoString(res.kind),
 		State: C.GoString(C.ResourceStateCStr(res.state)),
 		Metadata: ResourceMetadata{
-			Name:   C.GoString(res.info.name),
-			Labels: labels,
+			Name:        C.GoString(res.info.name),
+			Labels:      labels,
+			Annotations: annotations,
+		},
+		Spec: C.GoString(res.spec.raw),
+		Status: ResourceStatus{
+			State:  ResourceState(res.status.state),
+			Action: ControllerAction(res.status.action),
+			Reason: goReason,
+
+			//TODO(@s0cks):
+			// struct timespec timestamp;
 		},
 	}
 

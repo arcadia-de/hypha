@@ -46,6 +46,8 @@ typedef struct {
 
 typedef struct {
   ResourceState state;
+  ControllerAction action;
+  struct timespec timestamp;
   Reason reason;
 } ResourceStatus;
 

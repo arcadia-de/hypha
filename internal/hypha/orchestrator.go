@@ -602,6 +602,7 @@ func (orc *Orchestrator) ProcessDiscoveredManifests() {
 		}
 
 		if err != nil {
+			fmt.Printf("error processing %s: %v", dm.Value, err)
 			return false
 		}
 
