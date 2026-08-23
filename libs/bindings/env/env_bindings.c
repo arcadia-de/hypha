@@ -6,6 +6,8 @@
 #include <stdlib.h>
 #include <string.h>
 
+#include "hypha/env.h"
+
 LUA_FN(get) {
   const char* name = luaL_checkstring(L, 1);
   char* value = getenv(name);
@@ -27,21 +29,17 @@ LUA_FN(has) {
 
 extern char** environ;
 
+static inline bool AppendEnvVar(uint64_t idx, const char* k, const char* v, void* data) {
+#define L ((lua_State*)data)
+  lua_pushstring(L, v);
+  lua_setfield(L, -2, k);
+#undef L
+  return true;
+}
+
 LUA_FN(all) {
-  const char delims[] = "=";
-
   lua_newtable(L);
-
-  for (char** env = environ; *env != NULL; env++) {
-    char* str = (*env);
-
-    char* key = strtok(str, delims);
-    char* value = strtok(NULL, delims);
-
-    lua_pushstring(L, value);
-    lua_setfield(L, -2, key);
-  }
-
+  VisitAllEnvVars(&AppendEnvVar, L);
   return 1;
 }
 

@@ -94,9 +94,7 @@ static inline void ReconcileWork(uv_work_t* req) {
       goto finished;
 
     task->action = ControllerPlan(ctrl, observed, desired, &task->plan);
-    if (IsPlanReconcileTask(task))
-      goto finished;
-    if (task->action == kNoAction)
+    if (IsPlanReconcileTask(task) || task->action == kNoAction)
       goto finished;
 
     if (IsApplyReconcileTask(task))

@@ -10,6 +10,7 @@ hypha_utils = static_library(
     'src/glob.c',
     'src/crc32.c',
     'src/bitset.c',
+    'src/env.c',
   ],
   dependencies: hypha_utils_deps,
   include_directories: hypha_utils_inc,

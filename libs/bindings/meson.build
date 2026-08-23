@@ -9,7 +9,11 @@ bindings_matrix = {
       hypha_utils_dep,
     ],
   },
-  'env': {},
+  'env': {
+    'deps': [
+      hypha_utils_dep,
+    ],
+  },
   'events': {
     'deps': [
       hypha_events_dep,

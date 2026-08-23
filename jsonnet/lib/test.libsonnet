@@ -5,13 +5,8 @@
       metadata: {
         name: name,
       },
+      spec: (if spec != null then spec else {}),
     } +
-    (if spec != null then
-       {
-         spec: spec,
-       }
-     else
-       {}) +
     (if labels != null then
        {
          metadata+: {
