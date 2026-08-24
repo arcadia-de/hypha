@@ -1,6 +1,7 @@
 #ifdef HYPHA_GRAPHVIZ_ENABLED
 
 #include "hypha.h"
+#include "hypha/assertions.h"
 #include "hypha/log.h"
 #include "hypha/resource_graph.h"
 

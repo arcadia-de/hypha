@@ -9,7 +9,7 @@ pkg_manager_api = static_library(
     hypha_log_dep,
     hypha_utils_dep,
   ],
-  c_args: [ '-Wno-unused-variable' ],
+  c_args: ['-Wno-unused-variable'],
   include_directories: [
     pkg_manager_api_inc,
   ],

@@ -9,6 +9,7 @@ extern "C" {
 #include <uuid/uuid.h>
 
 #include "hypha.h"
+#include "hypha/reason.h"
 
 typedef struct {
   struct timespec timestamp;

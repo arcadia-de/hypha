@@ -4,6 +4,7 @@
 #include <xxhash.h>
 
 #include "hypha.h"
+#include "hypha/assertions.h"
 #include "hypha/label.h"
 #include "hypha/log.h"
 
@@ -26,34 +27,28 @@ bool ResourceMatchesRef(const Resource* res, const char* ref) {
   return ResourceHasId(res, ref);
 }
 
-bool ResourceHasLabel(const Resource* res, const Label* rhs) {
+bool ResourceHasLabel(const Resource* res, const Label rhs) {
   if (!res || !rhs)
     return false;
 
   const ResourceInfo* info = &res->info;
   for (size_t i = 0; i < info->labels_len; i++) {
-    if (LabelEq(&info->labels[i], rhs))
+    if (LabelEq(info->labels[i], rhs))
       return true;
   }
 
   return false;
 }
 
-bool ResourceVisitLabels(const Resource* res, bool (*vis)(const Resource*, const uint64_t, const Label*)) {
-  bool result = false;
-  if (!res)
-    goto success;
+void ResourceVisitLabels(const Resource* res, VisitResourceLabelFn fn, void* data) {
+  ASSERT(res);
+  ASSERT(fn);
 
   const ResourceInfo* info = &res->info;
   for (size_t i = 0; i < info->labels_len; i++) {
-    if (!vis(res, i, &info->labels[i]))
-      goto finished;
+    if (!fn(i, info->labels[i], data))
+      return;
   }
-
-success:
-  result = true;
-finished:
-  return result;
 }
 
 bool ResourceVisitAnnotations(const Resource* res, bool (*vis)(const Resource*, const uint64_t, const Annotation*)) {
@@ -146,20 +141,37 @@ finished:
   return result;
 }
 
-void ResourcePushLabel(Resource* res, const Label* label) {
-  ASSERT(res);
-  ASSERT(label);
-  ResourceInfo* info = &res->info;
-  if ((info->labels_len + 1) >= info->labels_cap) {
-    const size_t new_cap = info->labels_cap * 2;
+static inline void EnsureLabelsCapacity(ResourceInfo* info, const size_t num_labels) {
+  if (num_labels < info->labels_cap)
+    return;
+  else if ((info->labels_len + num_labels) >= info->labels_cap) {
+    const size_t new_cap = (info->labels_cap + num_labels + 1);  // TODO(@s0cks): round up pow2
     const size_t total_size = sizeof(Label) * new_cap;
     Label* new_labels = (Label*)realloc(info->labels, total_size);
     LOG_FATAL_IF(!new_labels, "failed to allocate new %zu new resource labels", new_cap);
     info->labels = new_labels;
     info->labels_cap = new_cap;
   }
+}
 
-  memcpy(&info->labels[info->labels_len], *label, HYPHA_LABEL_MAX_SIZE);
+void ResourcePushLabels(Resource* res, const Label* labels, const size_t num_labels) {
+  ASSERT(res);
+  ASSERT(labels);
+  ASSERT(num_labels > 0);
+  ResourceInfo* info = &res->info;
+  EnsureLabelsCapacity(info, info->labels_len + num_labels);
+
+  const size_t total_size = sizeof(Label) * num_labels;
+  memcpy(&info->labels[info->labels_len], labels, total_size);
+  info->labels_len += num_labels;
+}
+
+void ResourcePushLabel(Resource* res, const Label label) {
+  ASSERT(res);
+  ASSERT(label);
+  ResourceInfo* info = &res->info;
+  EnsureLabelsCapacity(info, info->labels_len + 1);
+  memcpy(&info->labels[info->labels_len], label, HYPHA_LABEL_MAX_SIZE);
   info->labels_len++;
 }
 

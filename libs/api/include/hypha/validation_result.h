@@ -6,6 +6,7 @@ extern "C" {
 #endif  // __cplusplus
 
 #include "hypha.h"
+#include "hypha/reason.h"
 
 #define FOR_EACH_VALIDATION_RESULT_KIND(V) \
   V(Skipped)                               \

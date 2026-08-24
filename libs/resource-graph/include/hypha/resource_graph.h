@@ -6,6 +6,7 @@
 #include "hypha.h"
 #include "hypha/resource.h"
 #include "hypha/resource_selector.h"
+#include "hypha/scheduling_strategy.h"
 
 typedef size_t ResourceGraphIndex;
 static const ResourceGraphIndex kInvalidResourceIndex = -1;

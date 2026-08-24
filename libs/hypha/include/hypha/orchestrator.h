@@ -9,6 +9,7 @@
 #include "hypha/event.h"
 #include "hypha/planner.h"
 #include "hypha/resource_graph.h"
+#include "hypha/run_mode.h"
 #include "hypha/validation_log.h"
 
 typedef struct _Orchestrator Orchestrator;

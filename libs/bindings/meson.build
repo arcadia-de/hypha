@@ -38,6 +38,7 @@ bindings_matrix = {
       pkg_manager_api_dep,
       pkg_manager_deps,
     ],
+    'c_args': ['-Wno-unused-variable'],
   },
   'query': {
     'deps': [
@@ -73,6 +74,7 @@ foreach name, cfg : bindings_matrix
     name_prefix: '',
     include_directories: binding_inc,
     install: false,
+    c_args: cfg.get('c_args', []),
     dependencies: base_binding_deps + cfg.get('deps', []),
     override_options: base_override_opts + cfg.get('override_opts', []),
   )

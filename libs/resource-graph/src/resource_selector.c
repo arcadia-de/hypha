@@ -2,6 +2,7 @@
 
 #include "hypha.h"
 #include "hypha/annotation.h"
+#include "hypha/assertions.h"
 #include "hypha/log.h"
 #include "hypha/resource.h"
 
@@ -95,7 +96,7 @@ ResourceSelector* NewOrResourceSelector(ResourceSelector** selectors, const uint
 static inline bool MatchesLabel(const Resource* res, void* data) {
   if (!res || !data)
     return false;
-  return ResourceHasLabel(res, (const Label*)data);
+  return ResourceHasLabel(res, *(const Label*)data);
 }
 
 static inline bool MatchesKind(const Resource* res, void* data) {

@@ -6,6 +6,7 @@
 #include <string.h>
 
 #include "hypha.h"
+#include "hypha/discovered_manifest.h"
 #include "hypha/expander.h"
 #include "hypha/glob.h"
 #include "hypha/log.h"
@@ -36,15 +37,16 @@ LUA_FN(file) {
     lua_setfield(L, new_table_idx, "value");
   } else if (lua_istable(L, 1)) {
     const size_t len = lua_rawlen(L, 1);
-    int file_row_counter = 1;  // FIXED: Prevent nil index gaps when values are skipped
+    int file_row_counter = 1;
 
     for (size_t i = 1; i <= len; i++) {
-      lua_rawgeti(L, 1, i);
+      lua_rawgeti(L, 1, (lua_Integer)i);
       if (!lua_isstring(L, -1)) {
         DLOG_WARN("expected table value at %zu to be a string", i);
         lua_pop(L, 1);
         continue;
       }
+
       const char* s = lua_tostring(L, -1);
       lua_newtable(L);
       const int new_tbl_idx = lua_gettop(L);
@@ -59,7 +61,6 @@ LUA_FN(file) {
       }
       lua_setfield(L, new_tbl_idx, "value");
 
-      // Force tight sequential keys to safeguard the discovery.c loop length calculations
       lua_rawseti(L, new_table_idx, file_row_counter);
       file_row_counter++;
       lua_pop(L, 1);
@@ -124,8 +125,6 @@ LUA_FN(glob) {
     lua_pushnumber(L, kDiscoveredPath);
     lua_setfield(L, -2, "kind");
 
-    // FIXED: Force a deep byte-copy allocation inside the Lua VM
-    // to insulate the data from ClearGlob's C-heap teardown
     lua_pushlstring(L, glob.paths[i], strlen(glob.paths[i]));
     lua_setfield(L, -2, "value");
 
@@ -138,7 +137,6 @@ LUA_FN(glob) {
   if (pattern)
     free(pattern);
 
-  // Safe to clear now—Lua owns its completely independent string copies
   ClearGlob(&glob);
 
   lua_settop(L, res_tbl_idx);

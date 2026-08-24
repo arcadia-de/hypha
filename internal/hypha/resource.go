@@ -1,21 +1,21 @@
 package hypha
 
 type ResourceStatus struct {
-	State     ResourceState
-	Action    ControllerAction
-	Timestamp uint64
-	Reason    string
+	State     ResourceState    `json:"state" yaml:"state"`
+	Action    ControllerAction `json:"action" yaml:"action"`
+	Timestamp uint64           `json:"timestamp" yaml:"timestamp"`
+	Reason    string           `json:"reason" yaml:"reason"`
 }
 
 type Resource struct {
-	ID       string `json:"id,omitempty" yaml:"id,omitempty"`
-	Kind     string `json:"kind,omitempty" yaml:"kind,omitempty"`
-	State    string `json:"state,omitempty" yaml:"state,omitempty"`
-	Action   string
-	Reason   string
+	ID       string           `json:"id,omitempty" yaml:"id,omitempty"`
+	Kind     string           `json:"kind,omitempty" yaml:"kind,omitempty"`
+	State    string           `json:"state,omitempty" yaml:"state,omitempty"`
+	Action   string           `json:"action,omitempty" yaml:"action,omitempty"`
+	Reason   string           `json:"reason,omitempty" yaml:"reason,omitempty"`
 	Metadata ResourceMetadata `json:"metadata" yaml:"metadata"`
-	Spec     string
-	Status   ResourceStatus
+	Spec     any              `json:"spec" yaml:"spec"`
+	Status   ResourceStatus   `json:"status" yaml:"status"`
 }
 
 func (res *Resource) HasLabels() bool {

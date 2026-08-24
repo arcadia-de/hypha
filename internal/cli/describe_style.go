@@ -1,6 +1,7 @@
 package cli
 
 import (
+	"encoding/json"
 	"fmt"
 
 	lg "charm.land/lipgloss/v2"
@@ -8,19 +9,21 @@ import (
 )
 
 type DescribeStyle struct {
-	RowStyle lg.Style
-
+	NameStyle       lg.Style
+	RowStyle        lg.Style
 	FieldNameStyle  lg.Style
 	FieldValueStyle lg.Style
 }
 
 func NewDescribeStyle(rowStyle *lg.Style) *DescribeStyle {
 	return &DescribeStyle{
-		RowStyle: (*rowStyle),
+		NameStyle: (*rowStyle),
+		RowStyle: (*rowStyle).
+			PaddingLeft(rowStyle.GetPaddingLeft() + 2),
 		FieldNameStyle: lg.NewStyle().
-			Align(lg.Right).
+			Align(lg.Left).
 			Bold(true).
-			Width(15),
+			Width(18),
 		FieldValueStyle: lg.NewStyle(),
 	}
 }
@@ -28,16 +31,22 @@ func NewDescribeStyle(rowStyle *lg.Style) *DescribeStyle {
 func (style *DescribeStyle) PrintFieldNameWithRowStyle(rowStyle *lg.Style, name string) {
 	fmt.Println((*rowStyle).Render(lg.JoinHorizontal(
 		lg.Left,
-		style.FieldNameStyle.Render(name),
-		": ",
+		style.FieldNameStyle.Render(name+": "),
+	)))
+}
+
+func (style *DescribeStyle) PrintFieldWithRowAndNameStyle(rowStyle *lg.Style, nameStyle *lg.Style, name string, value string) {
+	fmt.Println((*rowStyle).Render(lg.JoinHorizontal(
+		lg.Left,
+		nameStyle.Render(name+": "),
+		style.FieldValueStyle.Render(value),
 	)))
 }
 
 func (style *DescribeStyle) PrintFieldWithRowStyle(rowStyle *lg.Style, name string, value string) {
 	fmt.Println((*rowStyle).Render(lg.JoinHorizontal(
 		lg.Left,
-		style.FieldNameStyle.Render(name),
-		": ",
+		style.FieldNameStyle.Render(name+": "),
 		style.FieldValueStyle.Render(value),
 	)))
 }
@@ -48,39 +57,52 @@ func (style *DescribeStyle) PrintField(name string, value string) {
 
 func (style *DescribeStyle) PrintAnnotations(annotations []hypha.ResourceAnnotation) {
 	style.PrintFieldNameWithRowStyle(&style.RowStyle, "Annotations")
-	rowStyle := style.RowStyle.MarginLeft(style.RowStyle.GetMarginLeft() + 2 + style.FieldNameStyle.GetWidth())
+	rowStyle := style.RowStyle.PaddingLeft(style.RowStyle.GetPaddingLeft() + 2)
 	for _, annotation := range annotations {
 		fmt.Println(rowStyle.Render(lg.JoinHorizontal(
 			lg.Left,
-			style.FieldValueStyle.Render(fmt.Sprintf("%s=%s", annotation.Key, annotation.Value)),
+			style.FieldValueStyle.Render(fmt.Sprintf("- %s=%s", annotation.Key, annotation.Value)),
 		)))
 	}
 }
 
 func (style *DescribeStyle) PrintLabels(labels []string) {
 	style.PrintFieldNameWithRowStyle(&style.RowStyle, "Labels")
-	rowStyle := style.RowStyle.MarginLeft(style.RowStyle.GetMarginLeft() + 2 + style.FieldNameStyle.GetWidth())
+	rowStyle := style.RowStyle.PaddingLeft(style.RowStyle.GetPaddingLeft() + 2)
 	for _, label := range labels {
 		fmt.Println(rowStyle.Render(lg.JoinHorizontal(
 			lg.Left,
-			style.FieldValueStyle.Render(label),
+			style.FieldValueStyle.Render(fmt.Sprintf("- %s", label)),
 		)))
 	}
 }
 
 func (style *DescribeStyle) PrintStatus(status hypha.ResourceStatus) {
-	fmt.Println()
 	style.PrintFieldNameWithRowStyle(&style.RowStyle, "Status")
-	rowStyle := style.RowStyle.MarginLeft(style.RowStyle.GetMarginLeft() + 2)
-	style.PrintFieldWithRowStyle(&rowStyle, "State", status.State.String())
-	style.PrintFieldWithRowStyle(&rowStyle, "Action", hypha.GetControllerActionName(status.Action))
-	style.PrintFieldWithRowStyle(&rowStyle, "Reason", status.Reason)
+	rowStyle := style.RowStyle.PaddingLeft(style.RowStyle.GetPaddingLeft() + 2)
+	nameStyle := style.FieldNameStyle.Width(style.FieldNameStyle.GetWidth() - 2)
+	style.PrintFieldWithRowAndNameStyle(&rowStyle, &nameStyle, "State", status.State.String())
+	style.PrintFieldWithRowAndNameStyle(&rowStyle, &nameStyle, "Action", hypha.GetControllerActionName(status.Action))
+	style.PrintFieldWithRowAndNameStyle(&rowStyle, &nameStyle, "Reason", status.Reason)
+}
+
+func (style *DescribeStyle) PrintSpec(spec any) {
+	style.PrintFieldNameWithRowStyle(&style.RowStyle, "Spec")
+	rowStyle := style.RowStyle.PaddingLeft(style.RowStyle.GetPaddingLeft() + 2)
+	bytes, err := json.MarshalIndent(spec, "", "  ")
+	if err != nil {
+		fmt.Println(rowStyle.Render(fmt.Sprintf("cannot marshal spec: %v", err)))
+		return
+	}
+
+	fmt.Println(rowStyle.Render(string(bytes)))
 }
 
 func (style *DescribeStyle) Print(resource hypha.Resource) {
-	fmt.Println(style.RowStyle.Render(resource.Metadata.Name))
-	style.PrintField("ID", resource.ID)
+	fmt.Println(style.NameStyle.Render(resource.Metadata.Name))
+
 	style.PrintField("Kind", resource.Kind)
+	style.PrintField("ID", resource.ID)
 
 	if resource.HasLabels() {
 		style.PrintLabels(resource.Metadata.Labels)
@@ -90,9 +112,11 @@ func (style *DescribeStyle) Print(resource hypha.Resource) {
 		style.PrintAnnotations(resource.Metadata.Annotations)
 	}
 
-	if len(resource.Spec) > 0 {
-		style.PrintField("Spec", resource.Spec)
-	}
+	fmt.Println()
+
+	style.PrintSpec(resource.Spec)
+
+	fmt.Println()
 
 	style.PrintStatus(resource.Status)
 }

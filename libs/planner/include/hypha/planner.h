@@ -9,7 +9,9 @@ extern "C" {
 #include <stdio.h>
 
 #include "hypha.h"
+#include "hypha/assertions.h"
 #include "hypha/planned_action.h"
+#include "hypha/reason.h"
 
 typedef struct {
   PlannedAction* actions;

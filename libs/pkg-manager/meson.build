@@ -65,7 +65,7 @@ foreach name, cfg : pkg_manager_matrix
     include_directories: [
       pkg_manager_inc,
     ],
-    c_args: [ '-Wno-unused-variable' ],
+    c_args: ['-Wno-unused-variable'],
     dependencies: base_pkg_manager_deps + cfg.get('deps'),
     override_options: cfg.get('override_opts'),
   )

@@ -4,12 +4,7 @@
 #include <lua.h>
 #include <stddef.h>
 
-#include "hypha.h"
-
-typedef struct {
-  DiscoveredManifestKind kind;
-  char* value;
-} DiscoveredManifest;
+#include "hypha/discovered_manifest.h"
 
 void DiscoverManifestPaths(lua_State* L, DiscoveredManifest** discovered, size_t* num_discovered);
 

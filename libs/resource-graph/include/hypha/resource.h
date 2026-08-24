@@ -10,6 +10,8 @@
 #include "hypha.h"
 #include "hypha/annotation.h"
 #include "hypha/label.h"
+#include "hypha/orchestrator_state.h"
+#include "hypha/reason.h"
 #include "hypha/resource_id.h"
 #include "hypha/resource_state.h"
 
@@ -79,9 +81,12 @@ bool ResourceHasId(const Resource* res, const char* id);
 // name or its id. Name is checked first since that's what a person is expected
 // to type; id (uuid) is the fallback for machine/controller-supplied references.
 bool ResourceMatchesRef(const Resource* res, const char* ref);
-void ResourcePushLabel(Resource* res, const Label* label);
-bool ResourceHasLabel(const Resource* res, const Label* label);
-bool ResourceVisitLabels(const Resource* res, bool (*vis)(const Resource*, const uint64_t, const Label*));
+void ResourcePushLabel(Resource* res, const Label label);
+void ResourcePushLabels(Resource* res, const Label* labels, const size_t num_labels);
+bool ResourceHasLabel(const Resource* res, const Label label);
+
+typedef bool (*VisitResourceLabelFn)(uint64_t, const Label, void*);
+void ResourceVisitLabels(const Resource* res, VisitResourceLabelFn fn, void* data);
 
 static inline void PushResourceAnnotation(Resource* res, const Annotation* rhs) {
   ResourceInfo* info = &res->info;

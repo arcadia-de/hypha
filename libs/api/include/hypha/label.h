@@ -13,11 +13,11 @@ extern "C" {
 
 typedef char Label[HYPHA_LABEL_MAX_SIZE];
 
-static inline int CompareLabel(const Label* lhs, const Label* rhs) {
-  return strncmp(*lhs, *rhs, HYPHA_LABEL_MAX_SIZE);
+static inline int CompareLabel(const Label lhs, const Label rhs) {
+  return strncmp(lhs, rhs, HYPHA_LABEL_MAX_SIZE);
 }
 
-static inline bool LabelEq(const Label* lhs, const Label* rhs) {
+static inline bool LabelEq(const Label lhs, const Label rhs) {
   return CompareLabel(lhs, rhs) == 0;
 }
 

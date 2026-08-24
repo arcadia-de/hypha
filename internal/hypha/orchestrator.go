@@ -596,7 +596,11 @@ func (orc *Orchestrator) ProcessDiscoveredManifests() {
 
 		switch dm.Kind {
 		case DiscoveredManifestPath:
-			specs, err = orc.ParseResourceSpecsFromJsonnetFile(dm.Value)
+			if strings.HasSuffix(dm.Value, ".yaml") {
+				//TODO(@s0cks): implement
+			} else if strings.HasSuffix(dm.Value, ".jsonnet") {
+				specs, err = orc.ParseResourceSpecsFromJsonnetFile(dm.Value)
+			}
 		case DiscoveredManifestRaw:
 			specs, err = orc.ParseResourceSpecsFromJsonnet(dm.Value)
 		}

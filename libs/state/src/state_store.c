@@ -5,6 +5,7 @@
 #include <string.h>
 
 #include "hypha/annotation.h"
+#include "hypha/assertions.h"
 #include "hypha/log.h"
 #include "hypha/state.h"
 #include "state_log.h"

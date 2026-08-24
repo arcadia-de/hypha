@@ -10,6 +10,7 @@ extern "C" {
 #include <uv.h>
 
 #include "hypha.h"
+#include "hypha/controller_status.h"
 
 #define FOR_EACH_ORCHESTRATOR_EVENT(V) \
   V(OrchestratorInit)                  \

@@ -9,6 +9,7 @@ extern "C" {
 #include <stdio.h>
 
 #include "hypha.h"
+#include "hypha/controller_status.h"
 #include "hypha/planner.h"
 #include "hypha/resource.h"
 #include "hypha/validation_log.h"

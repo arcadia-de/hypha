@@ -55,11 +55,11 @@ static inline void ResourceDecoratorPipelineAddAnnotation(Resource* res, void* d
   PushResourceAnnotation(res, annotation);
 }
 
-void ResourceDecoratorPipelineAnnotate(ResourceDecoratorPipeline* pipe, const AnnotationKey* key,
-                                       const AnnotationValue* value) {
+void ResourceDecoratorPipelineAnnotate(ResourceDecoratorPipeline* pipe, const AnnotationKey key,
+                                       const AnnotationValue value) {
   Annotation annotation;
-  memcpy(annotation.key, *key, sizeof(AnnotationKey));
-  memcpy(annotation.value, *value, sizeof(AnnotationValue));
+  memcpy(annotation.key, key, sizeof(AnnotationKey));
+  memcpy(annotation.value, value, sizeof(AnnotationValue));
   return ResourceDecoratorPipelineAdd(pipe, &ResourceDecoratorPipelineAddAnnotation, &annotation, NULL);
 }
 
@@ -67,7 +67,7 @@ static inline void ResourceDecoratorPipelineAddLabel(Resource* res, void* data) 
   ResourceInfo* info = &res->info;
   const Label* label = (const Label*)data;
 
-  if (info->labels_len + 1 >= info->labels_cap) {
+  if ((info->labels_len + 1) >= info->labels_cap) {
     const size_t new_cap = info->labels_cap * 2;
     const size_t total_size = sizeof(Label) * new_cap;
     Label* new_labels = (Label*)realloc(info->labels, total_size);
@@ -80,8 +80,8 @@ static inline void ResourceDecoratorPipelineAddLabel(Resource* res, void* data) 
   info->labels_len++;
 }
 
-void ResourceDecoratorPipelineLabel(ResourceDecoratorPipeline* pipe, const Label* label) {
-  return ResourceDecoratorPipelineAdd(pipe, &ResourceDecoratorPipelineAddLabel, (void*)label, NULL);
+void ResourceDecoratorPipelineLabel(ResourceDecoratorPipeline* pipe, const Label label) {
+  return ResourceDecoratorPipelineAdd(pipe, &ResourceDecoratorPipelineAddLabel, strdup(label), free);
 }
 
 static inline void ExecStage(ResourceDecoratorPipelineStage* stage, Resource* res) {
@@ -108,7 +108,7 @@ void FreeResourceDecoratorPipeline(ResourceDecoratorPipeline* pipe) {
     return;
 
   BEGIN_FOREACH_DECORATOR_PIPELINE_STAGE(pipe, stage)
-  if (stage->free_data)
+  if (stage->data && stage->free_data)
     stage->free_data(stage->data);
   END_FOREACH_DECORATOR_PIPELINE_STAGE
 

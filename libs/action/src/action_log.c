@@ -2,6 +2,7 @@
 
 #include <string.h>
 
+#include "hypha/assertions.h"
 #include "hypha/log.h"
 
 void InitActionLog(ActionLog* alog, const size_t init_cap) {

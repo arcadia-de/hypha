@@ -1,0 +1,6 @@
+kind: Test
+metadata:
+  name: example-test
+  labels:
+    - test
+spec: {}

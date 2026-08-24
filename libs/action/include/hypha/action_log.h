@@ -9,6 +9,7 @@ extern "C" {
 #include <time.h>
 
 #include "hypha.h"
+#include "hypha/reason.h"
 
 typedef struct {
   uint32_t action;

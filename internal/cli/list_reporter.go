@@ -31,9 +31,9 @@ func (p PlainListReporter) Run(resources []hypha.Resource) (any, error) {
 	return nil, nil
 }
 
-type PrettyListReporter struct{}
+type ColoredListReporter struct{}
 
-func (p PrettyListReporter) Run(resources []hypha.Resource) (any, error) {
+func (p ColoredListReporter) Run(resources []hypha.Resource) (any, error) {
 	cs := hypha.GetDefaultColorScheme()
 	rowStyle := lg.NewStyle().
 		MarginLeft(2)
@@ -42,9 +42,9 @@ func (p PrettyListReporter) Run(resources []hypha.Resource) (any, error) {
 	return nil, nil
 }
 
-type ColoredListReporter struct{}
+type PrettyListReporter struct{}
 
-func (p ColoredListReporter) Run(resources []hypha.Resource) (any, error) {
+func (p PrettyListReporter) Run(resources []hypha.Resource) (any, error) {
 	cs := hypha.GetDefaultColorScheme()
 	rowStyle := lg.NewStyle().
 		MarginLeft(2)

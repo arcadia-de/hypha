@@ -2,6 +2,7 @@
 
 #include <string.h>
 
+#include "hypha/assertions.h"
 #include "hypha/log.h"
 #include "hypha/resource.h"
 #include "hypha/validation_result.h"

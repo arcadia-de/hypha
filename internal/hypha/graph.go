@@ -12,6 +12,7 @@ bool goVisitResource(ResourceGraphIndex, Resource* res, void* data);
 import "C"
 
 import (
+	"encoding/json"
 	"fmt"
 	"runtime"
 	"runtime/cgo"
@@ -48,7 +49,9 @@ func goVisitResource(idx C.ResourceGraphIndex, res *C.Resource, data unsafe.Poin
 	for i := range count {
 		offset := basePtr + (uintptr(i) * labelSize)
 		ptr := (*C.char)(unsafe.Pointer(offset))
-		labels = append(labels, C.GoStringN(ptr, C.int(labelSize)))
+		rawLabel := C.GoStringN(ptr, C.int(C.HYPHA_LABEL_MAX_SIZE))
+		goLabel, _, _ := strings.Cut(rawLabel, "\x00")
+		labels = append(labels, goLabel)
 	}
 
 	annotations := []ResourceAnnotation{}
@@ -70,6 +73,13 @@ func goVisitResource(idx C.ResourceGraphIndex, res *C.Resource, data unsafe.Poin
 	rawReason := C.GoStringN(&res.status.reason[0], C.int(C.HYPHA_REASON_MAX_LENGTH))
 	goReason, _, _ := strings.Cut(rawReason, "\x00")
 
+	goSpecStr := C.GoString(res.spec.raw)
+	var spec any
+	if err := json.Unmarshal([]byte(goSpecStr), &spec); err != nil {
+		fmt.Printf("failed to unmarshal spec field", err)
+		spec = goSpecStr
+	}
+
 	goResource := Resource{
 		ID:    formatResourceID(res.id),
 		Kind:  C.GoString(res.kind),
@@ -79,7 +89,7 @@ func goVisitResource(idx C.ResourceGraphIndex, res *C.Resource, data unsafe.Poin
 			Labels:      labels,
 			Annotations: annotations,
 		},
-		Spec: C.GoString(res.spec.raw),
+		Spec: spec,
 		Status: ResourceStatus{
 			State:  ResourceState(res.status.state),
 			Action: ControllerAction(res.status.action),

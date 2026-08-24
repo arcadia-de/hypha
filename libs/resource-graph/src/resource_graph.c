@@ -3,6 +3,7 @@
 #include <stdlib.h>
 
 #include "hypha.h"
+#include "hypha/assertions.h"
 #include "hypha/bitset.h"
 #include "hypha/log.h"
 #include "hypha/resource_selector.h"

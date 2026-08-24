@@ -4,6 +4,8 @@
 #include <stddef.h>
 #include <stdint.h>
 
+#include "hypha/assertions.h"
+
 #define FOR_EACH_PACKAGE_MANAGER(V) \
   V(Apt)                            \
   V(Asdf)                           \

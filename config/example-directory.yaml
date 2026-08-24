@@ -1,0 +1,7 @@
+kind: Directory
+metadata:
+  name: example-dir
+  labels:
+    - test
+spec:
+  target: ~/.config/example/

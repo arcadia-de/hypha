@@ -4,25 +4,22 @@ import (
 	"fmt"
 	"strings"
 
-	lg "charm.land/lipgloss/v2"
 	"github.com/arcadia-de/hypha/internal/hypha"
 	"github.com/spf13/cobra"
 )
 
 func CreateDescribeFilter(kind string, refs []string) hypha.ResourceSelector {
-	kindFilter := hypha.NewKindResourceSelector(kind)
-	refsFilter := hypha.NewRefsResourceSelector(refs)
-	return hypha.NewAndResourceSelector([]hypha.ResourceSelector{
-		kindFilter,
-		refsFilter,
-	})
+	filters := []hypha.ResourceSelector{}
+	filters = append(filters, hypha.NewKindResourceSelector(kind))
+	if len(refs) > 0 {
+		filters = append(filters, hypha.NewRefsResourceSelector(refs))
+	}
+
+	return hypha.NewAndResourceSelector(filters)
 }
 
-func handleDescribe(kind string, args []string) error {
+func HandleDescribeKind(kind string, args []string) error {
 	_ = kind
-
-	rowStyle := lg.NewStyle().MarginLeft(2)
-	style := NewDescribeStyle(&rowStyle)
 
 	orc, err := hypha.NewOrchestratorWithDefaultConfig()
 	if err != nil {
@@ -32,24 +29,22 @@ func handleDescribe(kind string, args []string) error {
 
 	orc.ProcessDiscoveredManifests()
 
-	fmt.Println()
-
 	filter := CreateDescribeFilter(kind, args)
 	defer filter.Close()
 
 	rg := orc.GetResourceGraph()
 	resources := rg.ListResourcesWithSelector(filter)
-	for _, r := range resources {
-		fmt.Println()
-		style.Print(r)
+	reporter := GetDescribeReporter()
+	err = reporter.Run(resources)
+	if err != nil {
+		return fmt.Errorf("failed to report resources")
 	}
-	fmt.Println()
 
 	return nil
 }
 
-func createDescribeResourceCommand(kind string) *cobra.Command {
-	return &cobra.Command{
+func CreateDescribeKindCommand(kind string) *cobra.Command {
+	cmd := &cobra.Command{
 		Use: kind + "s",
 		Aliases: []string{
 			kind,
@@ -57,11 +52,13 @@ func createDescribeResourceCommand(kind string) *cobra.Command {
 			strings.ToLower(kind) + "s",
 		},
 		Short: fmt.Sprintf("Describe %s resources", kind),
-		Args:  cobra.MinimumNArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
-			return handleDescribe(kind, args)
+			return HandleDescribeKind(kind, args)
 		},
 	}
+	cmd.PersistentFlags().StringP("format", "f", "pretty", fmt.Sprintf("Change the output format. Valid values are: %s", strings.Join(GetListReporters(), ", ")))
+
+	return cmd
 }
 
 func CreateDescribeCommand(kinds []string) *cobra.Command {
@@ -75,7 +72,7 @@ func CreateDescribeCommand(kinds []string) *cobra.Command {
 	}
 
 	for _, kind := range kinds {
-		describeCmd.AddCommand(createDescribeResourceCommand(kind))
+		describeCmd.AddCommand(CreateDescribeKindCommand(kind))
 	}
 
 	return describeCmd
