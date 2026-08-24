@@ -1,32 +1,31 @@
-hypha_service_inc = include_directories('include/')
-hypha_service_deps = [
-  libuv,
-  threads,
+subdir('api/')
+
+services_matrix = {
+  'systemd': {},
+}
+
+base_service_deps = [
   hypha_api_dep,
   hypha_log_dep,
   hypha_utils_dep,
-  hypha_resource_graph_dep,
+  hypha_service_dep,
 ]
-hypha_service = static_library(
-  'hypha-service',
-  [
-    'src/systemd.c',
-  ],
-  dependencies: hypha_service_deps,
-  include_directories: [
-    hypha_service_inc,
-  ],
-  install: false,
-)
-hypha_service_dep = declare_dependency(
-  link_with: hypha_service,
-  dependencies: hypha_service_deps,
-  include_directories: [
-    hypha_service_inc,
-  ],
-)
+services_deps = []
+foreach name, cfg : services_matrix 
+  binding_inc = include_directories(name)
+  binding_deps = base_service_deps  + cfg.get('deps', [])
+  binding_lib = static_library(
+    'hypha-' + name,
+    files(name / name + '.c'),
+    include_directories: binding_inc,
+    dependencies: binding_deps,
+    override_options: cfg.get('override_opts', []),
+  )
+  services_deps += declare_dependency(
+    link_with: binding_lib,
+    dependencies: binding_deps,
+    include_directories: binding_inc,
+  )
+endforeach
 
-if gtest_dep.found()
-  subdir('test/')
-endif
-
+subdir('all/')
