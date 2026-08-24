@@ -9,9 +9,11 @@
 #include "hypha/log.h"
 #include "hypha/package_manager.h"
 #include "hypha/process.h"
+#include "hypha/service_manager.h"
 #include "package_controller.h"
 #include "repository_controller.h"
 #include "symlink_controller.h"
+#include "systemd.h"
 #include "template_controller.h"
 #include "test_controller.h"
 
@@ -48,7 +50,14 @@ void InitControllers() {
 #undef INIT_CONTROLLER
 }
 
+static inline void InitServiceManagers() {
+  DLOG_INFO("initializing service managers....");
+  InitSystemDServiceManager();
+  DLOG_INFO("%d service managers initialized", GetTotalNumberOfServiceManagers());
+}
+
 void InitHypha(const char* luarocks_dir) {
   InitPackageManagers(luarocks_dir);
   InitControllers();
+  InitServiceManagers();
 }

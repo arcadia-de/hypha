@@ -541,18 +541,30 @@ func (orc *Orchestrator) PrintRuntimeInfo() {
 		": ",
 		valueStyle.Render(goLibuvVersion),
 	)))
+
 	fmt.Println(rowStyle.Render(lg.JoinHorizontal(
 		lg.Left,
 		keyStyle.Render("Registered Controllers"),
 		":",
 	)))
-
 	ctrlRowStyle := rowStyle.
 		MarginLeft(6)
 	VisitControllers(func(ctrl Controller) bool {
 		fmt.Println(ctrlRowStyle.Render(
 			fmt.Sprintf("- %s", ctrl.Kind),
 		))
+		return true
+	})
+
+	fmt.Println(rowStyle.Render(lg.JoinHorizontal(
+		lg.Left,
+		keyStyle.Render("Service Managers"),
+		":",
+	)))
+	smRowStyle := rowStyle.
+		MarginLeft(6)
+	VisitAllServiceManagers(func(sm ServiceManager) bool {
+		fmt.Println(smRowStyle.Render(fmt.Sprintf("- %s", sm.GetName())))
 		return true
 	})
 

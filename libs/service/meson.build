@@ -27,5 +27,3 @@ foreach name, cfg : services_matrix
     include_directories: binding_inc,
   )
 endforeach
-
-subdir('all/')

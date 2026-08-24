@@ -10,7 +10,7 @@ hypha_service_deps = [
 hypha_service = static_library(
   'hypha-service',
   [
-    'src/systemd.c',
+    'src/service_manager.c',
   ],
   dependencies: hypha_service_deps,
   include_directories: [

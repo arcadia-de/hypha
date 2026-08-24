@@ -5,6 +5,7 @@ package hypha
 #include <stdlib.h>
 
 #include "hypha.h"
+#include "hypha/controller_status.h"
 */
 import "C"
 

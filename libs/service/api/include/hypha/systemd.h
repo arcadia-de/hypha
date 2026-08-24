@@ -1,4 +1,0 @@
-#ifndef HYPHA_SYSTEMD_H
-#define HYPHA_SYSTEMD_H
-
-#endif  // HYPHA_SYSTEMD_H

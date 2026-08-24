@@ -12,6 +12,7 @@ hypha_utils = static_library(
     'src/bitset.c',
     'src/env.c',
   ],
+  c_args: ['-Wno-unused-variable'],
   dependencies: hypha_utils_deps,
   include_directories: hypha_utils_inc,
   install: false,
