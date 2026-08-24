@@ -409,75 +409,57 @@ func (orc *Orchestrator) VisitAppliedActions(vis AppliedActionVisitor) {
 	runtime.KeepAlive(handle)
 }
 
+// ParseResourceSpecsFromJsonnet renders and parses an in-memory Jsonnet
+// snippet (used for DiscoveredManifestRaw, i.e. hypha.sources.raw()).
 func (orc *Orchestrator) ParseResourceSpecsFromJsonnet(content string) ([]ResourceSpec, error) {
 	manifest, err := orc.RenderAnonymousJsonnetManifest(content)
 	if err != nil {
 		return nil, fmt.Errorf("failed to evaluating manifest Jsonnet: %v", err)
 	}
 
-	var results []ResourceSpec
 	specs, err := ParseResourceSpecs(manifest)
 	if err != nil {
 		return nil, fmt.Errorf("failed to parse manifest: %v", err)
 	}
 
-	switch v := specs.(type) {
-	case []any:
-		bytes, _ := json.Marshal(v)
-		if err := json.Unmarshal(bytes, &results); err != nil {
-			return nil, err
-		}
-	case map[string]any:
-		bytes, _ := json.Marshal(v)
-		var single ResourceSpec
-		if err := json.Unmarshal(bytes, &single); err != nil {
-			return nil, err
-		}
-
-		results = append(results, single)
-	default:
-		return nil, fmt.Errorf("failed to parse resource spec")
-	}
-
-	return results, nil
+	return ResourceSpecsFromAny(specs)
 }
 
+// ParseResourceSpecsFromJsonnetFile renders and parses a .jsonnet manifest
+// file on disk.
 func (orc *Orchestrator) ParseResourceSpecsFromJsonnetFile(filename string) ([]ResourceSpec, error) {
 	content, err := os.ReadFile(filename)
 	if err != nil {
 		return nil, fmt.Errorf("failed to read manifest: %v", err)
 	}
 
-	manifest, err := orc.RenderAnonymousJsonnetManifest(string(content))
-	if err != nil {
-		return nil, fmt.Errorf("failed to evaluating manifest Jsonnet: %v", err)
-	}
+	return orc.ParseResourceSpecsFromJsonnet(string(content))
+}
 
-	var results []ResourceSpec
-	specs, err := ParseResourceSpecs(manifest)
-	if err != nil {
-		return nil, fmt.Errorf("failed to parse manifest: %v", err)
-	}
-
-	switch v := specs.(type) {
-	case []any:
-		bytes, _ := json.Marshal(v)
-		if err := json.Unmarshal(bytes, &results); err != nil {
+// ParseResourceSpecsFromPath loads a manifest file from disk, dispatching to
+// the appropriate decoder (YAML, JSON, or Jsonnet) based on its extension.
+// This is the single entry point every DiscoveredManifestPath goes through,
+// so hypha.sources.{file,dir,glob} stay entirely format-agnostic: the user
+// just names a path and hypha figures out how to load it.
+func (orc *Orchestrator) ParseResourceSpecsFromPath(path string) ([]ResourceSpec, error) {
+	switch DetectManifestFormat(path) {
+	case ManifestFormatYAML:
+		docs, err := ParseResourceSpecsFromYaml(path)
+		if err != nil {
 			return nil, err
 		}
-	case map[string]any:
-		bytes, _ := json.Marshal(v)
-		var single ResourceSpec
-		if err := json.Unmarshal(bytes, &single); err != nil {
+		return ResourceSpecsFromDocuments(docs)
+	case ManifestFormatJSON:
+		docs, err := ParseResourceSpecsFromJson(path)
+		if err != nil {
 			return nil, err
 		}
-
-		results = append(results, single)
+		return ResourceSpecsFromDocuments(docs)
+	case ManifestFormatJsonnet:
+		return orc.ParseResourceSpecsFromJsonnetFile(path)
 	default:
-		return nil, fmt.Errorf("failed to parse resource spec")
+		return nil, fmt.Errorf("unsupported manifest format for %q: expected .yaml, .yml, .json, or .jsonnet", path)
 	}
-
-	return results, nil
 }
 
 func (orc *Orchestrator) CollectGarbage() error {
@@ -622,11 +604,7 @@ func (orc *Orchestrator) ProcessDiscoveredManifests() {
 
 		switch dm.Kind {
 		case DiscoveredManifestPath:
-			if strings.HasSuffix(dm.Value, ".yaml") {
-				//TODO(@s0cks): implement
-			} else if strings.HasSuffix(dm.Value, ".jsonnet") {
-				specs, err = orc.ParseResourceSpecsFromJsonnetFile(dm.Value)
-			}
+			specs, err = orc.ParseResourceSpecsFromPath(dm.Value)
 		case DiscoveredManifestRaw:
 			specs, err = orc.ParseResourceSpecsFromJsonnet(dm.Value)
 		}

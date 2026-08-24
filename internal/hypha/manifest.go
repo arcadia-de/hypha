@@ -7,10 +7,41 @@ import (
 	"github.com/google/go-jsonnet/ast"
 	"gopkg.in/yaml.v3"
 	"os"
+	"path/filepath"
 	"runtime"
+	"strings"
 
 	lib "github.com/arcadia-de/hypha/jsonnet"
 )
+
+// ManifestFormat identifies the on-disk encoding of a manifest file so that
+// discovery (which is format-agnostic, see libs/bindings/sources) and the
+// orchestrator can agree on how a given path should be decoded.
+type ManifestFormat int
+
+const (
+	ManifestFormatUnknown ManifestFormat = iota
+	ManifestFormatYAML
+	ManifestFormatJSON
+	ManifestFormatJsonnet
+)
+
+// DetectManifestFormat determines a manifest's format from its file
+// extension. It's the single place extension -> format mapping lives, so
+// yaml/json/jsonnet stay in lockstep across every load path (CLI discovery,
+// hypha.sources.{file,dir,glob}, etc).
+func DetectManifestFormat(path string) ManifestFormat {
+	switch strings.ToLower(filepath.Ext(path)) {
+	case ".yaml", ".yml":
+		return ManifestFormatYAML
+	case ".json":
+		return ManifestFormatJSON
+	case ".jsonnet", ".libsonnet":
+		return ManifestFormatJsonnet
+	default:
+		return ManifestFormatUnknown
+	}
+}
 
 type ResourceAnnotation struct {
 	Key   string `json:"key" yaml:"key"`
@@ -136,42 +167,57 @@ func ParseResourceSpecsFromYaml(filename string) ([]any, error) {
 	return results, nil
 }
 
-func ParseResourceSpecsFromJsonnet(vm *jsonnet.VM, filename string) ([]any, error) {
+// ParseResourceSpecsFromJson loads a plain JSON manifest, tolerating either a
+// single document ({...}) or a list of documents ([...]) at the root, the
+// same shape ParseResourceSpecsFromYaml normalizes YAML/Jsonnet output to.
+func ParseResourceSpecsFromJson(filename string) ([]any, error) {
 	content, err := os.ReadFile(filename)
 	if err != nil {
 		return nil, fmt.Errorf("failed to read manifest: %v", err)
 	}
 
-	manifest, err := RenderJsonnetManifest(vm, filename, string(content))
-	if err != nil {
-		return nil, fmt.Errorf("failed to evaluating manifest Jsonnet: %v", err)
+	var root any
+	if err := json.Unmarshal(content, &root); err != nil {
+		return nil, fmt.Errorf("failed to parse json: %v", err)
 	}
 
-	var results []any
-	specs, err := ParseResourceSpecs(manifest)
+	switch v := root.(type) {
+	case []any:
+		return v, nil
+	case map[string]any:
+		return []any{v}, nil
+	default:
+		return nil, fmt.Errorf("unsupported manifest root structure")
+	}
+}
+
+// ResourceSpecsFromDocuments decodes already-normalized manifest documents
+// (one map[string]any per resource) into typed ResourceSpecs. It's the
+// common tail end of every manifest load path (yaml, json, jsonnet).
+func ResourceSpecsFromDocuments(docs []any) ([]ResourceSpec, error) {
+	bytes, err := json.Marshal(docs)
 	if err != nil {
-		return nil, fmt.Errorf("failed to parse manifest: %v", err)
+		return nil, fmt.Errorf("failed to marshal manifest documents: %w", err)
 	}
 
+	var results []ResourceSpec
+	if err := json.Unmarshal(bytes, &results); err != nil {
+		return nil, fmt.Errorf("failed to decode manifest documents: %w", err)
+	}
+	return results, nil
+}
+
+// ResourceSpecsFromAny normalizes the untyped result of evaluating a
+// manifest (a single document or a list of documents) into ResourceSpecs.
+func ResourceSpecsFromAny(specs any) ([]ResourceSpec, error) {
 	switch v := specs.(type) {
 	case []any:
-		bytes, _ := json.Marshal(v)
-		if err := json.Unmarshal(bytes, &results); err != nil {
-			return nil, err
-		}
+		return ResourceSpecsFromDocuments(v)
 	case map[string]any:
-		bytes, _ := json.Marshal(v)
-		var single any
-		if err := json.Unmarshal(bytes, &single); err != nil {
-			return nil, err
-		}
-
-		results = append(results, single)
+		return ResourceSpecsFromDocuments([]any{v})
 	default:
 		return nil, fmt.Errorf("failed to parse resource spec")
 	}
-
-	return results, nil
 }
 
 func WriteManifestToYamlFile(filename string, spec ResourceSpec) error {
