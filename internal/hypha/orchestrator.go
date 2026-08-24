@@ -332,9 +332,26 @@ func (orc *Orchestrator) Close() {
 type DiscoveredManifestKind int
 
 const (
-	DiscoveredManifestPath = C.kDiscoveredPath
-	DiscoveredManifestRaw  = C.kDiscoveredRaw
+	DiscoveredManifestPath       = C.kDiscoveredPath
+	DiscoveredManifestRawJson    = C.kDiscoveredRawJson
+	DiscoveredManifestRawYaml    = C.kDiscoveredRawYaml
+	DiscoveredManifestRawJsonnet = C.kDiscoveredRawJsonnet
 )
+
+func (dmk DiscoveredManifestKind) String() string {
+	switch dmk {
+	case DiscoveredManifestPath:
+		return "Path"
+	case DiscoveredManifestRawJson:
+		return "Raw Json"
+	case DiscoveredManifestRawYaml:
+		return "Raw Yaml"
+	case DiscoveredManifestRawJsonnet:
+		return "Raw Jsonnet"
+	default:
+		return "Unknown"
+	}
+}
 
 type DiscoveredManifest struct {
 	Kind  DiscoveredManifestKind
@@ -425,8 +442,6 @@ func (orc *Orchestrator) ParseResourceSpecsFromJsonnet(content string) ([]Resour
 	return ResourceSpecsFromAny(specs)
 }
 
-// ParseResourceSpecsFromJsonnetFile renders and parses a .jsonnet manifest
-// file on disk.
 func (orc *Orchestrator) ParseResourceSpecsFromJsonnetFile(filename string) ([]ResourceSpec, error) {
 	content, err := os.ReadFile(filename)
 	if err != nil {
@@ -436,21 +451,16 @@ func (orc *Orchestrator) ParseResourceSpecsFromJsonnetFile(filename string) ([]R
 	return orc.ParseResourceSpecsFromJsonnet(string(content))
 }
 
-// ParseResourceSpecsFromPath loads a manifest file from disk, dispatching to
-// the appropriate decoder (YAML, JSON, or Jsonnet) based on its extension.
-// This is the single entry point every DiscoveredManifestPath goes through,
-// so hypha.sources.{file,dir,glob} stay entirely format-agnostic: the user
-// just names a path and hypha figures out how to load it.
 func (orc *Orchestrator) ParseResourceSpecsFromPath(path string) ([]ResourceSpec, error) {
 	switch DetectManifestFormat(path) {
 	case ManifestFormatYAML:
-		docs, err := ParseResourceSpecsFromYaml(path)
+		docs, err := ParseResourceSpecsFromYamlFile(path)
 		if err != nil {
 			return nil, err
 		}
 		return ResourceSpecsFromDocuments(docs)
 	case ManifestFormatJSON:
-		docs, err := ParseResourceSpecsFromJson(path)
+		docs, err := ParseResourceSpecsFromJsonFile(path)
 		if err != nil {
 			return nil, err
 		}
@@ -459,6 +469,27 @@ func (orc *Orchestrator) ParseResourceSpecsFromPath(path string) ([]ResourceSpec
 		return orc.ParseResourceSpecsFromJsonnetFile(path)
 	default:
 		return nil, fmt.Errorf("unsupported manifest format for %q: expected .yaml, .yml, .json, or .jsonnet", path)
+	}
+}
+
+func (orc *Orchestrator) ParseResourceSpecsFromString(content string, format ManifestFormat) ([]ResourceSpec, error) {
+	switch format {
+	case ManifestFormatYAML:
+		docs, err := ParseResourceSpecsFromYaml(content)
+		if err != nil {
+			return nil, err
+		}
+		return ResourceSpecsFromDocuments(docs)
+	case ManifestFormatJSON:
+		docs, err := ParseResourceSpecsFromJson(content)
+		if err != nil {
+			return nil, err
+		}
+		return ResourceSpecsFromDocuments(docs)
+	case ManifestFormatJsonnet:
+		return orc.ParseResourceSpecsFromJsonnet(content)
+	default:
+		return nil, fmt.Errorf("unsupported raw manifest %s", content)
 	}
 }
 
@@ -599,18 +630,25 @@ func (orc *Orchestrator) GetValidationLog() ValidationLog {
 func (orc *Orchestrator) ProcessDiscoveredManifests() {
 	var manifests []ResourceSpec
 	orc.VisitDiscoveredManifests(func(idx uint64, dm DiscoveredManifest) bool {
-		var specs []ResourceSpec
 		var err error
+		var specs []ResourceSpec
 
 		switch dm.Kind {
 		case DiscoveredManifestPath:
 			specs, err = orc.ParseResourceSpecsFromPath(dm.Value)
-		case DiscoveredManifestRaw:
-			specs, err = orc.ParseResourceSpecsFromJsonnet(dm.Value)
+		case DiscoveredManifestRawJson:
+			specs, err = orc.ParseResourceSpecsFromString(dm.Value, ManifestFormatJSON)
+		case DiscoveredManifestRawJsonnet:
+			specs, err = orc.ParseResourceSpecsFromString(dm.Value, ManifestFormatJsonnet)
+		case DiscoveredManifestRawYaml:
+			specs, err = orc.ParseResourceSpecsFromString(dm.Value, ManifestFormatYAML)
+		default:
+			fmt.Printf("error process: %s (%s)", dm.Value, dm.Kind.String())
+			return false
 		}
 
 		if err != nil {
-			fmt.Printf("error processing %s: %v", dm.Value, err)
+			fmt.Printf("error processing %s (%s): %v", dm.Value, dm.Kind.String(), err)
 			return false
 		}
 

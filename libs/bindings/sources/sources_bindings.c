@@ -4,6 +4,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <strings.h>
 
 #include "hypha.h"
 #include "hypha/discovered_manifest.h"
@@ -143,36 +144,37 @@ LUA_FN(glob) {
   return 1;
 }
 
-static inline void StripWhitespace(char* str) {
-  int i = 0;
-  int j = 0;
-  while (str[i] != '\0') {
-    const unsigned char c = (unsigned char)str[i];
-    if (!isspace(c) && c != '\t' && c != '\r')
-      str[j++] = str[i];
-
-    i++;
-  }
-  str[j] = '\0';
-}
-
 LUA_FN(dir) {
   return 0;
 }
 
 LUA_FN(raw) {
+  const int nargs = lua_gettop(L);
   const char* tpl = luaL_checkstring(L, 1);
 
-  char* new_tpl = strdup(tpl);
-  StripWhitespace(new_tpl);
+  LOG_INFO("tpl: %s, nargs: %d", tpl, nargs);
+
+  DiscoveredManifestKind kind = kDiscoveredRawJsonnet;
+  if (nargs >= 2) {
+    const char* raw_kind = luaL_checkstring(L, 2);
+    LOG_INFO("kind: %s", raw_kind);
+    if (strcasecmp(raw_kind, "jsonnet") == 0) {
+      kind = kDiscoveredRawJsonnet;
+    } else if (strcasecmp(raw_kind, "json") == 0) {
+      kind = kDiscoveredRawJson;
+    } else if (strcasecmp(raw_kind, "yaml") == 0) {
+      kind = kDiscoveredRawYaml;
+    } else {
+      return luaL_error(L, "invalid raw manifest kind: %s", raw_kind);
+    }
+  }
 
   lua_newtable(L);
-  lua_pushnumber(L, kDiscoveredRaw);
+  lua_pushnumber(L, kind);
   lua_setfield(L, -2, "kind");
 
-  lua_pushstring(L, new_tpl);
+  lua_pushstring(L, tpl);
   lua_setfield(L, -2, "value");
-
   return 1;
 }
 

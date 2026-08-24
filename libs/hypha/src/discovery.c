@@ -40,7 +40,7 @@ static inline void DedupeDiscoveredManifests(DiscoveredManifest* arr, size_t siz
 
   for (size_t i = 0; i < size; i++) {
     for (size_t j = i + 1; j < size; j++) {
-      if (arr[i].kind == kDiscoveredRaw)
+      if (IsRawManifest(&arr[i]))
         continue;
 
       if (CompareDiscoveredManifestPath(&arr[i], &arr[j]) == 0) {
