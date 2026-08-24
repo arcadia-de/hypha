@@ -138,14 +138,12 @@ DEFINE_CONTROLLER_PLAN_FN(Template) {
     rendered = RenderTemplate((char*)json_string_value(template), (char*)dataValue, false);
     if (rendered) {
       uint32_t rendered_digest = crc32((const uint8_t*)rendered, strlen(rendered));
-      LOG_INFO("rendered digest: %d; target digest: %d", rendered_digest, target_digest);
       if (rendered_digest == target_digest) {
         PlannedAction* action = NewNoPlannedAction(pl, desired, "template target file exists and has expected digest");
         ASSERT(action);
         return kNoAction;
       }
 
-      LOG_INFO("rendered template:\n%s\n", rendered);
       PlannedAction* action = NewCreatePlannedAction(pl, desired, "template spec is valid");
       ASSERT(action);
       return kCreateAction;

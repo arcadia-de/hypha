@@ -34,11 +34,9 @@ static inline void MaybeFinishReconciliation(Orchestrator* orc) {
 
   ControllerStatus status = kStatusInternalError;
   if (orc->run.success) {
-    DLOG_INFO("reconcile complete");
     status = kStatusOk;
     OrchestratorPublish(orc, RECONCILE_COMPLETE_EVENT, NewReconcileCompleteEvent(status));
   } else {
-    DLOG_INFO("reconcile failed");
     status = kStatusInternalError;
     OrchestratorPublish(orc, RECONCILE_FAILED_EVENT, NewReconcileFailedEvent(status));
   }

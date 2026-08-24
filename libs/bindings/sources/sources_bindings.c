@@ -152,12 +152,9 @@ LUA_FN(raw) {
   const int nargs = lua_gettop(L);
   const char* tpl = luaL_checkstring(L, 1);
 
-  LOG_INFO("tpl: %s, nargs: %d", tpl, nargs);
-
   DiscoveredManifestKind kind = kDiscoveredRawJsonnet;
   if (nargs >= 2) {
     const char* raw_kind = luaL_checkstring(L, 2);
-    LOG_INFO("kind: %s", raw_kind);
     if (strcasecmp(raw_kind, "jsonnet") == 0) {
       kind = kDiscoveredRawJsonnet;
     } else if (strcasecmp(raw_kind, "json") == 0) {
