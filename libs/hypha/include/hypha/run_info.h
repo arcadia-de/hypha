@@ -10,6 +10,9 @@ extern "C" {
 #include <uuid/uuid.h>
 
 #include "hypha.h"
+#include "hypha/assertions.h"
+#include "hypha/reason.h"
+#include "hypha/run_mode.h"
 
 typedef struct {
   uuid_t id;

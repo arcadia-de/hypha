@@ -233,7 +233,7 @@ static inline bool QueueReconcileTaskForResource(const ResourceGraphIndex idx, R
   if (!DependenciesAreSatisfied(orc->graph, res))
     return true;
 
-  Controller* ctrl = GetControllerForKind(res->kind);
+  Controller* ctrl = GetControllerForKindName(res->kind);
   if (!ctrl) {
     ResourceIdStr id_str;
     ResourceIdCStr(&res->id, id_str);

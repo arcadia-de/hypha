@@ -2,120 +2,150 @@
 
 #include <stdlib.h>
 
+#include "hypha/log.h"
+#include "hypha/resource_kind.h"
+
 #ifdef HYPHA_ENABLE_PROFILING
+
 #include <tracy/tracy/TracyC.h>
+
+#define BEGIN_CONTROLLER_FUNC(Name)          \
+  TracyCZone(ctx, 1);                        \
+  TracyCZoneName(ctx, #Name, strlen(#Name)); \
+  TracyCZoneText(ctx, GetControllerKind(ctrl), strlen(GetControllerKind(ctrl)));
+
+#define END_CONTROLLER_FUNC TracyCZoneEnd(ctx);
+
+#else
+
+#define BEGIN_CONTROLLER_FUNC(Name)
+
+#define END_CONTROLLER_FUNC
+
 #endif  // HYPHA_ENABLE_PROFILING
 
-#include "hypha/log.h"
-
-#ifndef MAX_NUMBER_OF_CONTROLLERS
-#define MAX_NUMBER_OF_CONTROLLERS 32
-#endif  // MAX_NUMBER_OF_CONTROLLERS
-
 struct _Controller {
-  const char* kind;
+  ResourceKind kind;
   ControllerConfig config;
 
   void* data;
   void (*free_data)(void*);
 };
 
-static uint32_t num_controllers = 0;
-static Controller controllers[MAX_NUMBER_OF_CONTROLLERS];
+static const size_t kInitCap = 16;
+static Controller* controllers = NULL;
+static size_t controllers_len = 0;
+static size_t controllers_cap = 0;
 
-#define BEGIN_FOREACH_CONTROLLER(Name)             \
-  for (uint32_t i = 0; i < num_controllers; i++) { \
-    Controller* Name = &controllers[i];
+static inline bool EnsureCapacity(const size_t new_len) {
+  if (new_len == 0 || new_len < controllers_cap)
+    return false;
 
-#define END_FOREACH_CONTROLLER }
+  const size_t new_cap = (controllers_cap + new_len) * 2;
+  const size_t total_size = sizeof(Controller) * new_cap;
+  Controller* new_controllers = (Controller*)realloc(controllers, total_size);
+  if (!new_controllers)
+    return false;
 
-const char* GetControllerKind(const Controller* ctrl) {
-  return ctrl ? ctrl->kind : NULL;  // NOLINT(modernize-use-nullptr)
+  controllers = new_controllers;
+  controllers_cap = new_cap;
+  return true;
 }
 
-Controller* GetControllerForKind(const char* kind) {
-  Controller* result = NULL;  // NOLINT(modernize-use-nullptr)
-  if (!kind)
-    goto finished;
+Controller* NewController(ResourceKind kind, ControllerConfig config, void* data, void (*free_data)(void*)) {
+  if (kind == kInvalidResourceKind)
+    return NULL;
 
-  BEGIN_FOREACH_CONTROLLER(ctrl)
-  if (IsControllerForKind(ctrl, kind)) {
-    result = ctrl;
-    goto finished;
+  if (!controllers) {
+    const size_t total_size = sizeof(Controller) * kInitCap;
+    Controller* new_controllers = (Controller*)malloc(total_size);
+    if (!new_controllers)
+      return NULL;
+    memset(new_controllers, 0, total_size);
+    controllers = new_controllers;
+    controllers_len = 0;
+    controllers_cap = kInitCap;
+  } else {
+    EnsureCapacity(controllers_len + 1);
   }
-  END_FOREACH_CONTROLLER
 
-finished:
-  return result;
+  Controller* ctrl = &controllers[controllers_len];
+  controllers_len++;
+  ctrl->kind = kind;
+  ctrl->data = data;
+  ctrl->free_data = free_data;
+  memcpy(&ctrl->config, &config, sizeof(ControllerConfig));
+  return ctrl;
 }
 
-Controller* RegisterController(const char* kind, ControllerConfig config, void* data, void (*free_data)(void*)) {
-  Controller* result = NULL;  // NOLINT(modernize-use-nullptr)
+ResourceKind GetControllerKind(const Controller* ctrl) {
+  return ctrl ? ctrl->kind : kInvalidResourceKind;
+}
 
-  if (num_controllers + 1 > MAX_NUMBER_OF_CONTROLLERS)
-    goto finished;
+Controller* GetControllerForKindName(const char* name) {
+  ASSERT(name);
+  ResourceKind kind = FindResourceKind(name);
+  if (kind == kInvalidResourceKind)
+    return NULL;
 
-  if (!kind)
-    goto finished;
+  return GetControllerForKind(kind);
+}
 
-  result = &controllers[num_controllers];
-  memset(result, 0, sizeof(Controller));
-  num_controllers++;
-  result->kind = strdup(kind);
-  memmove(&result->config, &config, sizeof(ControllerConfig));
-  result->data = data;
-  result->free_data = free_data;
-finished:
-  return result;
+Controller* GetControllerForKind(ResourceKind kind) {
+  if (kind == kInvalidResourceKind)
+    return NULL;
+
+  for (size_t i = 0; i < controllers_len; i++) {
+    Controller* ctrl = &controllers[i];
+    ResourceKindInfo* info = GetResourceKindInfo(ctrl->kind);
+    if (info->kind == kind)
+      return ctrl;
+  }
+
+  return NULL;
 }
 
 bool VisitAllControllers(ControllerVisitFn vis, void* data) {
   bool success = false;
 
-  BEGIN_FOREACH_CONTROLLER(ctrl)
-  if (!vis(i, ctrl->kind, ctrl, data))
-    goto finished;
-  END_FOREACH_CONTROLLER
+  for (size_t i = 0; i < controllers_len; i++) {
+    Controller* ctrl = &controllers[i];
+    ResourceKindInfo* info = GetResourceKindInfo(ctrl->kind);
+    ASSERT(info);
+    if (!vis(i, info->name, ctrl, data))
+      goto finished;
+  }
 
   success = true;
 finished:
   return success;
 }
 
-uint32_t GetNumberOfRegisteredControllers() {
-  return num_controllers;
+uint64_t GetNumberOfRegisteredControllers() {
+  return controllers_len;
 }
 
-Controller* GetControllerAt(const uint32_t i) {
-  if (i > num_controllers)
+Controller* GetControllerAt(const uint64_t i) {
+  if (i > controllers_len)
     return NULL;  // NOLINT(modernize-use-nullptr)
+
   return &controllers[i];
 }
 
 ControllerStatus ControllerObserve(Controller* ctrl, const Resource* observed, Resource* desired) {
-#ifdef HYPHA_ENABLE_PROFILING
-  TracyCZone(ctx, 1);
-  TracyCZoneName(ctx, "ControllerObserve", 17);
-  TracyCZoneText(ctx, GetControllerKind(ctrl), strlen(GetControllerKind(ctrl)));
-#endif  // HYPHA_ENABLE_PROFILING
+  BEGIN_CONTROLLER_FUNC(Observe);
   ControllerStatus status = kStatusInternalError;
   if (!desired || !desired || !ctrl || !ctrl->config.observe)
     goto finished;
 
   status = ctrl->config.observe(observed, desired, ctrl->data);
 finished:
-#ifdef HYPHA_ENABLE_PROFILING
-  TracyCZoneEnd(ctx);
-#endif  // HYPHA_ENABLE_PROFILING
+  END_CONTROLLER_FUNC;
   return status;
 }
 
 ControllerAction ControllerPlan(Controller* ctrl, const Resource* current, Resource* desired, Plan* pl) {
-#ifdef HYPHA_ENABLE_PROFILING
-  TracyCZone(ctx, 1);
-  TracyCZoneName(ctx, "ControllerPlan", 14);
-  TracyCZoneText(ctx, GetControllerKind(ctrl), strlen(GetControllerKind(ctrl)));
-#endif  // HYPHA_ENABLE_PROFILING
+  BEGIN_CONTROLLER_FUNC(Plan);
   ControllerAction result = kNoAction;
 
   if (!current || !desired || !ctrl || !ctrl->config.plan)
@@ -123,18 +153,12 @@ ControllerAction ControllerPlan(Controller* ctrl, const Resource* current, Resou
 
   result = ctrl->config.plan(current, desired, pl, ctrl->data);
 finished:
-#ifdef HYPHA_ENABLE_PROFILING
-  TracyCZoneEnd(ctx);
-#endif  // HYPHA_ENABLE_PROFILING
+  END_CONTROLLER_FUNC;
   return result;
 }
 
 ControllerStatus ControllerApply(Controller* ctrl, const Resource* desired, const ControllerAction action) {
-#ifdef HYPHA_ENABLE_PROFILING
-  TracyCZone(ctx, 1);
-  TracyCZoneName(ctx, "ControllerApply", 15);
-  TracyCZoneText(ctx, GetControllerKind(ctrl), strlen(GetControllerKind(ctrl)));
-#endif  // HYPHA_ENABLE_PROFILING
+  BEGIN_CONTROLLER_FUNC(Apply);
   ControllerStatus status = kStatusOk;
 
   if (!desired || !ctrl || !ctrl->config.apply || action == kNoAction)
@@ -142,18 +166,12 @@ ControllerStatus ControllerApply(Controller* ctrl, const Resource* desired, cons
 
   status = ctrl->config.apply(desired, action, ctrl->data);
 finished:
-#ifdef HYPHA_ENABLE_PROFILING
-  TracyCZoneEnd(ctx);
-#endif  // HYPHA_ENABLE_PROFILING
+  END_CONTROLLER_FUNC;
   return status;
 }
 
 ControllerStatus ControllerDestroy(Controller* ctrl, const Resource* current) {
-#ifdef HYPHA_ENABLE_PROFILING
-  TracyCZone(ctx, 1);
-  TracyCZoneName(ctx, "ControllerDestroy", 17);
-  TracyCZoneText(ctx, GetControllerKind(ctrl), strlen(GetControllerKind(ctrl)));
-#endif  // HYPHA_ENABLE_PROFILING
+  BEGIN_CONTROLLER_FUNC(Destroy);
   ControllerStatus status = kStatusOk;
 
   if (!current || !ctrl || !ctrl->config.destroy)
@@ -161,18 +179,12 @@ ControllerStatus ControllerDestroy(Controller* ctrl, const Resource* current) {
 
   status = ctrl->config.destroy(current, ctrl->data);
 finished:
-#ifdef HYPHA_ENABLE_PROFILING
-  TracyCZoneEnd(ctx);
-#endif  // HYPHA_ENABLE_PROFILING
+  END_CONTROLLER_FUNC;
   return status;
 }
 
 bool ControllerValidate(Controller* ctrl, Resource* desired, ValidationLog* vl) {
-#ifdef HYPHA_ENABLE_PROFILING
-  TracyCZone(ctx, 1);
-  TracyCZoneName(ctx, "ControllerValidate", 18);
-  TracyCZoneText(ctx, GetControllerKind(ctrl), strlen(GetControllerKind(ctrl)));
-#endif  // HYPHA_ENABLE_PROFILING
+  BEGIN_CONTROLLER_FUNC(Validate);
   bool valid = false;
 
   if (!desired || !ctrl || !ctrl->config.validate)
@@ -180,18 +192,12 @@ bool ControllerValidate(Controller* ctrl, Resource* desired, ValidationLog* vl) 
 
   valid = ctrl->config.validate(desired, vl, ctrl->data);
 finished:
-#ifdef HYPHA_ENABLE_PROFILING
-  TracyCZoneEnd(ctx);
-#endif  // HYPHA_ENABLE_PROFILING
+  END_CONTROLLER_FUNC;
   return valid;
 }
 
 ControllerStatus ControllerDiff(Controller* ctrl, const Resource* current) {
-#ifdef HYPHA_ENABLE_PROFILING
-  TracyCZone(ctx, 1);
-  TracyCZoneName(ctx, "ControllerDiff", 14);
-  TracyCZoneText(ctx, GetControllerKind(ctrl), strlen(GetControllerKind(ctrl)));
-#endif  // HYPHA_ENABLE_PROFILING
+  BEGIN_CONTROLLER_FUNC(Diff);
   ControllerStatus status = kStatusOk;
 
   if (!current || !ctrl || !ctrl->config.diff)
@@ -199,18 +205,12 @@ ControllerStatus ControllerDiff(Controller* ctrl, const Resource* current) {
 
   status = ctrl->config.diff(current, ctrl->data);
 finished:
-#ifdef HYPHA_ENABLE_PROFILING
-  TracyCZoneEnd(ctx);
-#endif  // HYPHA_ENABLE_PROFILING
+  END_CONTROLLER_FUNC;
   return status;
 }
 
 ControllerStatus ControllerStat(Controller* ctrl, const Resource* current) {
-#ifdef HYPHA_ENABLE_PROFILING
-  TracyCZone(ctx, 1);
-  TracyCZoneName(ctx, "ControllerStatus", 16);
-  TracyCZoneText(ctx, GetControllerKind(ctrl), strlen(GetControllerKind(ctrl)));
-#endif  // HYPHA_ENABLE_PROFILING
+  BEGIN_CONTROLLER_FUNC(Status);
   ControllerStatus status = kStatusOk;
 
   if (!current || !ctrl || !ctrl->config.status)
@@ -218,18 +218,12 @@ ControllerStatus ControllerStat(Controller* ctrl, const Resource* current) {
 
   status = ctrl->config.status(current, ctrl->data);
 finished:
-#ifdef HYPHA_ENABLE_PROFILING
-  TracyCZoneEnd(ctx);
-#endif  // HYPHA_ENABLE_PROFILING
+  END_CONTROLLER_FUNC;
   return status;
 }
 
 ControllerStatus ControllerRollback(Controller* ctrl, const Resource* current) {
-#ifdef HYPHA_ENABLE_PROFILING
-  TracyCZone(ctx, 1);
-  TracyCZoneName(ctx, "ControllerRollback", 18);
-  TracyCZoneText(ctx, GetControllerKind(ctrl), strlen(GetControllerKind(ctrl)));
-#endif  // HYPHA_ENABLE_PROFILING
+  BEGIN_CONTROLLER_FUNC(Rollback);
   ControllerStatus status = kStatusOk;
 
   if (!current || !ctrl || !ctrl->config.rollback)
@@ -237,18 +231,12 @@ ControllerStatus ControllerRollback(Controller* ctrl, const Resource* current) {
 
   status = ctrl->config.rollback(current, ctrl->data);
 finished:
-#ifdef HYPHA_ENABLE_PROFILING
-  TracyCZoneEnd(ctx);
-#endif  // HYPHA_ENABLE_PROFILING
+  END_CONTROLLER_FUNC;
   return status;
 }
 
 ControllerStatus ControllerNormalize(Controller* ctrl, const Resource* current) {
-#ifdef HYPHA_ENABLE_PROFILING
-  TracyCZone(ctx, 1);
-  TracyCZoneName(ctx, "ControllerNormalize", 19);
-  TracyCZoneText(ctx, GetControllerKind(ctrl), strlen(GetControllerKind(ctrl)));
-#endif  // HYPHA_ENABLE_PROFILING
+  BEGIN_CONTROLLER_FUNC(Normalize);
   ControllerStatus status = kStatusOk;
 
   if (!current || !ctrl || !ctrl->config.normalize)
@@ -256,40 +244,49 @@ ControllerStatus ControllerNormalize(Controller* ctrl, const Resource* current) 
 
   status = ctrl->config.normalize(current, ctrl->data);
 finished:
-#ifdef HYPHA_ENABLE_PROFILING
-  TracyCZoneEnd(ctx);
-#endif  // HYPHA_ENABLE_PROFILING
+  END_CONTROLLER_FUNC;
   return status;
 }
 
 void ControllerInit(Controller* ctrl) {
-#ifdef HYPHA_ENABLE_PROFILING
-  TracyCZone(ctx, 1);
-  TracyCZoneName(ctx, "ControllerInit", 14);
-  TracyCZoneText(ctx, GetControllerKind(ctrl), strlen(GetControllerKind(ctrl)));
-#endif  // HYPHA_ENABLE_PROFILING
+  BEGIN_CONTROLLER_FUNC(Init);
   if (!ctrl || !ctrl->config.init)
     goto finished;
 
   ctrl->config.init(ctrl->data);
 finished:
-#ifdef HYPHA_ENABLE_PROFILING
-  TracyCZoneEnd(ctx);
-#endif  // HYPHA_ENABLE_PROFILING
+  END_CONTROLLER_FUNC;
 }
 
 void ControllerDeInit(Controller* ctrl) {
-#ifdef HYPHA_ENABLE_PROFILING
-  TracyCZone(ctx, 1);
-  TracyCZoneName(ctx, "ControllerDeInit", 16);
-  TracyCZoneText(ctx, GetControllerKind(ctrl), strlen(GetControllerKind(ctrl)));
-#endif  // HYPHA_ENABLE_PROFILING
+  BEGIN_CONTROLLER_FUNC(DeInit);
   if (!ctrl || !ctrl->config.deinit)
     goto finished;
 
   ctrl->config.deinit(ctrl->data);
 finished:
-#ifdef HYPHA_ENABLE_PROFILING
-  TracyCZoneEnd(ctx);
-#endif  // HYPHA_ENABLE_PROFILING
+  END_CONTROLLER_FUNC;
+}
+
+static inline void FreeController(Controller* ctrl) {
+  if (!ctrl)
+    return;
+
+  if (ctrl->data && ctrl->free_data)
+    ctrl->free_data(ctrl->data);
+}
+
+void FreeAllControllers() {
+  if (!controllers)
+    return;
+
+  for (size_t i = 0; i < controllers_len; i++) {
+    Controller* ctrl = &controllers[i];
+    ASSERT(ctrl);
+    FreeController(ctrl);
+  }
+
+  free(controllers);
+  controllers = NULL;
+  controllers_len = controllers_cap = 0;
 }

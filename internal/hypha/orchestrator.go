@@ -544,6 +544,20 @@ func (orc *Orchestrator) PrintRuntimeInfo() {
 
 	fmt.Println(rowStyle.Render(lg.JoinHorizontal(
 		lg.Left,
+		keyStyle.Render("Resource Kinds"),
+		":",
+	)))
+	kindRowStyle := rowStyle.
+		MarginLeft(6)
+	VisitAllResourceKinds(func(info ResourceKindInfo) bool {
+		fmt.Println(kindRowStyle.Render(
+			fmt.Sprintf("- %s (%d)", info.Name, info.Kind),
+		))
+		return true
+	})
+
+	fmt.Println(rowStyle.Render(lg.JoinHorizontal(
+		lg.Left,
 		keyStyle.Render("Registered Controllers"),
 		":",
 	)))

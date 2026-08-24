@@ -12,6 +12,7 @@ extern "C" {
 #include "hypha/controller_status.h"
 #include "hypha/planner.h"
 #include "hypha/resource.h"
+#include "hypha/resource_kind.h"
 #include "hypha/validation_log.h"
 #include "hypha/validation_result.h"
 
@@ -80,15 +81,17 @@ typedef struct {
 
 typedef struct _Controller Controller;
 
-uint32_t GetNumberOfRegisteredControllers();
-Controller* GetControllerAt(const uint32_t i);
+uint64_t GetNumberOfRegisteredControllers();
+Controller* GetControllerAt(const uint64_t i);
+void FreeAllControllers();
 
 typedef bool (*ControllerVisitFn)(const uint32_t, const char*, const Controller*, void* data);
 bool VisitAllControllers(ControllerVisitFn, void*);
 
-Controller* GetControllerForKind(const char* kind);
-Controller* RegisterController(const char* kind, ControllerConfig config, void* data, void (*free_data)(void*));
-const char* GetControllerKind(const Controller* ctrl);
+Controller* GetControllerForKind(ResourceKind kind);
+Controller* GetControllerForKindName(const char* name);
+Controller* NewController(ResourceKind kind, ControllerConfig config, void* data, void (*free_data)(void*));
+ResourceKind GetControllerKind(const Controller* ctrl);
 
 void ControllerInit(Controller*);
 void ControllerDeInit(Controller*);
@@ -102,24 +105,13 @@ ControllerStatus ControllerDiff(Controller* ctrl, const Resource* current);
 ControllerStatus ControllerStat(Controller* ctrl, const Resource* current);
 ControllerStatus ControllerNormalize(Controller* ctrl, const Resource* current);
 
-static inline bool IsControllerForKind(Controller* lhs, const char* rhs) {
-  if (!lhs || !rhs)
-    return false;
-
-  return strcmp(GetControllerKind(lhs), rhs) == 0;
-}
-
-static inline bool HasControllerForKind(const char* rhs) {
-  return GetControllerForKind(rhs) != NULL;  // NOLINT(modernize-use-nullptr)
-}
-
-#ifdef HYPHA_DEBUG
-void ListRegisteredControllers(FILE* out);
-#endif  // HYPHA_DEBUG
-
-#define DEFINE_NEW_CONTROLLER(Name, Kind)                                     \
-  Controller* New##Name##Controller() {                                       \
-    return RegisterController((Kind), k##Name##ControllerConfig, NULL, NULL); \
+#define DEFINE_NEW_CONTROLLER(Name, Kind)                                       \
+  static ResourceKind k##Name##Kind = kInvalidResourceKind;                     \
+  Controller* New##Name##Controller() {                                         \
+    k##Name##Kind = NewResourceKind((Kind));                                    \
+    if (k##Name##Kind == kInvalidResourceKind)                                  \
+      return NULL;                                                              \
+    return NewController(k##Name##Kind, k##Name##ControllerConfig, NULL, NULL); \
   }
 
 #ifdef __cplusplus

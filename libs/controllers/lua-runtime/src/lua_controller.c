@@ -7,6 +7,7 @@
 
 #include "hypha/controller.h"
 #include "hypha/log.h"
+#include "hypha/resource_kind.h"
 
 static inline bool BindCallbackField(lua_State* L, int tbl_index, const char* field_name, int* ref) {
   (*ref) = LUA_NOREF;
@@ -87,11 +88,14 @@ Controller* NewLuaController(lua_State* L, const char* kind, const int tbl_index
   BindCallbackField(L, -1, "normalize", &lctrl->normalize_ref);
   lua_pop(L, 1);
 
+  ResourceKind k = NewResourceKind(kind);
+  if (k == kInvalidResourceKind)
+    return NULL;
   ControllerConfig config = {
       .init = LuaInit,
       .deinit = LuaDeInit,
   };
-  return RegisterController(kind, config, lctrl, &FreeLuaCtrl);
+  return NewController(k, config, lctrl, &FreeLuaCtrl);
 }
 
 void FreeLuaController(LuaController* ctrl) {
