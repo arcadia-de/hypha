@@ -99,6 +99,12 @@ func (orc *Orchestrator) GetMetrics() OrchestratorMetrics {
 	}
 }
 
+func (orc *Orchestrator) GetResourceGraph() ResourceGraph {
+	return ResourceGraph{
+		Handle: C.GetOrcResourceGraph(orc.Handle),
+	}
+}
+
 func (orc *Orchestrator) PrintMetrics() error {
 	metrics := orc.GetMetrics()
 	fmt.Println("Telemetry:")
@@ -201,9 +207,11 @@ func (orc *Orchestrator) RunWithReason(mode OrchestratorRunMode, reason string) 
 	return nil
 }
 
-func (orc *Orchestrator) AddResource(res ResourceSpec) {
-	cKind := C.CString(res.Kind)
-	defer C.free(unsafe.Pointer(cKind))
+func (orc *Orchestrator) AddResource(res ResourceSpec) error {
+	cKindStr := C.CString(res.Kind)
+	defer C.free(unsafe.Pointer(cKindStr))
+
+	cKind := C.FindResourceKind(cKindStr)
 
 	cName := C.CString(res.Metadata.Name)
 	defer C.free(unsafe.Pointer(cName))
@@ -285,16 +293,15 @@ func (orc *Orchestrator) AddResource(res ResourceSpec) {
 	if res.Spec != nil {
 		specBytes, err := json.Marshal(res.Spec)
 		if err != nil {
-			fmt.Printf("error marshalling spec: %v", err)
-			os.Exit(1)
-			return
+			return fmt.Errorf("error marshalling spec: %v", err)
 		}
+
 		cRawSpec = C.CString(string(specBytes))
 	}
 	defer C.free(unsafe.Pointer(cRawSpec))
 
 	spec := C.Resource{
-		kind:           cKind,
+		kind:           C.ResourceKind(cKind),
 		depends_on:     cDeps,
 		num_depends_on: C.size_t(numDeps),
 		info: C.ResourceInfo{
@@ -309,7 +316,6 @@ func (orc *Orchestrator) AddResource(res ResourceSpec) {
 		},
 		spec: C.ResourceSpecDocument{
 			raw: cRawSpec,
-			doc: nil,
 		},
 	}
 
@@ -323,6 +329,8 @@ func (orc *Orchestrator) AddResource(res ResourceSpec) {
 
 		C.free(unsafe.Pointer(cDeps))
 	}
+
+	return nil
 }
 
 func (orc *Orchestrator) Close() {
@@ -400,7 +408,8 @@ func goVisitAppliedActions(idx C.uint64_t, act *C.AppliedAction, data unsafe.Poi
 	vis := handle.Value().(AppliedActionVisitor)
 
 	goName := C.GoString(act.resource.info.name)
-	goKind := C.GoString(act.resource.kind)
+
+	goKind := C.GoString(C.FindResourceKindName(act.resource.kind))
 
 	rawReason := C.GoStringN(&act.reason[0], C.int(C.HYPHA_REASON_MAX_LENGTH))
 	goReason, _, _ := strings.Cut(rawReason, "\x00")
@@ -660,11 +669,5 @@ func (orc *Orchestrator) ProcessDiscoveredManifests() {
 
 	for _, s := range manifests {
 		orc.AddResource(s)
-	}
-}
-
-func (orc *Orchestrator) GetResourceGraph() ResourceGraph {
-	return ResourceGraph{
-		Handle: C.GetOrcResourceGraph(orc.Handle),
 	}
 }

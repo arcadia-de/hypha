@@ -37,7 +37,7 @@ func Execute() error {
 	}
 	hypha.InitHypha(config_dir)
 
-	kinds := hypha.GetAllControllerKinds()
+	kinds := hypha.GetAllResourceKindNames()
 	RootCmd.AddCommand(CreateGenCommand(kinds))
 	RootCmd.AddCommand(CreateDescribeCommand(kinds))
 	RootCmd.AddCommand(CreateListCommand(kinds))

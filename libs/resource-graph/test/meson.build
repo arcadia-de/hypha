@@ -1,6 +1,7 @@
 resource_graph_test_exec = executable('hypha-resource-graph-tests',
   sources : [
     'test_resource.cc',
+    'test_resource_bootstrap.cc',
   ],
   dependencies : [
     gtest_dep,

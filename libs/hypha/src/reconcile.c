@@ -6,6 +6,7 @@
 #include "hypha/planner.h"
 #include "hypha/resource.h"
 #include "hypha/resource_graph.h"
+#include "hypha/resource_kind.h"
 #include "hypha/validation_log.h"
 #include "orc.h"
 
@@ -80,7 +81,7 @@ static inline void ReconcileWork(uv_work_t* req) {
 
   ResourceIdStr desired_id_str;
   ResourceIdCStr(&desired->id, desired_id_str);
-  SetLogResourceContext(desired_id_str, desired->kind);
+  SetLogResourceContext(desired_id_str, FindResourceKindName(desired->kind));
   {
     {
       const ControllerStatus status = ControllerObserve(ctrl, observed, desired);
@@ -120,9 +121,10 @@ static inline void WriteResourceState(Orchestrator* orc, const Resource* res, co
   ResourceIdStr id_str;
   ResourceIdCStr(&res->id, id_str);
 
+  const char* kind = FindResourceKindName(res->kind);
   StateEntry entry = {
       .id = strdup(id_str),
-      .kind = strdup(res->kind),
+      .kind = strdup(kind),
       .name = res->info.name ? strdup(res->info.name) : NULL,
       .applied_at = orc->metrics.run_start,
       .last_status = status,
@@ -149,9 +151,10 @@ static inline void WriteHistory(Orchestrator* orc, const Resource* res, const Re
   ResourceIdStr id_str;
   ResourceIdCStr(&res->id, id_str);
 
+  const char* kind = FindResourceKindName(res->kind);
   HistoryRecord record = {
       .id = strdup(id_str),
-      .kind = strdup(res->kind),
+      .kind = strdup(kind),
       .name = res->info.name ? strdup(res->info.name) : NULL,
       .action = task->action,
       .status = task->status,
@@ -182,7 +185,7 @@ static inline void ReconcileAfterWork(uv_work_t* req, int status) {
 
   ResourceIdStr res_id_str;
   ResourceIdCStr(&res->id, res_id_str);
-  SetLogResourceContext(res_id_str, res->kind);
+  SetLogResourceContext(res_id_str, FindResourceKindName(res->kind));
   orc->metrics.num_actions[task->action]++;
 
   AppendPlan(&orc->plan, &task->plan);
@@ -231,7 +234,7 @@ static inline bool QueueReconcileTaskForResource(const ResourceGraphIndex idx, R
   if (!DependenciesAreSatisfied(orc->graph, res))
     return true;
 
-  Controller* ctrl = GetControllerForKindName(res->kind);
+  Controller* ctrl = GetControllerForKindName(FindResourceKindName(res->kind));
   if (!ctrl) {
     ResourceIdStr id_str;
     ResourceIdCStr(&res->id, id_str);

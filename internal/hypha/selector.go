@@ -42,14 +42,21 @@ func NewKindResourceSelector(kind string) ResourceSelector {
 	}
 }
 
-// NewRefsResourceSelector selects resources matching any of the given references,
-// each of which may be a name (the expected case for something a user typed) or
-// an id (the expected case for something a controller or another command passed along).
+func NewNamespaceResourceSelector(ns string) ResourceSelector {
+	cNamespace := C.CString(ns)
+	defer C.free(unsafe.Pointer(cNamespace))
+	handle := C.NewNamespaceResourceSelector(cNamespace)
+	return ResourceSelector{
+		Handle: handle,
+	}
+}
+
 func NewRefsResourceSelector(refs []string) ResourceSelector {
 	var filters []ResourceSelector
 	for _, ref := range refs {
 		filters = append(filters, NewRefFilter(ref))
 	}
+
 	return NewOrResourceSelector(filters)
 }
 

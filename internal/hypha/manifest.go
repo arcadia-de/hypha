@@ -4,7 +4,6 @@ import (
 	"encoding/json"
 	"fmt"
 	"github.com/google/go-jsonnet"
-	"github.com/google/go-jsonnet/ast"
 	"gopkg.in/yaml.v3"
 	"os"
 	"path/filepath"
@@ -14,9 +13,6 @@ import (
 	lib "github.com/arcadia-de/hypha/jsonnet"
 )
 
-// ManifestFormat identifies the on-disk encoding of a manifest file so that
-// discovery (which is format-agnostic, see libs/bindings/sources) and the
-// orchestrator can agree on how a given path should be decoded.
 type ManifestFormat int
 
 const (
@@ -41,10 +37,6 @@ func (mf ManifestFormat) String() string {
 	}
 }
 
-// DetectManifestFormat determines a manifest's format from its file
-// extension. It's the single place extension -> format mapping lives, so
-// yaml/json/jsonnet stay in lockstep across every load path (CLI discovery,
-// hypha.sources.{file,dir,glob}, etc).
 func DetectManifestFormat(path string) ManifestFormat {
 	switch strings.ToLower(filepath.Ext(path)) {
 	case ".yaml", ".yml":
@@ -65,14 +57,15 @@ type ResourceAnnotation struct {
 
 type ResourceMetadata struct {
 	Name        string               `json:"name,omitempty" yaml:"name,omitempty"`
+	Namespace   string               `json:"namespace,omitempty" yaml:"namespace,omitempty"`
 	Labels      []string             `json:"labels,omitempty" yaml:"labels,omitempty"`
 	Annotations []ResourceAnnotation `json:"annotations,omitempty" yaml:"annotations,omitempty"`
 }
 
 type ResourceSpec struct {
 	Kind      string           `json:"kind" yaml:"kind"`
-	DependsOn []string         `json:"depends_on,omitempty" yaml:"depends_on,omitempty"`
 	Metadata  ResourceMetadata `json:"metadata" yaml:"metadata"`
+	DependsOn []string         `json:"depends_on,omitempty" yaml:"depends_on,omitempty"`
 	Spec      any              `json:"spec" yaml:"spec"`
 }
 
@@ -100,23 +93,6 @@ func (m *MemoryImporter) Import(importedFrom, importedPath string) (contents jso
 	return jsonnet.Contents{}, "", fmt.Errorf("import blocked: %s", importedPath)
 }
 
-func HandleCubeFunc(args []any) (any, error) {
-	num, ok := args[0].(float64)
-	if !ok {
-		return nil, fmt.Errorf("argument must be a number")
-	}
-
-	return num * num * num, nil
-}
-
-func CubeFunc() *jsonnet.NativeFunction {
-	return &jsonnet.NativeFunction{
-		Name:   "cube",
-		Params: []ast.Identifier{"x"},
-		Func:   HandleCubeFunc,
-	}
-}
-
 func HandleGetOperatingSystemName(args []any) (any, error) {
 	return runtime.GOOS, nil
 }
@@ -137,7 +113,6 @@ func CreateJsonnetVM() *jsonnet.VM {
 	vm.ExtVar("env", "production")
 	vm.ExtCode("features", `{"enableBeta": true, "maxUsers": 100}`)
 
-	vm.NativeFunction(CubeFunc())
 	vm.NativeFunction(GetOperatingSystemName())
 	return vm
 }

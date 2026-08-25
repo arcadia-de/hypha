@@ -17,10 +17,18 @@ type DescribeReporter interface {
 type PlainDescribeReporter struct{}
 
 func (reporter PlainDescribeReporter) Run(resources []hypha.Resource) error {
+	fmt.Println()
+
 	rowStyle := lg.NewStyle().
 		MarginLeft(2)
 
 	style := NewDescribeStyle(&rowStyle)
+
+	if len(resources) == 0 {
+		fmt.Println("No resources found")
+		return nil
+	}
+
 	for _, res := range resources {
 		style.Print(res)
 		fmt.Println()
@@ -32,10 +40,18 @@ func (reporter PlainDescribeReporter) Run(resources []hypha.Resource) error {
 type ColoredDescribeReporter struct{}
 
 func (reporter ColoredDescribeReporter) Run(resources []hypha.Resource) error {
+	fmt.Println()
+
 	rowStyle := lg.NewStyle().
 		MarginLeft(2)
 
 	style := NewDescribeStyle(&rowStyle)
+
+	if len(resources) == 0 {
+		fmt.Println("No resources found")
+		return nil
+	}
+
 	for _, res := range resources {
 		style.Print(res)
 		fmt.Println()
@@ -47,10 +63,18 @@ func (reporter ColoredDescribeReporter) Run(resources []hypha.Resource) error {
 type PrettyDescribeReporter struct{}
 
 func (reporter PrettyDescribeReporter) Run(resources []hypha.Resource) error {
+	fmt.Println()
+
 	rowStyle := lg.NewStyle().
 		MarginLeft(2)
 
 	style := NewDescribeStyle(&rowStyle)
+
+	if len(resources) == 0 {
+		fmt.Println("No resources found")
+		return nil
+	}
+
 	for _, res := range resources {
 		style.Print(res)
 		fmt.Println()

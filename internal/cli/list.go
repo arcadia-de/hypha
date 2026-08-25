@@ -21,6 +21,32 @@ func CreateListFilter(kind string) hypha.ResourceSelector {
 		filters = append(filters, hypha.NewLabelResourceSelector(labelFilter))
 	}
 
+	nsFilter := viper.GetString("namespace")
+	if nsFilter != "" {
+		filters = append(filters, hypha.NewNamespaceResourceSelector(nsFilter))
+	}
+	fmt.Println("namespace filter" + nsFilter)
+
+	return hypha.NewAndResourceSelector(filters)
+}
+
+func CreateDefaultListFilter() hypha.ResourceSelector {
+	var filters []hypha.ResourceSelector
+
+	labelFilter := viper.GetString("label")
+	if labelFilter != "" {
+		filters = append(filters, hypha.NewLabelResourceSelector(labelFilter))
+	}
+
+	nsFilter := viper.GetString("namespace")
+	if nsFilter != "" {
+		filters = append(filters, hypha.NewNamespaceResourceSelector(nsFilter))
+	}
+
+	if len(filters) == 0 {
+		return hypha.ResourceSelector{}
+	}
+
 	return hypha.NewAndResourceSelector(filters)
 }
 
@@ -39,7 +65,7 @@ func HandleListResourcesByKindCommand(kind string, args []string) error {
 		defer filter.Close()
 
 		reporter := GetListReporter()
-		resources := rg.ListResourcesWithOptionalSelector(filter)
+		resources := rg.ListResourcesWithSelector(filter)
 		if _, err := reporter.Run(resources); err != nil {
 			fmt.Printf("Error running program: %v\n", err)
 			os.Exit(1)
@@ -47,23 +73,6 @@ func HandleListResourcesByKindCommand(kind string, args []string) error {
 	}
 
 	return nil
-}
-
-func CreateListResourcesByKindCommand(kind string) *cobra.Command {
-	listKindCommand := &cobra.Command{
-		Use: kind + "s",
-		Aliases: []string{
-			kind,
-			strings.ToLower(kind),
-			strings.ToLower(kind + "s"),
-		},
-		Short: fmt.Sprintf("List %s resource", kind),
-		RunE: func(cmd *cobra.Command, args []string) error {
-			return HandleListResourcesByKindCommand(kind, args)
-		},
-	}
-	listKindCommand.Flags().StringP("label", "l", "", "Filter by label")
-	return listKindCommand
 }
 
 func GetListReporters() []string {
@@ -89,7 +98,11 @@ func HandleDefaultListResources(args []string) error {
 	rg := orc.GetResourceGraph()
 	if !rg.IsEmpty() {
 		reporter := GetListReporter()
-		resources := rg.ListResources()
+
+		filter := CreateDefaultListFilter()
+		defer filter.Close()
+
+		resources := rg.ListResourcesWithSelector(filter)
 		if _, err := reporter.Run(resources); err != nil {
 			fmt.Printf("Error running program: %v\n", err)
 			os.Exit(1)
@@ -97,6 +110,23 @@ func HandleDefaultListResources(args []string) error {
 	}
 
 	return nil
+}
+
+func CreateListResourcesByKindCommand(kind string) *cobra.Command {
+	listKindCommand := &cobra.Command{
+		Use: kind + "s",
+		Aliases: []string{
+			kind,
+			strings.ToLower(kind),
+			strings.ToLower(kind + "s"),
+		},
+		Short: fmt.Sprintf("List %s resource", kind),
+		RunE: func(cmd *cobra.Command, args []string) error {
+			return HandleListResourcesByKindCommand(kind, args)
+		},
+	}
+
+	return listKindCommand
 }
 
 func CreateListCommand(kinds []string) *cobra.Command {
@@ -111,7 +141,9 @@ func CreateListCommand(kinds []string) *cobra.Command {
 			return HandleDefaultListResources(args)
 		},
 	}
-	listCmd.PersistentFlags().StringP("format", "f", "pretty", fmt.Sprintf("Change the output format. Valid values are: %s", strings.Join(GetListReporters(), ", ")))
+	listCmd.Flags().StringP("label", "l", "", "Filter by label")
+	listCmd.Flags().StringP("namespace", "n", "", "Filter by namespace")
+	listCmd.Flags().StringP("format", "f", "pretty", fmt.Sprintf("Change the output format. Valid values are: %s", strings.Join(GetListReporters(), ", ")))
 
 	for _, kind := range kinds {
 		listCmd.AddCommand(CreateListResourcesByKindCommand(kind))

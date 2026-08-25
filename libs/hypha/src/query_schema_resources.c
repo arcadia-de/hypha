@@ -3,6 +3,7 @@
 #include "hypha.h"
 #include "hypha/query.h"
 #include "hypha/resource.h"
+#include "hypha/resource_kind.h"
 #include "hypha/resource_query_schema.h"
 
 static FieldResolverResult ResourceFieldId(void* obj) {
@@ -12,7 +13,8 @@ static FieldResolverResult ResourceFieldId(void* obj) {
 }
 
 static FieldResolverResult ResourceFieldKind(void* obj) {
-  return (FieldResolverResult){.kind = kQueryFieldResultScalar, .scalar = strdup(((Resource*)obj)->kind)};
+  const char* name = FindResourceKindName(((Resource*)obj)->kind);
+  return (FieldResolverResult){.kind = kQueryFieldResultScalar, .scalar = strdup(name)};
 }
 
 static FieldResolverResult ResourceFieldState(void* obj) {
@@ -96,7 +98,8 @@ static RootResult ResolveResources(const QueryArg* args, void* context) {
   for (uint32_t i = 0; i < ctx->count; i++) {
     Resource* res = &ctx->resources[i];
 
-    if (kind_filter && strcmp(res->kind, kind_filter) != 0)
+    const char* k = FindResourceKindName(res->kind);
+    if (kind_filter && strcmp(k, kind_filter) != 0)
       continue;
 
     if (id_filter) {

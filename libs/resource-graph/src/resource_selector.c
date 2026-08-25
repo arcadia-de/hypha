@@ -102,13 +102,18 @@ static inline bool MatchesLabel(const Resource* res, void* data) {
 static inline bool MatchesKind(const Resource* res, void* data) {
   if (!res || !data)
     return false;
-  return strcmp(res->kind, (const char*)data) == 0;
+  return res->kind == *((ResourceKind*)data);
 }
 
 ResourceSelector* NewKindResourceSelector(const char* rhs) {
   if (!rhs)
     return NULL;
-  return NewResourceSelector(&MatchesKind, strdup(rhs), free);
+
+  ResourceKindInfo* info = FindResourceKindInfo(rhs);
+  if (!info)
+    return NULL;
+
+  return NewResourceSelector(&MatchesKind, &info->kind, NULL);
 }
 
 static inline bool MatchesRef(const Resource* res, void* data) {
@@ -121,6 +126,20 @@ ResourceSelector* NewRefResourceSelector(const char* rhs) {
   if (!rhs)
     return NULL;
   return NewResourceSelector(&MatchesRef, strdup(rhs), free);
+}
+
+static inline bool MatchesNamespace(const Resource* res, void* data) {
+  if (!res || !data)
+    return false;
+
+  return strcmp(res->info.ns, (const char*)data) == 0;
+}
+
+ResourceSelector* NewNamespaceResourceSelector(const char* ns) {
+  if (!ns)
+    return NULL;
+
+  return NewResourceSelector(&MatchesNamespace, strdup(ns), free);
 }
 
 ResourceSelector* NewLabelResourceSelector(const Label* rhs) {

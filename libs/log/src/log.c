@@ -40,8 +40,8 @@ static inline void LogPrefix(FILE* stream, const char* file, const int line, con
 
 #define DEFINE_LOG(Name, Level, Stream)                                    \
   void Log##Name(const char* file, const int line, const char* fmt, ...) { \
-    _LOG_##Level##_PREFIX(stdout, file, line);                             \
-    _LOG_ARGS(stdout, fmt);                                                \
+    _LOG_##Level##_PREFIX(Stream, file, line);                             \
+    _LOG_ARGS(Stream, fmt);                                                \
     fprintf((Stream), "\n");                                               \
   }
 

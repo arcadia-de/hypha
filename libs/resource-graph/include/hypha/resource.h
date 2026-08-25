@@ -12,11 +12,15 @@
 #include "hypha/label.h"
 #include "hypha/orchestrator_state.h"
 #include "hypha/reason.h"
+#include "hypha/resource_flags.h"
 #include "hypha/resource_id.h"
+#include "hypha/resource_kind.h"
+#include "hypha/resource_namespace.h"
 #include "hypha/resource_state.h"
 
 typedef struct {
   char* name;
+  ResourceNamespace ns;
 
   // labels
   Label* labels;
@@ -55,7 +59,7 @@ typedef struct {
 
 struct _Resource {
   ResourceId id;
-  char* kind;
+  ResourceKind kind;
   ResourceInfo info;
   ResourceState state;  // TODO(@s0cks): replace w/ status field usage
   ResourceStatus status;
@@ -66,6 +70,8 @@ struct _Resource {
   size_t depends_on_cap;
 
   ResourceTelemetry telemetry;
+
+  ResourceFlags flags;
 };
 
 #define DEFINE_STATE_CHECK(Name)                             \
@@ -75,18 +81,29 @@ struct _Resource {
 FOR_EACH_RESOURCE_STATE(DEFINE_STATE_CHECK)
 #undef DEFINE_STATE_CHECK
 
-bool ResourceHasId(const Resource* res, const char* id);
+static inline bool IsResourceStatic(const Resource* res) {
+  return res && ResourceFlagsHas(res->flags, kResourceFlagStatic);
+}
 
-// Matches a resource against a user-supplied reference that may be either its
-// name or its id. Name is checked first since that's what a person is expected
-// to type; id (uuid) is the fallback for machine/controller-supplied references.
+static inline bool IsResourceDynamic(const Resource* res) {
+  return !IsResourceStatic(res);
+}
+
+typedef bool (*VisitResourceLabelFn)(uint64_t, const Label, void*);
+void ResourceVisitLabels(const Resource* res, VisitResourceLabelFn fn, void* data);
+
+typedef bool (*VisitResourceAnnotationFn)(uint64_t, const Annotation*, void*);
+bool ResourceVisitAnnotations(const Resource* res, VisitResourceAnnotationFn fn, void* data);
+
+typedef bool (*VisitResourceDependencyFn)(uint64_t, const char*, void* data);
+bool ResourceVisitDependsOn(const Resource* res, VisitResourceDependencyFn fn, void* data);
+
+// TODO(@s0cks): cleanup this section
+bool ResourceHasId(const Resource* res, const char* id);
 bool ResourceMatchesRef(const Resource* res, const char* ref);
 void ResourcePushLabel(Resource* res, const Label label);
 void ResourcePushLabels(Resource* res, const Label* labels, const size_t num_labels);
 bool ResourceHasLabel(const Resource* res, const Label label);
-
-typedef bool (*VisitResourceLabelFn)(uint64_t, const Label, void*);
-void ResourceVisitLabels(const Resource* res, VisitResourceLabelFn fn, void* data);
 
 static inline void PushResourceAnnotation(Resource* res, const Annotation* rhs) {
   ResourceInfo* info = &res->info;
@@ -100,8 +117,5 @@ bool ResourceHasAnnotation(const Resource* res, const Annotation* annotation);
 bool ResourceHasAnnotationK(const Resource* res, const AnnotationKey* k);
 bool ResourceHasAnnotationV(const Resource* res, const AnnotationValue* v);
 bool ResourceHasAnnotationKV(const Resource* res, const AnnotationKey* k, const AnnotationValue* v);
-bool ResourceVisitAnnotations(const Resource* res, bool (*vis)(const Resource*, const uint64_t, const Annotation*));
-
-bool ResourceVisitDependsOn(const Resource* res, bool (*vis)(const Resource*, const uint64_t, const char*));
 
 #endif  // HYPHA_RESOURCE_H

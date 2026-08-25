@@ -4,6 +4,7 @@
 #include <string.h>
 
 #include "hypha/assertions.h"
+#include "hypha/log.h"
 
 static const size_t kInitCap = 16;
 static ResourceKindInfo* kinds = NULL;
@@ -67,6 +68,23 @@ ResourceKind FindResourceKind(const char* name) {
   return kInvalidResourceKind;
 }
 
+ResourceKind FindOrCreateResourceKind(const char* name) {
+  if (!name)
+    return kInvalidResourceKind;
+
+  if (!kinds)
+    goto finished;
+
+  for (size_t i = 0; i < kinds_len; i++) {
+    ResourceKindInfo* info = &kinds[i];
+    if (strcmp(info->name, name) == 0)
+      return info->kind;
+  }
+
+finished:
+  return NewResourceKind(name);
+}
+
 ResourceKindInfo* GetResourceKindInfo(const ResourceKind rhs) {
   if (rhs == kInvalidResourceKind || !kinds || kinds_len == 0)
     return NULL;
@@ -88,6 +106,19 @@ ResourceKindInfo* FindResourceKindInfo(const char* name) {
     ResourceKindInfo* info = &kinds[i];
     if (strcmp(info->name, name) == 0)
       return info;
+  }
+
+  return NULL;
+}
+
+const char* FindResourceKindName(const ResourceKind rhs) {
+  if (rhs == kInvalidResourceKind || !kinds || kinds_len == 0)
+    return NULL;
+
+  for (size_t i = 0; i < kinds_len; i++) {
+    ResourceKindInfo* info = &kinds[i];
+    if (info->kind == rhs)
+      return info->name;
   }
 
   return NULL;

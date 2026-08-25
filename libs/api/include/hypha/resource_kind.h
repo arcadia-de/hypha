@@ -17,8 +17,10 @@ typedef struct {
 
 ResourceKind NewResourceKind(const char* name);
 ResourceKind FindResourceKind(const char* name);
+ResourceKind FindOrCreateResourceKind(const char* name);
 ResourceKindInfo* GetResourceKindInfo(const ResourceKind rhs);
 ResourceKindInfo* FindResourceKindInfo(const char* name);
+const char* FindResourceKindName(const ResourceKind rhs);
 uint64_t GetTotalNumberOfResourceKinds();
 
 typedef bool (*VisitResourceKindFn)(const ResourceKindInfo* kind, void* data);

@@ -167,7 +167,6 @@ void FreeResourceGraph(ResourceGraph* graph) {
 
   for (ResourceGraphIndex i = 0; i < graph->count; i++) {
     Resource* res = &graph->resources[i];
-    free(res->kind);
 
     for (ResourceGraphIndex j = 0; j < res->num_depends_on; j++) {
       if (res->depends_on[j])

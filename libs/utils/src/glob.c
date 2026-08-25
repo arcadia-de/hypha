@@ -3,7 +3,6 @@
 
 #include <dirent.h>
 #include <fnmatch.h>
-#include <lauxlib.h>
 #include <linux/limits.h>
 #include <stdio.h>
 #include <stdlib.h>

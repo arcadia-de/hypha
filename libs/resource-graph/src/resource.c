@@ -51,14 +51,14 @@ void ResourceVisitLabels(const Resource* res, VisitResourceLabelFn fn, void* dat
   }
 }
 
-bool ResourceVisitAnnotations(const Resource* res, bool (*vis)(const Resource*, const uint64_t, const Annotation*)) {
+bool ResourceVisitAnnotations(const Resource* res, VisitResourceAnnotationFn fn, void* data) {
   bool result = false;
   if (!res)
     goto success;
 
   const ResourceInfo* info = &res->info;
   for (size_t i = 0; i < info->annotations_len; i++) {
-    if (!vis(res, i, &info->annotations[i]))
+    if (!fn(i, &info->annotations[i], data))
       goto finished;
   }
 
@@ -126,13 +126,13 @@ bool ResourceHasAnnotationV(const Resource* res, const AnnotationValue* value) {
   return false;
 }
 
-bool ResourceVisitDependsOn(const Resource* res, bool (*vis)(const Resource*, const uint64_t, const char*)) {
+bool ResourceVisitDependsOn(const Resource* res, VisitResourceDependencyFn fn, void* data) {
   bool result = false;
-  if (!res || !vis)
+  if (!res || !fn)
     goto finished;
 
   for (size_t i = 0; i < res->num_depends_on; i++) {
-    if (!vis(res, i, res->depends_on[i]))
+    if (!fn(i, res->depends_on[i], data))
       goto finished;
   }
 

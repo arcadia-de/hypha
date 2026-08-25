@@ -1,5 +1,7 @@
 #include "hypha/resource_validator.h"
 
+#include "hypha/assertions.h"
+
 struct _ResourceValidator {
   ResourceValidator* next;
   ResourceValidatorFn fn;

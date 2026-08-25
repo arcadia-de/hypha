@@ -2,6 +2,7 @@
 #include <lua.h>
 #include <lualib.h>
 
+#include "bootstrap.h"
 #include "hypha.h"
 #include "hypha/action_log.h"
 #include "hypha/orchestrator.h"
@@ -103,6 +104,7 @@ OrchestratorHandle NewOrchestrator(OrchestratorConfig config) {
     InitRunInfoWithNewId(&orc->run, kOrchestratorPlanMode);
     orc->loop = uv_default_loop();
     orc->graph = NewResourceGraph();
+    BootstrapHyphaCoreResources(orc->graph);
     orc->discovered_manifests = NULL;
     orc->num_discovered_manifests = 0;
 #ifdef HYPHA_ENABLE_PROFILING

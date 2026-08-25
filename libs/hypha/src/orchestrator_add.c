@@ -3,10 +3,14 @@
 #include "hypha/name.h"
 #include "hypha/orchestrator.h"
 #include "hypha/resource_id.h"
+#include "hypha/resource_kind.h"
+#include "hypha/resource_namespace.h"
 #include "orc.h"
 
-static inline void ResolveOrGenerateResourceId(StateStore* store, const char* kind, const char* name, ResourceId* out) {
-  char* existing_id = (name && kind) ? StateStoreFindIdByName(store, kind, name) : NULL;
+static inline void ResolveOrGenerateResourceId(StateStore* store, ResourceKind kind, const char* name,
+                                               ResourceId* out) {
+  const char* k = FindResourceKindName(kind);
+  char* existing_id = (name && kind) ? StateStoreFindIdByName(store, k, name) : NULL;
   if (existing_id) {
     if (uuid_parse(existing_id, *out) != 0)
       GenerateResourceId(out);
@@ -28,11 +32,26 @@ void OrchestratorAddResource(OrchestratorHandle handle, Resource* res) {
   ResourceInfo* dest_info = &new_res->info;
 
   const bool has_explicit_name = source_info->name && source_info->name[0] != '\0';
-  dest_info->name = has_explicit_name ? strdup(source_info->name) : GenerateDefaultResourceName(res->kind);
+  if (has_explicit_name) {
+    dest_info->name = strdup(source_info->name);
+  } else {
+    // TODO(@s0cks): optimize name generation
+    Name name;
+    memset(name, '\0', sizeof(Name));
+    GenerateDefaultResourceName(res->kind, &name);
+    dest_info->name = strdup(name);
+  }
+
+  if (!IsDefaultResourceNamespace(source_info->ns) && IsReservedResourceNamespace(source_info->ns)) {
+    LOG_ERROR("rejected resource %s/%s: namespace '%s' is reserved for orchestrator-internal use", res->kind,
+              dest_info->name, source_info->ns);
+    return;  // TODO(@s0cks): reclaim the allocated graph slot / mark failed rather than leave an empty node
+  }
+  SetResourceNamespace(dest_info->ns, source_info->ns);
 
   ResolveOrGenerateResourceId(orc->state, res->kind, dest_info->name, &new_res->id);
 
-  new_res->kind = strdup(res->kind);
+  new_res->kind = res->kind;
   if (!new_res->kind)
     return;  // TODO(@s0cks): probably should reclaim the allocated id
 

@@ -73,19 +73,28 @@ func goVisitResource(idx C.ResourceGraphIndex, res *C.Resource, data unsafe.Poin
 	rawReason := C.GoStringN(&res.status.reason[0], C.int(C.HYPHA_REASON_MAX_LENGTH))
 	goReason, _, _ := strings.Cut(rawReason, "\x00")
 
-	goSpecStr := C.GoString(res.spec.raw)
+	ns := GetResourceNamespace(res)
+
 	var spec any
-	if err := json.Unmarshal([]byte(goSpecStr), &spec); err != nil {
-		fmt.Printf("failed to unmarshal spec field", err)
-		spec = goSpecStr
+	goSpecStr := C.GoString(res.spec.raw)
+	if goSpecStr != "" {
+		if err := json.Unmarshal([]byte(goSpecStr), &spec); err != nil {
+			fmt.Printf("failed to unmarshal spec field `%s`: %v", goSpecStr, err)
+			spec = goSpecStr
+		}
+	} else {
+		spec = map[string]any{}
 	}
+
+	kindStr := C.GoString(C.FindResourceKindName(res.kind))
 
 	goResource := Resource{
 		ID:    formatResourceID(res.id),
-		Kind:  C.GoString(res.kind),
+		Kind:  kindStr,
 		State: C.GoString(C.ResourceStateCStr(res.state)),
 		Metadata: ResourceMetadata{
 			Name:        C.GoString(res.info.name),
+			Namespace:   ns,
 			Labels:      labels,
 			Annotations: annotations,
 		},
@@ -143,10 +152,19 @@ func (rg *ResourceGraph) ListResources() []Resource {
 
 func (rg *ResourceGraph) ListResourcesWithSelector(selector ResourceSelector) []Resource {
 	var records []Resource
-	rg.VisitAllMatchingResources(selector, func(idx uint64, rec Resource) bool {
-		records = append(records, rec)
-		return true
-	})
+
+	if selector.Handle != nil {
+		rg.VisitAllMatchingResources(selector, func(idx uint64, rec Resource) bool {
+			records = append(records, rec)
+			return true
+		})
+	} else {
+		rg.VisitAllResources(func(idx uint64, rec Resource) bool {
+			records = append(records, rec)
+			return true
+		})
+	}
+
 	return records
 }
 
