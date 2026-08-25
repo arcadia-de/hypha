@@ -35,11 +35,13 @@ all_hypha_deps = [
 archive = dependency('libarchive', version: '>=3.8.8', required: false)
 if archive.found()
   all_hypha_deps += archive
+  add_project_arguments('-DHYPHA_HAS_ARCHIVE', language: [ 'c', 'cpp' ])
 endif
 
 git2 = dependency('libgit2', version: '>=1.9.4', required: false)
 if git2.found()
   all_hypha_deps += git2
+  add_project_arguments('-DHYPHA_HAS_GIT2', language: [ 'c', 'cpp' ])
 endif
 
 gvc = dependency('libgvc', version: '>= 15.1.0', required: false)
