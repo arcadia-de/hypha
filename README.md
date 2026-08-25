@@ -103,6 +103,64 @@ Check out the [build docs](https://github.com/arcadia-de/hypha/wiki) for how to 
 
 Check out the [wiki](https://github.com/arcadia-de/hypha/wiki) for more information.
 
+## CLI
+
+> A preview of the sub-commands for Hypha, you can find out more in the wiki
+
+```sh
+hypha --help
+```
+
+```text
+A dotfile manager
+
+Usage:
+  hypha [command]
+
+Configuration Commands
+  adopt       Adopt specific resources into the resource graph
+  apply       Apply your configuration
+  gc          Cleanup orphaned resources
+  generate    generate a manifest for a given resource
+  init        Initialize hypha on a system
+  plan        Preview the pending changes
+  status      Show resource drift
+  tidy        Cleanup the configuration dir
+
+Inspection Commands
+  browse      Open a read-only interactive browser session
+  describe    Describe a resource
+  explain     Explain why a resource exists
+  graph       Graph the resources
+  history     Show the history of the resource graph
+  lint        Lint the specified manifests
+  list        List resources in the graph
+  query       Query the resource graph using an expression
+  validate    Validate the specified manifests
+
+Development Commands
+  docs        Open the documentation for a specific resource kind in the system browser
+  eval        Evaluate a lua expression or file
+  lsp         Run the LSP service for a manifest
+
+Resource Commands
+
+Additional Commands:
+  completion  Generate the autocompletion script for the specified shell
+  help        Help about any command
+  info        Show runtime info
+  rocks       Manipulate luarocks packages
+
+Flags:
+      --cache-dir string    The cache dir for hypha (default "/home/tazz/.cache/hypha")
+      --config-dir string   The configuration dir for hypha (default "/home/tazz/.config/hypha")
+  -h, --help                help for hypha
+      --state-dir string    The state dir for hypha (default "/home/tazz/.local/state/hypha")
+  -v, --verbose             add more detailed output
+
+Use "hypha [command] --help" for more information about a command.
+```
+
 ## Contributing
 
 See the [Contributing guide](https://github.com/arcadia-de/hypha/wiki/Contributing) in the wiki for contribution guidelines and development information.
