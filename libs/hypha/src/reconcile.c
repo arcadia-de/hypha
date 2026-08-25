@@ -249,7 +249,6 @@ void QueueReconcileTask(Orchestrator* orc, Controller* ctrl, const ResourceGraph
   ResourceIdStr id_str;
   ResourceIdCStr(&res->id, id_str);
   task->has_last_applied = StateStoreGet(orc->state, id_str, &task->last_applied);
-  LOG_DEBUG_IF(!task->has_last_applied, "no prior state for: %s (%s)", id_str, res->kind);
   task->orc = orc;
   clock_gettime(CLOCK_REALTIME, &task->start);
   task->mode = orc->run.mode;

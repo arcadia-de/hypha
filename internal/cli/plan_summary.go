@@ -40,11 +40,11 @@ func (style *PlanSummaryStyle) Print(ps *PlanSummary) {
 	}
 
 	if ps.Destroyed > 0 {
-		style.PrintRow(style.DestroyedStyle.Render(fmt.Sprintf("  %s %d/%d Destroyed", DestroySymbol.NF, ps.Destroyed, ps.Total)))
+		style.PrintRow(style.DestroyedStyle.Render(fmt.Sprintf("%s %d/%d Destroyed", DestroySymbol.NF, ps.Destroyed, ps.Total)))
 	}
 
 	if ps.None > 0 {
-		style.PrintRow(style.NoneStyle.Render(fmt.Sprintf("  %s %d/%d No Actions", NoOpSymbol.NF, ps.None, ps.Total)))
+		style.PrintRow(style.NoneStyle.Render(fmt.Sprintf("%s %d/%d No Actions", NoOpSymbol.NF, ps.None, ps.Total)))
 	}
 	fmt.Println()
 }

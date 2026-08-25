@@ -8,6 +8,8 @@ Hypha, a declarative configuration system for managing a user's environment and 
 It represents configuration as Resources defined by declarative manifests, forming a
 dependency graph that is reconciled through pluggable controllers.
 
+![Example](./docs/example.gif)
+
 ## Building From Source
 
 Check out the [build docs](https://github.com/arcadia-de/hypha/wiki) for how to build.
