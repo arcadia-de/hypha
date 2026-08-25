@@ -1,13 +1,14 @@
-subdir('api/')
-subdir('lua-runtime/')
-subdir('wasm-runtime/')
+subdir('api')
+subdir('lua-runtime')
+subdir('wasm-runtime')
 
 controllers_matrix = {
   'test': {},
-  'dir': {},
+  'directory': {},
   'package': {},
   'symlink': {},
   'template': {},
+  'package_manager': {},
 }
 
 if archive.found()
@@ -30,6 +31,9 @@ if git2.found()
   }
 endif
 
+base_c_args = [
+  '-Wno-unused-function',
+]
 base_controller_deps = [
   jansson,
   hypha_api_dep,
@@ -43,12 +47,13 @@ base_controller_deps = [
 ]
 controllers_deps = []
 foreach name, cfg : controllers_matrix
-  binding_inc = include_directories(name)
+  binding_inc = include_directories(name / 'include')
   binding_lib = static_library(
     'hypha-' + name + '-controller',
-    files(name / name + '_controller.c'),
+    files(name / 'src' / name + '_controller.c'),
     include_directories: binding_inc,
     dependencies: base_controller_deps + cfg.get('deps', []),
+    c_args: base_c_args + cfg.get('c_args', []),
     override_options: cfg.get('override_opts', []),
   )
   controllers_deps += declare_dependency(
@@ -56,3 +61,5 @@ foreach name, cfg : controllers_matrix
     include_directories: binding_inc,
   )
 endforeach
+
+subdir('all')

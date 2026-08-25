@@ -1,4 +1,4 @@
-#include "template_controller.h"
+#include "hypha/template_controller.h"
 
 #include <stdio.h>
 
@@ -208,4 +208,4 @@ static const ControllerConfig kTemplateControllerConfig = {
     .plan = TemplatePlan,
     .apply = TemplateApply,
 };
-DEFINE_NEW_CONTROLLER(Template, TEMPLATE_CONTROLLER_KIND);
+DEFINE_NEW_CONTROLLER(Template);

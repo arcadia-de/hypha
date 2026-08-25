@@ -4,8 +4,6 @@
 #include "hypha.h"
 #include "hypha/controller.h"
 
-#define TEST_CONTROLLER_KIND "Test"
-
-Controller* NewTestController();
+DECLARE_CONTROLLER(Test);
 
 #endif  // HYPHA_TEST_CONTROLLER_H

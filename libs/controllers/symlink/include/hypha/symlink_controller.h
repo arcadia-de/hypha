@@ -4,8 +4,6 @@
 #include "hypha.h"
 #include "hypha/controller.h"
 
-#define SYMLINK_CONTROLLER_KIND "Symlink"
-
-Controller* NewSymlinkController();
+DECLARE_CONTROLLER(Symlink);
 
 #endif  // HYPHA_SYMLINK_CONTROLLER_H

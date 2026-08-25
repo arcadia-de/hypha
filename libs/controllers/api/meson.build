@@ -1,6 +1,7 @@
 all_hypha_controller_deps = [
   libuv,
   threads,
+
   hypha_api_dep,
   hypha_log_dep,
   hypha_resource_graph_dep,
@@ -31,6 +32,7 @@ hypha_controller_dep = declare_dependency(
   link_with: [
     hypha_controller,
   ],
+  dependencies: all_hypha_controller_deps,
   include_directories: [
     hypha_controller_inc,
   ]

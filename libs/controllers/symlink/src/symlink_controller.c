@@ -1,4 +1,4 @@
-#include "symlink_controller.h"
+#include "hypha/symlink_controller.h"
 
 #include <errno.h>
 #include <jansson.h>
@@ -171,4 +171,4 @@ static const ControllerConfig kSymlinkControllerConfig = {
     .normalize = NULL,
     .destroy = NULL,
 };
-DEFINE_NEW_CONTROLLER(Symlink, SYMLINK_CONTROLLER_KIND);
+DEFINE_NEW_CONTROLLER(Symlink);

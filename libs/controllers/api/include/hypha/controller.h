@@ -105,10 +105,18 @@ ControllerStatus ControllerDiff(Controller* ctrl, const Resource* current);
 ControllerStatus ControllerStat(Controller* ctrl, const Resource* current);
 ControllerStatus ControllerNormalize(Controller* ctrl, const Resource* current);
 
-#define DEFINE_NEW_CONTROLLER(Name, Kind)                                       \
+#define DECLARE_CONTROLLER(Name)                           \
+  static const char k##Name##ControllerKindName[] = #Name; \
+  ResourceKind Get##Name##ResourceKind();                  \
+  Controller* New##Name##Controller();
+
+#define DEFINE_NEW_CONTROLLER(Name)                                             \
   static ResourceKind k##Name##Kind = kInvalidResourceKind;                     \
+  ResourceKind Get##Name##ResourceKind() {                                      \
+    return k##Name##Kind;                                                       \
+  }                                                                             \
   Controller* New##Name##Controller() {                                         \
-    k##Name##Kind = NewResourceKind((Kind));                                    \
+    k##Name##Kind = NewResourceKind(k##Name##ControllerKindName);               \
     if (k##Name##Kind == kInvalidResourceKind)                                  \
       return NULL;                                                              \
     return NewController(k##Name##Kind, k##Name##ControllerConfig, NULL, NULL); \

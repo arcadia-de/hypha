@@ -1,4 +1,4 @@
-#include "repository_controller.h"
+#include "hypha/repository_controller.h"
 
 #include <git2.h>
 #include <git2/clone.h>
@@ -74,4 +74,4 @@ static const ControllerConfig kRepositoryControllerConfig = {
     .plan = RepositoryPlan,
     .apply = RepositoryApply,
 };
-DEFINE_NEW_CONTROLLER(Repository, REPOSITORY_CONTROLLER_KIND);
+DEFINE_NEW_CONTROLLER(Repository);

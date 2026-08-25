@@ -4,8 +4,6 @@
 #include "hypha.h"
 #include "hypha/controller.h"
 
-#define REPOSITORY_CONTROLLER_KIND "Repository"
-
-Controller* NewRepositoryController();
+DECLARE_CONTROLLER(Repository);
 
 #endif  // HYPHA_REPOSITORY_CONTROLLER_H

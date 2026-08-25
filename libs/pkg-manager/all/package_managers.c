@@ -10,12 +10,15 @@
 #include "go_pkg_manager.h"
 #include "hypha/log.h"
 #include "hypha/package_manager.h"
+#include "hypha/resource_kind.h"
 #include "luarocks_pkg_manager.h"
 #include "pacman_pkg_manager.h"
 #include "paru_pkg_manager.h"
 #include "yay_pkg_manager.h"
 
 void InitPackageManagers(const char* luarocks_dir) {
+  LOG_FATAL_IF(NewResourceKind("PackageManager") == kInvalidResourceKind, "failed to create PackageManager kind");
+
   PackageManager* Apt = NewApt();
   DLOG_WARN_IF(!Apt, "failed to create Apt package manager");
 

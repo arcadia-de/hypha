@@ -22,9 +22,9 @@ hypha_deps = [
   hypha_validation_dep,
   hypha_service_dep,
   hypha_resource_graph_dep,
+  hypha_controllers_dep,
 ]
 hypha_deps += pkg_manager_deps
-hypha_deps += controllers_deps
 hypha_deps += services_deps
 hypha = static_library(
   'hypha',

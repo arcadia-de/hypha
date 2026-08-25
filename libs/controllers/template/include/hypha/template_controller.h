@@ -4,8 +4,6 @@
 #include "hypha.h"
 #include "hypha/controller.h"
 
-#define TEMPLATE_CONTROLLER_KIND "Template"
-
-Controller* NewTemplateController();
+DECLARE_CONTROLLER(Template);
 
 #endif  // HYPHA_TEMPLATE_CONTROLLER_H

@@ -1,3 +1,5 @@
+#include "hypha/archive_controller.h"
+
 #include <archive.h>
 #include <archive_entry.h>
 #include <linux/limits.h>
@@ -6,7 +8,6 @@
 #include <string.h>
 #include <unistd.h>
 
-#include "archive_controller.h"
 #include "hypha.h"
 #include "hypha/log.h"
 
@@ -82,4 +83,4 @@ static const ControllerConfig kArchiveControllerConfig = {
     .plan = ArchivePlan,
     .apply = ArchiveApply,
 };
-DEFINE_NEW_CONTROLLER(Archive, ARCHIVE_CONTROLLER_KIND);
+DEFINE_NEW_CONTROLLER(Archive);

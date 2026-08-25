@@ -1,6 +1,7 @@
+#include "hypha/package_controller.h"
+
 #include "hypha.h"
 #include "hypha/log.h"
-#include "package_controller.h"
 
 DEFINE_CONTROLLER_OBSERVE_FN(Package) {
   return kStatusOk;
@@ -19,4 +20,4 @@ static const ControllerConfig kPackageControllerConfig = {
     .plan = PackagePlan,
     .apply = PackageApply,
 };
-DEFINE_NEW_CONTROLLER(Package, PACKAGE_CONTROLLER_KIND);
+DEFINE_NEW_CONTROLLER(Package);

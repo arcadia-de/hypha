@@ -1,4 +1,4 @@
-#include "test_controller.h"
+#include "hypha/test_controller.h"
 
 #include <bits/time.h>
 #include <pthread.h>
@@ -45,4 +45,4 @@ static const ControllerConfig kTestControllerConfig = {
     .plan = TestPlan,
     .apply = TestApply,
 };
-DEFINE_NEW_CONTROLLER(Test, TEST_CONTROLLER_KIND);
+DEFINE_NEW_CONTROLLER(Test);

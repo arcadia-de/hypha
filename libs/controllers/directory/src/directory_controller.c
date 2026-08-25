@@ -1,4 +1,4 @@
-#include "dir_controller.h"
+#include "hypha/directory_controller.h"
 
 #include <bits/time.h>
 #include <errno.h>
@@ -88,4 +88,4 @@ static const ControllerConfig kDirectoryControllerConfig = {
     .plan = DirectoryPlan,
     .apply = DirectoryApply,
 };
-DEFINE_NEW_CONTROLLER(Directory, DIRECTORY_CONTROLLER_KIND);
+DEFINE_NEW_CONTROLLER(Directory);

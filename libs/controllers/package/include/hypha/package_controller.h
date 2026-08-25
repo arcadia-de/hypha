@@ -4,8 +4,6 @@
 #include "hypha.h"
 #include "hypha/controller.h"
 
-#define PACKAGE_CONTROLLER_KIND "Package"
-
-Controller* NewPackageController();
+DECLARE_CONTROLLER(Package);
 
 #endif  // HYPHA_PACKAGE_CONTROLLER_H

@@ -4,8 +4,6 @@
 #include "hypha.h"
 #include "hypha/controller.h"
 
-#define ARCHIVE_CONTROLLER_KIND "Archive"
-
-Controller* NewArchiveController();
+DECLARE_CONTROLLER(Archive);
 
 #endif  // HYPHA_ARCHIVE_CONTROLLER_H
