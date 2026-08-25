@@ -25,7 +25,6 @@ func CreateListFilter(kind string) hypha.ResourceSelector {
 	if nsFilter != "" {
 		filters = append(filters, hypha.NewNamespaceResourceSelector(nsFilter))
 	}
-	fmt.Println("namespace filter" + nsFilter)
 
 	return hypha.NewAndResourceSelector(filters)
 }

@@ -84,6 +84,7 @@ static inline bool OnGraphSubmitted(const char* p, const void* event, void* data
   const size_t num_resources = GetNumberOfResourcesInResourceGraph(orc->graph) + 1;
   InitPlan(&orc->plan, num_resources);
   InitActionLog(&orc->actions, num_resources);
+  InitDeltaLog(&orc->dlog, num_resources);
   InitValidationLog(&orc->vlog, num_resources);
 
   DispatchReadyResources(orc);

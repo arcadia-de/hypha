@@ -113,9 +113,6 @@ finished:
   observed->spec.doc = NULL;
 }
 
-// Persists the post-apply state of `res`. Only ever called for apply-mode tasks: state is
-// the serialized record of what was actually applied, and plan/validate runs never touch it
-// (there is no plan artifact to serialize -- plan is always recomputed as the gate for apply).
 static inline void WriteResourceState(Orchestrator* orc, const Resource* res, const ControllerStatus status) {
   ASSERT(res->spec.raw);
   ResourceIdStr id_str;
@@ -142,11 +139,6 @@ static inline void WriteResourceState(Orchestrator* orc, const Resource* res, co
   free(entry.name);
 }
 
-// Appends one HistoryRecord for `task`. Only ever called for apply-mode tasks that actually
-// took an action -- history is an audit trail of applied changes, not a per-run log of every
-// resource that was checked and found to already match. Field-for-field this mirrors
-// WriteResourceState above: id/kind/name/labels/annotations carry the same values a StateEntry
-// for this resource would, just captured for this one applied action rather than "latest known."
 static inline void WriteHistory(Orchestrator* orc, const Resource* res, const ReconcileTask* task) {
   ResourceIdStr id_str;
   ResourceIdCStr(&res->id, id_str);
@@ -170,8 +162,6 @@ static inline void WriteHistory(Orchestrator* orc, const Resource* res, const Re
   memcpy(record.reason, task->reason, sizeof(Reason));  // TODO(@s0cks): should check if reason is not empty first
   LOG_ERROR_IF(!HistoryLogAppend(orc->history, &record), "failed to write to history for: %s", id_str);
 
-  // labels/annotations are borrowed from res->info (owned by the resource graph), matching
-  // WriteResourceState -- only the strdup'd scalar fields need freeing here.
   free(record.id);
   free(record.kind);
   free(record.name);
@@ -190,6 +180,7 @@ static inline void ReconcileAfterWork(uv_work_t* req, int status) {
 
   AppendPlan(&orc->plan, &task->plan);
   AppendValidationLog(&orc->vlog, &task->vlog);
+  AppendDeltaLog(&orc->dlog, &task->dlog);
   if (IsApplyReconcileTask(task)) {
     AppliedAction* action = NewAppliedAction(&orc->actions);
     ASSERT(action);
@@ -207,13 +198,8 @@ static inline void ReconcileAfterWork(uv_work_t* req, int status) {
     orc->run.success = (task->status == kStatusOk);
   }
 
-  // Only apply is the deterministic execution phase whose outcome gets persisted -- plan and
-  // validate runs are read-only with respect to state/history (state/history record what was
-  // actually applied, not what a dry run determined would happen).
   if (IsApplyReconcileTask(task)) {
     WriteResourceState(orc, res, task->status);
-    // A NoAction result means observed already matched desired -- nothing was actually
-    // applied, so it doesn't belong in an audit trail of applied changes.
     if (task->action != kNoAction)
       WriteHistory(orc, res, task);
   }
@@ -262,8 +248,6 @@ void QueueReconcileTask(Orchestrator* orc, Controller* ctrl, const ResourceGraph
   memset(task, 0, sizeof(ReconcileTask));
   ResourceIdStr id_str;
   ResourceIdCStr(&res->id, id_str);
-  // No prior entry is the normal case for a resource's first reconcile, not a failure --
-  // only note it at debug level rather than warning on every first-time apply.
   task->has_last_applied = StateStoreGet(orc->state, id_str, &task->last_applied);
   LOG_DEBUG_IF(!task->has_last_applied, "no prior state for: %s (%s)", id_str, res->kind);
   task->orc = orc;
@@ -277,6 +261,7 @@ void QueueReconcileTask(Orchestrator* orc, Controller* ctrl, const ResourceGraph
   const size_t init_cap = 3;
   InitPlan(&task->plan, init_cap);
   InitValidationLog(&task->vlog, init_cap);
+  InitDeltaLog(&task->dlog, init_cap);
 
   uv_queue_work(orc->loop, &task->work, ReconcileWork, ReconcileAfterWork);
 }

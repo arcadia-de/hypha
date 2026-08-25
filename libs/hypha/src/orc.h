@@ -39,6 +39,7 @@ struct _Orchestrator {
   StateStore* state;
   HistoryLog* history;
   Plan plan;
+  DeltaLog dlog;
   ValidationLog vlog;
   OrchestratorMetrics metrics;
   ResourceDecoratorPipeline decorator;

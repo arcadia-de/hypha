@@ -23,6 +23,7 @@ hypha_deps = [
   hypha_service_dep,
   hypha_resource_graph_dep,
   hypha_controllers_dep,
+  delta_dep,
 ]
 hypha_deps += pkg_manager_deps
 hypha_deps += services_deps

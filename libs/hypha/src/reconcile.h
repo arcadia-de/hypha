@@ -5,6 +5,7 @@
 
 #include "hypha.h"
 #include "hypha/controller.h"
+#include "hypha/delta_log.h"
 #include "hypha/orchestrator.h"
 #include "hypha/state.h"
 
@@ -24,6 +25,7 @@ typedef struct {
   Reason reason;
   Plan plan;
   ValidationLog vlog;
+  DeltaLog dlog;
 } ReconcileTask;
 
 #define DEFINE_RUN_MODE_CHECK(Name)                                \
