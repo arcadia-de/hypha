@@ -4,9 +4,94 @@
 
 ![Hypha Logo](./assets/logo.png)
 
-Hypha, a declarative configuration system for managing a user's environment and dotfiles.
+Hypha, is a declarative configuration system for managing a user's environment and dotfiles.
 It represents configuration as Resources defined by declarative manifests, forming a
 dependency graph that is reconciled through pluggable controllers.
+
+## Example
+
+First let's define some manifests
+
+> Hypha allows you to define manifests using Jsonnet, JSON, & YAML
+
+`~/.config/hypha/example.jsonnet`:
+
+```jsonnet
+local hypha = import 'lib/hypha.libsonnet';
+[
+  // Create a symlink .gitconfig => ~/.gitconfig
+  hypha.Manifest('Symlink', 'gitconfig', spec={
+    source: ".gitconfig",
+    target: "~/.gitconfig",
+  }),
+]
+```
+
+> Create another manifest, this time using YAML.
+
+`~/.config/hypha/git.yaml`:
+
+```yaml
+---
+kind: Package
+metadata:
+  name: git
+  labels:
+    - test
+spec:
+  target: git
+```
+
+> By default, Hypha can discover manifests automatically.
+> 
+> Any file found in the config directory `~/.config/hypha` with one of the following extensions is considered a valid manifest source:
+>
+> - .jsonnet
+> - .yaml
+> - .json
+>
+>
+> However, you can also provide an `init.lua` in the config directory to customize how and what manifests get loaded:
+
+`~/.config/hypha/init.lua`:
+
+```lua
+local sources = require('hypha.sources')
+return {
+  -- load the new manifests from ~/.config/hypha/example.jsonnet
+  sources.file("%h/example.jsonnet"),
+  -- manifests can also be provided directly from lua
+  -- create the directory:  ~/.config/hypha/test-dir
+  sources.raw([[
+  {
+    kind: "Directory",
+    metadata: {
+      "name": "TestDirectory",
+      "labels": [
+        "test",
+      ],
+    },
+    spec: {
+      "target": "%h/test-dir",
+    },
+  }
+  ]])
+}
+```
+
+Once your config is defined, you can preview the changes Hypha would make with `plan`:
+
+> Optional, but highly recommended
+
+```sh
+hypha plan
+```
+
+Finally, if your changes look correct, let's apply those changes:
+
+```sh
+hypha apply
+```
 
 ![Example](./docs/example.gif)
 
