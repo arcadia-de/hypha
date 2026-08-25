@@ -131,9 +131,10 @@ and maintainability standards, in addition to the requirements described in the 
 
 ## Credits
 
-- [helm](https://helm.sh/) --- Inspiration
-- [dotbot](https://github.com/anishathalye/dotbot) --- Inspiration
-- [home-manager](https://github.com/nix-community/home-manager) --- Inspiration
+Hypha is inspired by the [helm](https://helm.sh/), [dotbot](https://github.com/anishathalye/dotbot), and [home-manager](https://github.com/nix-community/home-manager)
+
+With contributions by the following:
+
 - [ChatGPT](https://chatgpt.com/) --- Logo
 - [Claude](https://claude.ai/) --- Some [contributions](https://github.com/arcadia-de/hypha/commits?author=claude)
 
