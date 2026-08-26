@@ -17,6 +17,8 @@ typedef void (*ProcessCallback)(Process* p);
 struct _Process {
   bool root;
   const char* bin;
+  int code;
+  int timeout;
 
   const char** args;
   uint64_t num_args;

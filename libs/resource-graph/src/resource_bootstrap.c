@@ -24,8 +24,7 @@ static inline void DeriveBootstrapResourceId(const char* ns, const char* kind, c
 static inline bool SetProvidesAnnotation(Resource* res, const char* provides) {
   AnnotationValue value;
   memset(value, 0, sizeof(AnnotationValue));
-  strncpy(value, provides, sizeof(AnnotationValue) - 1);
-
+  strncpy(value, provides, sizeof(AnnotationValue));
   ResourcePushAnnotation(res, &kProvidesAnnotationKey, &value);
   return true;
 }
@@ -33,7 +32,7 @@ static inline bool SetProvidesAnnotation(Resource* res, const char* provides) {
 static inline bool SetDocsAnnotation(Resource* res, const char* docs) {
   AnnotationValue value;
   memset(value, 0, sizeof(AnnotationValue));
-  strncpy(value, docs, sizeof(AnnotationValue) - 1);
+  strncpy(value, docs, sizeof(AnnotationValue));
   ResourcePushAnnotation(res, &kDocsAnnotationKey, &value);
   return true;
 }
@@ -97,7 +96,7 @@ typedef struct {
 
 static inline bool VisitFindProvides(const ResourceGraphIndex idx, Resource* res, void* data) {
   FindProvidesContext* ctx = (FindProvidesContext*)data;
-  if (!res->kind || res->kind == ctx->kind)
+  if (res->kind == kInvalidResourceKind || res->kind != ctx->kind)
     return true;  // keep looking
 
   Annotation* found = NULL;
@@ -114,6 +113,7 @@ static inline bool VisitFindProvides(const ResourceGraphIndex idx, Resource* res
 bool FindResourceProviding(ResourceGraph* graph, const char* kind, const char* provides, Resource** out) {
   if (out)
     *out = NULL;
+
   if (!graph || !kind || !provides)
     return false;
 

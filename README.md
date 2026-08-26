@@ -161,6 +161,21 @@ Flags:
 Use "hypha [command] --help" for more information about a command.
 ```
 
+## Status
+
+This project is currently experimental and not every planned feature is working.
+
+|      OS | Description                                                                                                                    |
+|--------:|:-------------------------------------------------------------------------------------------------------------------------------|
+|   Linux | So far the most active development for this project has been on [Arch](https://archlinux.org/) & [Ubuntu](https://ubuntu.com/) |
+|     OSX | I have plans to support OSX, TBD still                                                                                         |
+| Windows | Windows support is a long way away                                                                                             |
+
+> If your OS doesn't work:
+>
+> - Submit a Pull Request (PR)
+> - Submit an Issue
+
 ## Contributing
 
 See the [Contributing guide](https://github.com/arcadia-de/hypha/wiki/Contributing) in the wiki for contribution guidelines and development information.

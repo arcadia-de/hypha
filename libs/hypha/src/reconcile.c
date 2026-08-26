@@ -1,10 +1,11 @@
 #include "reconcile.h"
 
-#include <uuid.h>
+#include <uuid/uuid.h>
 #include <xxhash.h>
 
 #include "hypha.h"
 #include "hypha/annotation.h"
+#include "hypha/controller_action.h"
 #include "hypha/controller_status.h"
 #include "hypha/history.h"
 #include "hypha/label.h"
@@ -70,8 +71,9 @@ static inline void ReconcileWork(uv_work_t* req) {
   ReconcileTask* task = container_of(req, ReconcileTask, work);
   Controller* ctrl = task->ctrl;
   Resource* desired = GetResourceInGraph(task->orc->graph, task->index);
-  ResourceSpecParseJson(&desired->spec);
+  EnsureResourceSpecDoc(&desired->spec);
   Resource* observed = &task->observed;
+  EnsureResourceSpecDoc(&observed->spec);
 
   BEGIN_RESOURCE_LOG_CTX(desired);
   const ControllerStatus status = ControllerObserve(ctrl, observed, &task->last);
@@ -86,8 +88,9 @@ static inline void ReconcileWork(uv_work_t* req) {
   const size_t num_defaults = GetNumberOfDefaultLabels();
   if (defaults != NULL && num_defaults > 0)
     ResourcePushLabels(desired, defaults, num_defaults);
+
   task->action = ControllerPlan(ctrl, observed, desired, &task->plan);
-  if (IsPlanReconcileTask(task) || task->action == kNoAction)
+  if (IsPlanReconcileTask(task) || task->action == kNoAction || task->action == kFailedAction)
     goto finished;
   CHECK_MODE(Plan);
 
@@ -134,7 +137,6 @@ static inline void WriteResourceState(Orchestrator* orc, const Resource* res) {
       .annotations_len = res->info.annotations_len,
   };
   LOG_ERROR_IF(!StateStorePut(orc->state, &entry), "failed to write state entry for %s", id_str);
-  DLOG_INFO("wrote %zu labels to state store", entry.labels_len);
   free(entry.id);
   free(entry.kind);
   free(entry.name);

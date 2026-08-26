@@ -46,6 +46,15 @@ bool ResourceSpecParseJson(ResourceSpecDocument* rhs);
 void FreeResourceSpecJson(ResourceSpecDocument* rhs);
 uint64_t ResourceSpecDocumentGetHash(ResourceSpecDocument* rhs);
 
+// Guarantees `rhs->doc` is a valid (non-NULL) json object by the time this returns --
+// controllers should never have to NULL-check a resource's spec.doc before calling
+// json_object_get on it. Covers three cases: `.doc` already set (no-op), `.raw` set but
+// unparsed or invalid (parses it, or falls back to an empty object on failure), and
+// `.raw` itself NULL (e.g. a Resource reconstructed from a state store lookup that found
+// nothing -- happens for both `desired` and `observed` on a resource's first-ever
+// reconcile) -- in which case both `.raw` and `.doc` are set to a fresh empty object.
+void EnsureResourceSpecDoc(ResourceSpecDocument* rhs);
+
 typedef struct {
   struct {
     struct timespec start;

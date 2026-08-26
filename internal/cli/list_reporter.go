@@ -23,6 +23,12 @@ type ListReporter interface {
 type PlainListReporter struct{}
 
 func (p PlainListReporter) Run(resources []hypha.Resource) (any, error) {
+	if len(resources) == 0 {
+		fmt.Println()
+		fmt.Println("No resources found")
+		return nil, nil
+	}
+
 	cs := hypha.GetDefaultColorScheme()
 	rowStyle := lg.NewStyle().
 		MarginLeft(2)
@@ -34,6 +40,12 @@ func (p PlainListReporter) Run(resources []hypha.Resource) (any, error) {
 type ColoredListReporter struct{}
 
 func (p ColoredListReporter) Run(resources []hypha.Resource) (any, error) {
+	if len(resources) == 0 {
+		fmt.Println()
+		fmt.Println("No resources found")
+		return nil, nil
+	}
+
 	cs := hypha.GetDefaultColorScheme()
 	rowStyle := lg.NewStyle().
 		MarginLeft(2)
@@ -45,6 +57,12 @@ func (p ColoredListReporter) Run(resources []hypha.Resource) (any, error) {
 type PrettyListReporter struct{}
 
 func (p PrettyListReporter) Run(resources []hypha.Resource) (any, error) {
+	if len(resources) == 0 {
+		fmt.Println()
+		fmt.Println("No resources found")
+		return nil, nil
+	}
+
 	cs := hypha.GetDefaultColorScheme()
 	rowStyle := lg.NewStyle().
 		MarginLeft(2)

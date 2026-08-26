@@ -31,6 +31,23 @@ bool ResourceSpecParseJson(ResourceSpecDocument* doc) {
   return true;
 }
 
+void EnsureResourceSpecDoc(ResourceSpecDocument* rhs) {
+  ASSERT(rhs);
+
+  if (rhs->doc)
+    return;
+
+  if (rhs->raw) {
+    if (ResourceSpecParseJson(rhs))
+      return;
+    DLOG_ERROR("spec doc failed to parse, falling back to an empty object:\n%s", rhs->raw);
+  }
+
+  rhs->doc = json_object();
+  if (!rhs->raw)
+    rhs->raw = strdup("{}");
+}
+
 bool ResourceHasId(const Resource* res, const char* id) {
   if (!res || !id)
     return false;

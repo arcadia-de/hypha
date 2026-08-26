@@ -1,7 +1,5 @@
 kind: Test
 metadata:
   name: test-0
-depends_on:
-  - symlink-0
 spec:
   sleep: 2

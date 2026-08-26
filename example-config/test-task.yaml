@@ -1,0 +1,13 @@
+kind: Task
+metadata:
+  name: echo-hello-world
+spec:
+  check:
+    shell: "/usr/bin/zsh"
+    command:
+      - echo "Hello world" && return 1
+  exec:
+    shell: "/usr/bin/zsh"
+    command:
+      - echo
+      - '"Hello World"'

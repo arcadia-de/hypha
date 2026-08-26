@@ -24,6 +24,7 @@ PACKAGE_MANAGER_STATUS_FN(Yay) {
 
   proc.num_args = 2;
   proc.args = args;
+  proc.timeout = 5000;
 
   const int code = ExecProcess(&proc);
   if (code != 0) {

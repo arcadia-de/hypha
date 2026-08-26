@@ -17,13 +17,11 @@ static inline void FlushAccumulatedLines(Process* p, char* accumulator, int is_s
     *newline_pos = '\0';
 
     if (is_stderr) {
-      if (p->err) {
+      if (p->err)
         p->err(p, search_ptr);
-      }
     } else {
-      if (p->out) {
+      if (p->out)
         p->out(p, search_ptr);
-      }
     }
 
     search_ptr = newline_pos + 1;
@@ -153,10 +151,20 @@ int ExecProcess(Process* p) {
   int active_pipes = 2;
 
   while (active_pipes > 0) {
-    int poll_count = poll(fds, 2, -1);
+    int poll_count = poll(fds, 2, p->timeout);
     if (poll_count < 0) {
       perror("Poll error during process tracking");
       break;
+    }
+
+    if (poll_count == 0) {
+      DLOG_ERROR("process timed out.");
+      kill(pid, SIGKILL);
+      int status = 0;
+      waitpid(pid, &status, 0);
+      free(env);
+      free(args);
+      return -1;
     }
 
     for (int i = 0; i < 2; i++) {
@@ -165,29 +173,29 @@ int ExecProcess(Process* p) {
 
       if (fds[i].revents & POLLIN) {
         ssize_t bytes_read = read(fds[i].fd, buffer, sizeof(buffer) - 1);
-
         if (bytes_read > 0) {
           buffer[bytes_read] = '\0';
           if (i == 0) {
-            strcat(stdout_accumulator, buffer);
+            size_t current_len = strlen(stdout_accumulator);
+            strncat(stdout_accumulator, buffer, sizeof(stdout_accumulator) - current_len - 1);
             FlushAccumulatedLines(p, stdout_accumulator, 0);
           } else {
-            strcat(stderr_accumulator, buffer);
+            size_t current_len = strlen(stderr_accumulator);
+            strncat(stderr_accumulator, buffer, sizeof(stderr_accumulator) - current_len - 1);
             FlushAccumulatedLines(p, stderr_accumulator, 1);
           }
         } else if (bytes_read == 0) {
           close(fds[i].fd);
           fds[i].fd = -1;
           active_pipes--;
+          continue;
         }
       }
 
-      if (fds[i].revents & (POLLHUP | POLLERR)) {
-        if (fds[i].fd != -1) {
-          close(fds[i].fd);
-          fds[i].fd = -1;
-          active_pipes--;
-        }
+      if (fds[i].revents & (POLLHUP | POLLERR | POLLNVAL)) {
+        close(fds[i].fd);
+        fds[i].fd = -1;
+        active_pipes--;
       }
     }
   }
@@ -200,7 +208,7 @@ int ExecProcess(Process* p) {
   free(env);
   free(args);
   int status = 0;
-  waitpid(pid, &status, 0);
+  waitpid(pid, &status, WNOHANG);
   clock_gettime(CLOCK_REALTIME, &p->start);
 
   if (p->on_finished)
@@ -233,6 +241,7 @@ bool ExecWhich(const char* bin, char** result) {
   proc.num_args = 1;
   proc.data = NULL;
   proc.out = &OnWhich;
+  proc.timeout = 5000;
 
   const int status = ExecProcess(&proc);
   if (status != 0) {

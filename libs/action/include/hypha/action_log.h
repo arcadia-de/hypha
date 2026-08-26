@@ -1,17 +1,15 @@
 #ifndef HYPHA_ACTION_LOG_H
 #define HYPHA_ACTION_LOG_H
 
-#include "hypha/structured_log.h"
 #ifdef __cplusplus
 extern "C" {
 #endif  // __cplusplus
 
-#include <stdint.h>
 #include <time.h>
 
-#include "hypha.h"
 #include "hypha/reason.h"
 #include "hypha/resource.h"
+#include "hypha/structured_log.h"
 
 typedef struct {
   uint32_t action;
@@ -64,11 +62,6 @@ void SortActionLog(AppliedActionLog* alog);
 
 FOR_EACH_CONTROLLER_ACTION(DEFINE_NEW_ACTION);
 #undef DEFINE_NEW_ACTION
-
-// uint32_t action;
-// struct timespec timestamp;
-// Resource* resource;
-// Reason reason;
 
 #ifdef __cplusplus
 };

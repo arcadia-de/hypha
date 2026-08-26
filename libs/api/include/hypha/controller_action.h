@@ -9,7 +9,8 @@ extern "C" {
   V(No)                               \
   V(Create)                           \
   V(Update)                           \
-  V(Destroy)
+  V(Destroy)                          \
+  V(Failed)
 
 // clang-format off
 typedef enum {

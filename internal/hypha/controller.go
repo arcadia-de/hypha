@@ -25,6 +25,7 @@ const (
 	kCreateAction
 	kUpdateAction
 	kDestroyAction
+	kFailedAction
 )
 
 func GetControllerActionName(action ControllerAction) string {
@@ -37,6 +38,8 @@ func GetControllerActionName(action ControllerAction) string {
 		return "Update"
 	case kDestroyAction:
 		return "Destroy"
+	case kFailedAction:
+		return "Failed"
 	default:
 		return "Unknown"
 	}

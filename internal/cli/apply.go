@@ -91,6 +91,9 @@ func PrintAppliedActions(orc *hypha.Orchestrator, rowStyle *lg.Style, cs *hypha.
 		case "Destroy":
 			act = style.DestroyActionStyle.Render(act)
 			summary.Destroyed++
+		case "Failed":
+			act = style.FailedActionStyle.Render(act)
+			summary.Failed++
 		}
 
 		fmt.Println(rowStyle.Render(lg.JoinHorizontal(

@@ -45,6 +45,7 @@ static const char kPackageManagerDocs[] = "";
 static const char kRepositoryDocs[]     = "https://github.com/arcadia-de/hypha/wiki/BuiltinResources-Repositories";
 static const char kSymlinkDocs[]        = "https://github.com/arcadia-de/hypha/wiki/BuiltinResources-Symlinks";
 static const char kTemplateDocs[]       = "https://github.com/arcadia-de/hypha/wiki/BuiltinResources-Templates";
+static const char kTaskDocs[]           = "";
 // clang-format on
 
 void BootstrapHyphaCoreResources(ResourceGraph* graph) {

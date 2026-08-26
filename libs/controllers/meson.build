@@ -9,6 +9,12 @@ controllers_matrix = {
   'symlink': {},
   'template': {},
   'package_manager': {},
+  'task': {
+    'sources': [
+      'src' / 'task_spec.c',
+      'src' / 'exec_spec.c',
+    ]
+  },
 }
 
 if archive.found()
@@ -49,9 +55,15 @@ base_controller_deps = [
 controllers_deps = []
 foreach name, cfg : controllers_matrix
   binding_inc = include_directories(name / 'include')
+  binding_sources = [
+    name / 'src' / name + '_controller.c',
+  ]
+  foreach source : cfg.get('sources', [])
+    binding_sources += name / source
+  endforeach
   binding_lib = static_library(
     'hypha-' + name + '-controller',
-    files(name / 'src' / name + '_controller.c'),
+    binding_sources,
     include_directories: binding_inc,
     dependencies: base_controller_deps + cfg.get('deps', []),
     c_args: base_c_args + cfg.get('c_args', []),

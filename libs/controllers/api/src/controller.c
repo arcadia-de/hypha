@@ -152,7 +152,6 @@ ControllerStatus ControllerObserve(Controller* ctrl, Resource* observed, StateEn
     observed_info->labels_len = num_labels;
     observed_info->labels_cap = num_labels;
   }
-  DLOG_INFO("decoded %zu/%zu labels", observed_info->labels_len, last->labels_len);
 
   const size_t num_annotations = last->annotations_len;
   if (num_annotations > 0) {
@@ -163,7 +162,6 @@ ControllerStatus ControllerObserve(Controller* ctrl, Resource* observed, StateEn
     observed->info.annotations = annotations;
     observed->info.annotations_len = observed->info.annotations_cap = num_annotations;
   }
-  DLOG_INFO("decoded %zu annotations", observed->info.annotations_len);
 
   ObserveContext ctx = {
       .observed = observed,
@@ -239,6 +237,7 @@ finished:
 bool ControllerValidate(Controller* ctrl, Resource* desired, ValidationLog* vl) {
   ASSERT(ctrl);
   ASSERT(desired);
+  ASSERT(vl);
   BEGIN_CONTROLLER_FUNC(Validate);
   bool valid = false;
 

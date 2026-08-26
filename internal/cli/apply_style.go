@@ -17,6 +17,7 @@ type ApplyStyle struct {
 	CreateActionStyle  lg.Style
 	UpdateActionStyle  lg.Style
 	DestroyActionStyle lg.Style
+	FailedActionStyle  lg.Style
 	KindStyle          lg.Style
 	NameStyle          lg.Style
 	IdStyle            lg.Style
@@ -59,6 +60,8 @@ func NewApplyStyle(rowStyle *lg.Style, cs *hypha.ColorScheme) *ApplyStyle {
 			Foreground(cs.GetUpdateColor()),
 		DestroyActionStyle: actionStyle.
 			Foreground(cs.GetDestroyColor()),
+		FailedActionStyle: actionStyle.
+			Foreground(cs.GetFailedColor()),
 		NameStyle: colStyle.
 			Width(20).
 			Align(lg.Center),

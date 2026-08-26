@@ -23,8 +23,3 @@ hypha_state_dep = declare_dependency(
   dependencies: hypha_state_deps,
   include_directories: hypha_state_inc,
 )
-
-if gtest_dep.found()
-  subdir('test/')
-endif
-

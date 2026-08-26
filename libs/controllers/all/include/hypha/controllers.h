@@ -6,6 +6,7 @@
 #include "hypha/package_controller.h"
 #include "hypha/package_manager_controller.h"
 #include "hypha/symlink_controller.h"
+#include "hypha/task_controller.h"
 #include "hypha/template_controller.h"
 #include "hypha/test_controller.h"
 
@@ -22,6 +23,7 @@
 #define FOR_EACH_CONTROLLER(V) \
   V(Controller)                \
   V(Test)                      \
+  V(Task)                      \
   V(Archive)                   \
   V(Directory)                 \
   V(Package)                   \
