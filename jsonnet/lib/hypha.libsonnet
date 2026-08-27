@@ -1,12 +1,5 @@
 {
-  Manifest(kind, name, spec=null, labels=null, annotations=null):
-    {
-      kind: kind,
-      metadata: {
-        name: name,
-      },
-      spec: (if spec != null then spec else {}),
-    } +
+  Labels(labels):
     (if labels != null then
        {
          metadata+: {
@@ -14,7 +7,8 @@
          },
        }
      else
-       {}) +
+       {}),
+  Annotations(annotations=null):
     (if annotations != null then
        {
          metadata+: {
@@ -35,4 +29,14 @@
        }
      else
        {}),
+  Manifest(kind, name, spec=null, labels=null, annotations=null):
+    {
+      kind: kind,
+      metadata: {
+        name: name,
+      },
+      spec: (if spec != null then spec else {}),
+    } +
+    $.Labels(labels) +
+    $.Annotations(annotations),
 }
