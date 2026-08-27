@@ -207,131 +207,30 @@ func (orc *Orchestrator) RunWithReason(mode OrchestratorRunMode, reason string) 
 	return nil
 }
 
-func (orc *Orchestrator) AddResource(res ResourceSpec) error {
-	cKindStr := C.CString(res.Kind)
-	defer C.free(unsafe.Pointer(cKindStr))
-
-	cKind := C.FindResourceKind(cKindStr)
-
-	cName := C.CString(res.Metadata.Name)
-	defer C.free(unsafe.Pointer(cName))
-
-	var cDeps **C.char
-	numDeps := len(res.DependsOn)
-	if numDeps > 0 {
-		cDepsSlice := C.malloc(C.size_t(numDeps) * C.size_t(unsafe.Sizeof(uintptr(0))))
-		cDeps = (**C.char)(cDepsSlice)
-
-		goSlice := (*[1 << 30]*C.char)(cDepsSlice)[:numDeps:numDeps]
-		for i, dep := range res.DependsOn {
-			goSlice[i] = C.CString(dep)
-		}
+func (orc *Orchestrator) AddResource(spec ResourceSpec) error {
+	kind := FindResourceKind(spec.Kind)
+	if kind == InvalidResourceKind {
+		return fmt.Errorf("unknown resource kind %q", spec.Kind)
 	}
 
-	var cLabels *C.Label
-	numLabels := len(res.Metadata.Labels)
-	if numLabels > 0 {
-		var dummyLabel C.Label
-		labelSize := int(unsafe.Sizeof(dummyLabel))
-		cLabelsSlice := C.malloc(C.size_t(numLabels) * C.size_t(labelSize))
-		cLabels = (*C.Label)(cLabelsSlice)
-		C.memset(cLabelsSlice, 0, C.size_t(numLabels)*C.size_t(labelSize))
-		rawByteSlice := unsafe.Slice((*byte)(cLabelsSlice), numLabels*labelSize)
-
-		for i, labelVal := range res.Metadata.Labels {
-			offset := i * labelSize
-			maxSafeLength := labelSize - 1
-
-			if len(labelVal) > maxSafeLength {
-				labelVal = labelVal[:maxSafeLength]
-			}
-
-			copy(rawByteSlice[offset:offset+len(labelVal)], labelVal)
-		}
+	ns := spec.Metadata.Namespace
+	if IsReservedResourceNamespace(ns) {
+		return fmt.Errorf("rejected resource %s/%s: namespace %q is reserved for orchestrator-internal use",
+			spec.Kind, spec.Metadata.Name, ns)
 	}
 
-	var cAnnotations *C.Annotation
-	numAnnos := len(res.Metadata.Annotations)
-	if numAnnos > 0 {
-		var dummyAnno C.Annotation
-		annoSize := int(unsafe.Sizeof(dummyAnno))
-
-		cAnnosSlice := C.malloc(C.size_t(numAnnos) * C.size_t(annoSize))
-		cAnnotations = (*C.Annotation)(cAnnosSlice)
-
-		C.memset(cAnnosSlice, 0, C.size_t(numAnnos)*C.size_t(annoSize))
-		rawByteSlice := unsafe.Slice((*byte)(cAnnosSlice), numAnnos*annoSize)
-
-		keySize := int(C.HYPHA_ANNOTATION_KEY_SIZE)
-		valSize := int(C.HYPHA_ANNOTATION_VALUE_SIZE)
-
-		for i, anno := range res.Metadata.Annotations {
-			structOffset := i * annoSize
-
-			keyStart := structOffset
-			valStart := structOffset + keySize
-
-			maxKeyLen := keySize - 1
-			maxValLen := valSize - 1
-
-			keyStr := anno.Key
-			if len(keyStr) > maxKeyLen {
-				keyStr = keyStr[:maxKeyLen]
-			}
-
-			valStr := anno.Value
-			if len(valStr) > maxValLen {
-				valStr = valStr[:maxValLen]
-			}
-
-			copy(rawByteSlice[keyStart:keyStart+len(keyStr)], keyStr)
-			copy(rawByteSlice[valStart:valStart+len(valStr)], valStr)
-		}
-	}
-
-	var cRawSpec *C.char
-	if res.Spec != nil {
-		specBytes, err := json.Marshal(res.Spec)
+	var rawSpec string
+	if spec.Spec != nil {
+		specBytes, err := json.Marshal(spec.Spec)
 		if err != nil {
 			return fmt.Errorf("error marshalling spec: %v", err)
 		}
-
-		cRawSpec = C.CString(string(specBytes))
-	}
-	defer C.free(unsafe.Pointer(cRawSpec))
-
-	spec := C.Resource{
-		kind:           C.ResourceKind(cKind),
-		depends_on:     cDeps,
-		num_depends_on: C.size_t(numDeps),
-		info: C.ResourceInfo{
-			name: cName,
-
-			labels:     cLabels,
-			labels_len: C.size_t(numLabels),
-			labels_cap: C.size_t(numLabels),
-
-			annotations:     cAnnotations,
-			annotations_len: C.size_t(numAnnos),
-			annotations_cap: C.size_t(numAnnos),
-		},
-		spec: C.ResourceSpecDocument{
-			raw: cRawSpec,
-		},
+		rawSpec = string(specBytes)
 	}
 
-	C.OrchestratorAddResource(orc.Handle, &spec)
-
-	if numDeps > 0 {
-		goSlice := (*[1 << 30]*C.char)(unsafe.Pointer(cDeps))[:numDeps:numDeps]
-		for slice := range goSlice {
-			C.free(unsafe.Pointer(goSlice[slice]))
-		}
-
-		C.free(unsafe.Pointer(cDeps))
-	}
-
-	return nil
+	graph := orc.GetResourceGraph()
+	store := C.GetOrcStateStore(orc.Handle)
+	return graph.AddResource(store, kind, spec.Metadata.Name, ns, spec.Metadata.Labels, spec.Metadata.Annotations, spec.DependsOn, rawSpec)
 }
 
 func (orc *Orchestrator) Close() {

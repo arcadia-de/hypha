@@ -46,6 +46,7 @@ bindings_matrix = {
       hypha_utils_dep,
       hypha_resource_graph_dep,
       hypha_query_dep,
+      hypha_state_dep,
       hypha_planner_dep,
       hypha_validation_dep,
       hypha_service_dep,

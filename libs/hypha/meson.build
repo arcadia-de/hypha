@@ -31,7 +31,6 @@ hypha = static_library(
   'hypha',
   [
     'src/hypha.c',
-    'src/orchestrator_add.c',
     'src/orchestrator.c',
     'src/orchestrator_init.c',
     'src/orchestrator_gvc.c',

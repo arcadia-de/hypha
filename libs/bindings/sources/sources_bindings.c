@@ -82,6 +82,7 @@ LUA_FN(glob) {
         pattern = strdup(lua_tostring(L, -1));
       lua_pop(L, 1);
     }
+
     {
       const int type = lua_getfield(L, 2, "recursive");
       if (type == LUA_TBOOLEAN)

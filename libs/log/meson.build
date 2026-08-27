@@ -17,8 +17,3 @@ hypha_log_dep = declare_dependency(
   dependencies: hypha_log_deps,
   include_directories: hypha_log_inc,
 )
-
-if gtest_dep.found()
-  subdir('test/')
-endif
-

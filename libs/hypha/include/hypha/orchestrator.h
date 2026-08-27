@@ -10,6 +10,7 @@
 #include "hypha/planner.h"
 #include "hypha/resource_graph.h"
 #include "hypha/run_mode.h"
+#include "hypha/state.h"
 #include "hypha/validation_log.h"
 
 typedef struct _Orchestrator Orchestrator;
@@ -34,8 +35,8 @@ Plan* GetOrcPlan(OrchestratorHandle);
 const char* GetOrcConfigDir(OrchestratorHandle);
 const char* GetOrcStateDir(OrchestratorHandle);
 const char* GetOrcCacheDir(OrchestratorHandle);
+StateStore* GetOrcStateStore(OrchestratorHandle);
 
-void OrchestratorAddResource(OrchestratorHandle, Resource*);
 void OrchestratorSubscribe(OrchestratorHandle, const char* p, EventCallbackFn cb, void* data, void (*free_data)(void*));
 void OrchestratorPublish(OrchestratorHandle, const char* p, void* event);
 bool OrchestratorRunWithReason(OrchestratorHandle, const OrchestratorRunMode mode, const Reason reason);

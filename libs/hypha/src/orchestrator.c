@@ -43,6 +43,7 @@ DEFINE_GETTER(ValidationLog, vlog);
 DEFINE_GETTER(ActionLog, actions);
 __DEFINE_GETTER(lua_State, LuaState, ((Orchestrator*)handle)->L);
 DEFINE_GETTER(Plan, plan);
+_DEFINE_GETTER(StateStore, ((Orchestrator*)handle)->state);
 
 #undef DEFINE_GETTER
 #undef _DEFINE_GETTER
