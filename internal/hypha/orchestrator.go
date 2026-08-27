@@ -237,37 +237,6 @@ func (orc *Orchestrator) Close() {
 	C.FreeOrchestrator(orc.Handle)
 }
 
-type DiscoveredManifestKind int
-
-const (
-	DiscoveredManifestPath       = C.kDiscoveredPath
-	DiscoveredManifestRawJson    = C.kDiscoveredRawJson
-	DiscoveredManifestRawYaml    = C.kDiscoveredRawYaml
-	DiscoveredManifestRawJsonnet = C.kDiscoveredRawJsonnet
-)
-
-func (dmk DiscoveredManifestKind) String() string {
-	switch dmk {
-	case DiscoveredManifestPath:
-		return "Path"
-	case DiscoveredManifestRawJson:
-		return "Raw Json"
-	case DiscoveredManifestRawYaml:
-		return "Raw Yaml"
-	case DiscoveredManifestRawJsonnet:
-		return "Raw Jsonnet"
-	default:
-		return "Unknown"
-	}
-}
-
-type DiscoveredManifest struct {
-	Kind  DiscoveredManifestKind
-	Value string
-}
-
-type DiscoveredManifestVisitor func(idx uint64, manifest DiscoveredManifest) bool
-
 //export goVisitDiscoveredManifests
 func goVisitDiscoveredManifests(idx C.uint64_t, dm *C.DiscoveredManifest, data unsafe.Pointer) C.bool {
 	handle := *(*cgo.Handle)(data)
@@ -292,15 +261,6 @@ func (orc *Orchestrator) VisitDiscoveredManifests(vis DiscoveredManifestVisitor)
 
 	runtime.KeepAlive(handle)
 }
-
-type AppliedAction struct {
-	Action uint32
-	Name   string
-	Kind   string
-	Reason string
-}
-
-type AppliedActionVisitor func(idx uint64, act AppliedAction) bool
 
 //export goVisitAppliedActions
 func goVisitAppliedActions(idx C.uint64_t, act *C.AppliedAction, data unsafe.Pointer) C.bool {
@@ -335,8 +295,6 @@ func (orc *Orchestrator) VisitAppliedActions(vis AppliedActionVisitor) {
 	runtime.KeepAlive(handle)
 }
 
-// ParseResourceSpecsFromJsonnet renders and parses an in-memory Jsonnet
-// snippet (used for DiscoveredManifestRaw, i.e. hypha.sources.raw()).
 func (orc *Orchestrator) ParseResourceSpecsFromJsonnet(content string) ([]ResourceSpec, error) {
 	manifest, err := orc.RenderAnonymousJsonnetManifest(content)
 	if err != nil {
