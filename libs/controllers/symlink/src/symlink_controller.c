@@ -9,117 +9,99 @@
 #include <unistd.h>
 
 #include "hypha.h"
+#include "hypha/controller_status.h"
 #include "hypha/expander.h"
 #include "hypha/log.h"
 #include "hypha/planned_action.h"
 #include "hypha/planner.h"
 #include "hypha/validation_log.h"
 
+typedef struct {
+  char* source;
+  size_t source_len;
+
+  char* target;
+  size_t target_len;
+} SymlinkSpec;
+
 static inline bool GetSpecField(const Resource* res, const char* field, char** result, size_t* result_len) {
+  ASSERT(res);
+  ASSERT(res->spec.doc);
+
   Expander expander;
   json_t* source = json_object_get(res->spec.doc, field);
   return ExpandStr(&expander, json_string_value(source), result, result_len);
 }
 
-DEFINE_CONTROLLER_VALIDATE_FN(Symlink) {
-  bool valid = true;
+thread_local SymlinkSpec spec;
 
-  char* source = NULL;
-  size_t source_len = 0;
-  if (!GetSpecField(desired, "source", &source, &source_len)) {
-    valid = false;
-    NewFailedValidationResult(vlog, desired, "failed to get `source` spec field");
-  }
-
-  char* target = NULL;
-  size_t target_len = 0;
-  if (!GetSpecField(desired, "target", &target, &target_len)) {
-    valid = false;
-    NewFailedValidationResult(vlog, desired, "failed to get `target` spec field");
-  }
-
-  return valid;
-}
-
+static const char kSourceField[] = "source";
+static const char kTargetField[] = "target";
 DEFINE_CONTROLLER_OBSERVE_FN(Symlink) {
   ASSERT(desired);
-  json_t* doc = desired->spec.doc;
-  ASSERT(doc);
 
-  char* source = NULL;
-  size_t source_len = 0;
-  if (!GetSpecField(desired, "source", &source, &source_len)) {
+  if (!GetSpecField(desired, kSourceField, &spec.source, &spec.source_len)) {
     LOG_ERROR("failed to get source field");
     return kStatusInternalError;
   }
 
-  char* target = NULL;
-  size_t target_len = 0;
-  if (!GetSpecField(desired, "target", &target, &target_len)) {
+  if (!GetSpecField(desired, kTargetField, &spec.target, &spec.target_len)) {
     LOG_ERROR("failed to get target field");
     return kStatusInternalError;
   }
+
   return kStatusOk;
+}
+
+DEFINE_CONTROLLER_VALIDATE_FN(Symlink) {
+  if (!spec.source || spec.source_len == 0) {
+    NewFailedValidationResult(vlog, desired, "Failed to get `source` spec field");
+    return false;
+  }
+
+  if (!spec.target || spec.target_len == 0) {
+    NewFailedValidationResult(vlog, desired, "Failed to get `target` spec field");
+    return false;
+  }
+
+  NewPassedValidationResult(vlog, desired, "Spec is valid");
+  return true;
 }
 
 DEFINE_CONTROLLER_PLAN_FN(Symlink) {
   ASSERT(desired);
 
-  json_t* doc = desired->spec.doc;
-  ASSERT(doc);
-
-  char* source = NULL;
-  size_t source_len = 0;
-  GetSpecField(desired, "source", &source, &source_len);
-
   struct stat source_stat;
-  if (stat(source, &source_stat) != 0) {
-    PlannedAction* action = NewNoPlannedAction(pl, desired, "source `%s` does not exist", source);
+  if (stat(spec.source, &source_stat) != 0) {
+    PlannedAction* action = NewNoPlannedAction(pl, desired, "Source `%s` does not exist", spec.source);
     ASSERT(action);
     return kNoAction;
   }
 
-  char* target = NULL;
-  size_t target_len = 0;
-  GetSpecField(desired, "target", &target, &target_len);
-
   struct stat target_stat;
-  if (lstat(target, &target_stat) == 0) {
+  if (lstat(spec.target, &target_stat) == 0) {
     if (S_ISLNK(target_stat.st_mode)) {
       PlannedAction* action =
-          NewNoPlannedAction(pl, desired, "target `%s` already exists and is a valid symlink", target);
+          NewNoPlannedAction(pl, desired, "Target `%s` already exists and is a valid symlink", spec.target);
       // TODO(@s0cks): check symlink dest
       ASSERT(action);
       return kNoAction;
     }
 
-    PlannedAction* action = NewNoPlannedAction(pl, desired, "target `%s` already exists but is not a symlink", target);
+    PlannedAction* action =
+        NewNoPlannedAction(pl, desired, "Target `%s` already exists but is not a symlink", spec.target);
     ASSERT(action);
     return kNoAction;
   }
 
-  PlannedAction* action = NewCreatePlannedAction(pl, desired, "target `%s` doesn't exist", target);
+  PlannedAction* action = NewCreatePlannedAction(pl, desired, "Target `%s` doesn't exist", spec.target);
   ASSERT(action);
   return kCreateAction;
 }
 
 DEFINE_CONTROLLER_APPLY_FN(Symlink) {
-  char* source = NULL;
-  size_t source_len = 0;
-  if (!GetSpecField(desired, "source", &source, &source_len)) {
-    LOG_ERROR("failed to get source field");
-    return kStatusInternalError;
-  }
-
-  char* target = NULL;
-  size_t target_len = 0;
-  if (!GetSpecField(desired, "target", &target, &target_len)) {
-    LOG_ERROR("failed to get target field");
-    return kStatusInternalError;
-  }
-
-  if (symlink(source, target) != 0) {
-    LOG_ERROR("failed to create symlink from '%s' to '%s': %s", source, target, strerror(errno));
+  if (symlink(spec.source, spec.target) != 0) {
+    LOG_ERROR("Failed to create symlink from '%s' to '%s': %s", spec.source, spec.target, strerror(errno));
     return kStatusInternalError;
   }
 
@@ -128,34 +110,22 @@ DEFINE_CONTROLLER_APPLY_FN(Symlink) {
 
 DEFINE_CONTROLLER_STATUS_FN(Symlink) {
   ASSERT(current);
-  json_t* doc = current->spec.doc;
-  ASSERT(doc);
-  ControllerStatus status = kStatusInternalError;
-
-  json_t* source = json_object_get(doc, "source");
-  const char* source_path = json_string_value(source);
-
   struct stat source_stat;
-  if (stat(source_path, &source_stat) != 0) {
-    LOG_ERROR("source '%s' does not exist", source_path);
-    goto finished;
+  if (stat(spec.source, &source_stat) != 0) {
+    LOG_ERROR("Source '%s' does not exist", spec.source);
+    return kStatusInternalError;
   }
-
-  json_t* target = json_object_get(doc, "target");
-  const char* target_path = json_string_value(target);
 
   struct stat target_stat;
-  if (lstat(target_path, &target_stat) == 0) {
-    if (S_ISLNK(target_stat.st_mode)) {
-      status = kStatusOk;
-      goto finished;
-    }
+  if (lstat(spec.target, &target_stat) == 0) {
+    if (S_ISLNK(target_stat.st_mode))
+      return kStatusOk;
 
-    LOG_ERROR("target '%s' is not a symlink", target_path);
+    LOG_ERROR("Target '%s' is not a symlink", spec.target);
+    return kStatusInternalError;
   }
 
-finished:
-  return status;
+  return kStatusInternalError;
 }
 
 static const ControllerConfig kSymlinkControllerConfig = {
