@@ -56,7 +56,9 @@ func HandleListResourcesByKindCommand(kind string, args []string) error {
 	}
 	defer orc.Close()
 
-	orc.ProcessDiscoveredManifests()
+	if err := orc.ProcessDiscoveredManifests(); err != nil {
+		return fmt.Errorf("failed to process discovered manifests: %v", err)
+	}
 
 	rg := orc.GetResourceGraph()
 	if !rg.IsEmpty() {
@@ -92,7 +94,9 @@ func HandleDefaultListResources(args []string) error {
 	}
 	defer orc.Close()
 
-	orc.ProcessDiscoveredManifests()
+	if err := orc.ProcessDiscoveredManifests(); err != nil {
+		return fmt.Errorf("failed to process discovered manifests: %v", err)
+	}
 
 	rg := orc.GetResourceGraph()
 	if !rg.IsEmpty() {

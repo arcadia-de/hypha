@@ -67,6 +67,7 @@ type ResourceSpec struct {
 	Metadata  ResourceMetadata `json:"metadata" yaml:"metadata"`
 	DependsOn []string         `json:"depends_on,omitempty" yaml:"depends_on,omitempty"`
 	Spec      any              `json:"spec" yaml:"spec"`
+	Version   string           `json:"version,omitempty" yaml:"version,omitempty"`
 }
 
 func ParseResourceSpecs(code string) (any, error) {

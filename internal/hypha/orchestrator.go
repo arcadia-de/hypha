@@ -305,7 +305,8 @@ func (orc *Orchestrator) AddResource(res ResourceSpec) error {
 		depends_on:     cDeps,
 		num_depends_on: C.size_t(numDeps),
 		info: C.ResourceInfo{
-			name:       cName,
+			name: cName,
+
 			labels:     cLabels,
 			labels_len: C.size_t(numLabels),
 			labels_cap: C.size_t(numLabels),
@@ -636,7 +637,12 @@ func (orc *Orchestrator) GetValidationLog() ValidationLog {
 	return GetValidationLog(C.GetOrcValidationLog(orc.Handle))
 }
 
-func (orc *Orchestrator) ProcessDiscoveredManifests() {
+func (orc *Orchestrator) ProcessDiscoveredManifests() error {
+	validator, err := NewSchemaValidator()
+	if err != nil {
+		return fmt.Errorf("failed to initialize schema validator: %w", err)
+	}
+
 	var manifests []ResourceSpec
 	orc.VisitDiscoveredManifests(func(idx uint64, dm DiscoveredManifest) bool {
 		var err error
@@ -664,10 +670,18 @@ func (orc *Orchestrator) ProcessDiscoveredManifests() {
 		for _, s := range specs {
 			manifests = append(manifests, s)
 		}
+
 		return true
 	})
 
 	for _, s := range manifests {
+		if err := validator.ValidateResourceSpec(s); err != nil {
+			fmt.Printf("skipping resource %q (%s): %v\n", s.Metadata.Name, s.Kind, err)
+			continue
+		}
+
 		orc.AddResource(s)
 	}
+
+	return nil
 }

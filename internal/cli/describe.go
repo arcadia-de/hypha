@@ -27,7 +27,9 @@ func HandleDescribeKind(kind string, args []string) error {
 	}
 	defer orc.Close()
 
-	orc.ProcessDiscoveredManifests()
+	if err := orc.ProcessDiscoveredManifests(); err != nil {
+		return fmt.Errorf("failed to process discovered manifests: %v", err)
+	}
 
 	filter := CreateDescribeFilter(kind, args)
 	defer filter.Close()

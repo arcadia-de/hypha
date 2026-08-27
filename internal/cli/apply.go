@@ -108,7 +108,9 @@ func handleApply(cmd *cobra.Command, args []string) error {
 	}
 	defer orc.Close()
 
-	orc.ProcessDiscoveredManifests()
+	if err := orc.ProcessDiscoveredManifests(); err != nil {
+		return fmt.Errorf("failed to process discovered manifests: %v", err)
+	}
 
 	err = orc.Run(hypha.OrchestratorApplyMode)
 	if err != nil {

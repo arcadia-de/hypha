@@ -219,6 +219,30 @@ func (validator *SchemaValidator) ValidateSchema(inputJson any) error {
 	return nil
 }
 
+func (validator *SchemaValidator) ValidateResourceSpec(spec ResourceSpec) error {
+	raw, err := json.Marshal(spec)
+	if err != nil {
+		return fmt.Errorf("failed to marshal resource spec for validation: %w", err)
+	}
+
+	var doc any
+	if err := json.Unmarshal(raw, &doc); err != nil {
+		return fmt.Errorf("failed to decode resource spec for validation: %w", err)
+	}
+
+	if err := validator.ValidateSchema(doc); err != nil {
+		return err
+	}
+
+	if spec.Version != "" {
+		if err := ValidateManifestVersion(spec.Version); err != nil {
+			return err
+		}
+	}
+
+	return nil
+}
+
 //export ValidateManifests
 func ValidateManifests(tpls **C.char, num_tpls C.uint64_t, valid *C.bool) C.uint64_t {
 	validator, err := NewSchemaValidator()

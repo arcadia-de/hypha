@@ -13,7 +13,9 @@ func HandleInfo(cmd *cobra.Command, args []string) error {
 		return fmt.Errorf("failed to create new Orchestrator with default config: %v", err)
 	}
 	defer orc.Close()
-	orc.ProcessDiscoveredManifests()
+	if err := orc.ProcessDiscoveredManifests(); err != nil {
+		return fmt.Errorf("failed to process discovered manifests: %v", err)
+	}
 	orc.PrintRuntimeInfo()
 	return nil
 }
