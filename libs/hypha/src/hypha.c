@@ -14,10 +14,6 @@
 #include "hypha/service_manager.h"
 #include "systemd.h"
 
-static inline void FailedToRegisterController(const char* name) {
-  LOG_FATAL("failed to register %s controller", name);
-}
-
 static inline void InitServiceManagers() {
   InitSystemDServiceManager();
 }

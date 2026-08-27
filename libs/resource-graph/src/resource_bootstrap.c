@@ -9,12 +9,6 @@
 #include "hypha/resource.h"
 #include "hypha/resource_kind.h"
 
-// Fixed namespace UUID (RFC 4122 "namespace UUID" pattern, the same idea as the
-// well-known DNS/URL/OID namespace UUIDs) used as the seed for deriving stable per-run ids
-// for bootstrap resources via uuid_generate_sha1 (UUIDv5). Minted once; must never change.
-// Changing it would silently reassign every core resource a new id on the next run,
-// breaking depends_on-by-id references and state/history correlation for anyone with an
-// existing journal.
 static const uuid_t kHyphaBootstrapNamespaceUuid = {0xbd, 0x84, 0x2c, 0x9a, 0xef, 0x83, 0x49, 0x52,
                                                     0xa6, 0xa7, 0xda, 0x55, 0xd7, 0x33, 0x0c, 0xd4};
 
@@ -26,10 +20,6 @@ static inline void DeriveBootstrapResourceId(const char* ns, const char* kind, c
   uuid_generate_sha1(*out, kHyphaBootstrapNamespaceUuid, key, strlen(key));
 }
 
-// Bootstrap resources carry at most one annotation ("hypha/provides"), so this allocates
-// exactly enough capacity for it up front rather than relying on ResourcePushAnnotation's
-// doubling growth path, which -- like several other capacity-tracking fields in this
-// codebase -- assumes a nonzero starting capacity.
 static inline bool ReserveSingleAnnotation(ResourceInfo* info) {
   info->annotations = (Annotation*)malloc(sizeof(Annotation));
   if (!info->annotations)
@@ -93,13 +83,8 @@ bool BootstrapCoreResources(ResourceGraph* graph, const CoreResourceDef* defs, c
     DeriveBootstrapResourceId(ns, def->kind, def->name, &res->id);
 
     res->flags = def->flags;
-
-    // Pre-converged: bootstrap resources are never observed/planned/applied, so they must
-    // never sit in kResourcePending -- that's the only state the scheduler/dispatch loop
-    // (QueueReconcileTaskForResource, DependenciesAreSatisfied) treats as work to do.
     res->state = kResourceReady;
     res->status.state = kResourceReady;
-
     if (def->provides && !SetProvidesAnnotation(res, def->provides))
       LOG_ERROR("failed to record 'provides' for core resource %s/%s -- continuing without it", def->kind, def->name);
   }

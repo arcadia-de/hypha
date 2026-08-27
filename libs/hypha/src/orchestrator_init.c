@@ -130,9 +130,5 @@ OrchestratorHandle NewOrchestrator(OrchestratorConfig config) {
   }
 
   OrchestratorPublish(orc, ORCHESTRATOR_INIT_EVENT, NewOrchestratorInitEvent());
-#ifdef HYPHA_ENABLE_PROFILING
-  TracyCFrameMark;
-#endif  // HYPHA_ENABLE_PROFILING
-
   return (OrchestratorHandle)orc;
 }
