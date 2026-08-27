@@ -12,6 +12,7 @@
 static const uuid_t kHyphaBootstrapNamespaceUuid = {0xbd, 0x84, 0x2c, 0x9a, 0xef, 0x83, 0x49, 0x52,
                                                     0xa6, 0xa7, 0xda, 0x55, 0xd7, 0x33, 0x0c, 0xd4};
 
+static const AnnotationKey kDocsAnnotationKey = "hypha/docs";
 static const AnnotationKey kProvidesAnnotationKey = "hypha/provides";
 
 static inline void DeriveBootstrapResourceId(const char* ns, const char* kind, const char* name, ResourceId* out) {
@@ -20,27 +21,20 @@ static inline void DeriveBootstrapResourceId(const char* ns, const char* kind, c
   uuid_generate_sha1(*out, kHyphaBootstrapNamespaceUuid, key, strlen(key));
 }
 
-static inline bool ReserveSingleAnnotation(ResourceInfo* info) {
-  info->annotations = (Annotation*)malloc(sizeof(Annotation));
-  if (!info->annotations)
-    return false;
-
-  memset(info->annotations, 0, sizeof(Annotation));
-  info->annotations_cap = 1;
-  info->annotations_len = 0;
-  return true;
-}
-
 static inline bool SetProvidesAnnotation(Resource* res, const char* provides) {
-  ResourceInfo* info = &res->info;
-  if (!ReserveSingleAnnotation(info))
-    return false;
-
   AnnotationValue value;
   memset(value, 0, sizeof(AnnotationValue));
   strncpy(value, provides, sizeof(AnnotationValue) - 1);
 
   ResourcePushAnnotation(res, &kProvidesAnnotationKey, &value);
+  return true;
+}
+
+static inline bool SetDocsAnnotation(Resource* res, const char* docs) {
+  AnnotationValue value;
+  memset(value, 0, sizeof(AnnotationValue));
+  strncpy(value, docs, sizeof(AnnotationValue) - 1);
+  ResourcePushAnnotation(res, &kDocsAnnotationKey, &value);
   return true;
 }
 
@@ -87,6 +81,9 @@ bool BootstrapCoreResources(ResourceGraph* graph, const CoreResourceDef* defs, c
     res->status.state = kResourceReady;
     if (def->provides && !SetProvidesAnnotation(res, def->provides))
       LOG_ERROR("failed to record 'provides' for core resource %s/%s -- continuing without it", def->kind, def->name);
+
+    if (def->docs && !SetDocsAnnotation(res, def->docs))
+      LOG_ERROR("failed to record `docs` for core resource %s/%s", def->kind, def->name);
   }
 
   return true;

@@ -33,6 +33,18 @@ static inline void ToLowerCStr(char* dst, const char* src, const size_t dst_size
 
 #define HYPHA_MAX_CORE_RESOURCE_DEFS 64
 
+// clang-format off
+static const char kDirectoryDocs[]      = "https://github.com/arcadia-de/hypha/wiki/BuiltinResources-Directories";
+static const char kControllerDocs[]     = "";
+static const char kTestDocs[]           = "";
+static const char kArchiveDocs[]        = "https://github.com/arcadia-de/hypha/wiki/BuiltinResources-Archives";
+static const char kPackageDocs[]        = "https://github.com/arcadia-de/hypha/wiki/BuiltinResources-Packages";
+static const char kPackageManagerDocs[] = "";
+static const char kRepositoryDocs[]     = "https://github.com/arcadia-de/hypha/wiki/BuiltinResources-Repositories";
+static const char kSymlinkDocs[]        = "https://github.com/arcadia-de/hypha/wiki/BuiltinResources-Symlinks";
+static const char kTemplateDocs[]       = "https://github.com/arcadia-de/hypha/wiki/BuiltinResources-Templates";
+// clang-format on
+
 void BootstrapHyphaCoreResources(ResourceGraph* graph) {
   if (!graph)
     return;
@@ -48,6 +60,7 @@ void BootstrapHyphaCoreResources(ResourceGraph* graph) {
   defs[n] = (CoreResourceDef){.kind = "Controller",                    \
                               .name = names[n],                        \
                               .ns = kCoreResourceNamespace,            \
+                              .docs = k##Name##Docs,                   \
                               .provides = #Name,                       \
                               .flags = kResourceFlagStatic};           \
   n++;

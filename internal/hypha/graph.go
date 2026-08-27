@@ -70,9 +70,15 @@ func goVisitResource(idx C.ResourceGraphIndex, res *C.Resource, data unsafe.Poin
 		namePtr := offset
 		valuePtr := offset + uintptr(C.HYPHA_ANNOTATION_KEY_SIZE)
 
+		rawKey := C.GoStringN((*C.char)(unsafe.Pointer(namePtr)), C.HYPHA_ANNOTATION_KEY_SIZE)
+		goKey, _, _ := strings.Cut(rawKey, "\x00")
+
+		rawValue := C.GoStringN((*C.char)(unsafe.Pointer(valuePtr)), C.HYPHA_ANNOTATION_VALUE_SIZE)
+		goValue, _, _ := strings.Cut(rawValue, "\x00")
+
 		annotations = append(annotations, ResourceAnnotation{
-			Key:   C.GoStringN((*C.char)(unsafe.Pointer(namePtr)), C.HYPHA_ANNOTATION_KEY_SIZE),
-			Value: C.GoStringN((*C.char)(unsafe.Pointer(valuePtr)), C.HYPHA_ANNOTATION_VALUE_SIZE),
+			Key:   goKey,
+			Value: goValue,
 		})
 	}
 

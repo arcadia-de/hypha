@@ -181,7 +181,7 @@ void ResourcePushAnnotation(Resource* res, const AnnotationKey* k, const Annotat
   ASSERT(v);
   ResourceInfo* info = &res->info;
   if ((info->annotations_len + 1) >= info->annotations_cap) {
-    const size_t new_cap = info->annotations_cap * 2;
+    const size_t new_cap = (info->annotations_cap + 1) * 2;
     const size_t total_size = sizeof(Annotation) * new_cap;
     Annotation* new_annotations = (Annotation*)realloc(info->annotations, total_size);
     LOG_FATAL_IF(!new_annotations, "failed to allocate new annotations of size: %zu", new_cap);
