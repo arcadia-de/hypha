@@ -40,7 +40,6 @@ static inline void InitOrcLuaState(Orchestrator* orc) {
 
 static inline bool StopLoopOnReconcileDone(const char* p, const void* event, void* data) {
   ASSERT(event);
-
   Orchestrator* orc = (Orchestrator*)data;
   uv_stop(orc->loop);
   return true;

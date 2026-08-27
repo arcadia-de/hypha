@@ -87,4 +87,3 @@ void BootstrapHyphaCoreResources(ResourceGraph* graph) {
 }
 
 #undef HYPHA_MAX_CORE_RESOURCE_DEFS
-#undef FOR_EACH_CONTROLLER

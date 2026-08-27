@@ -24,6 +24,7 @@ static inline bool CheckPending(ResourceGraphIndex idx, Resource* res, void* dat
     res->state = kResourceFailed;
     orc->run.success = false;
   }
+
   return true;
 }
 
@@ -58,10 +59,8 @@ static inline void ReconcileWork(uv_work_t* req) {
   {
     const Label* defaults = GetDefaultLabels();
     const size_t num_defaults = GetNumberOfDefaultLabels();
-    DLOG_INFO("appending %zu default labels", num_defaults);
-    if (defaults != NULL && num_defaults > 0) {
+    if (defaults != NULL && num_defaults > 0)
       ResourcePushLabels(desired, defaults, num_defaults);
-    }
   }
 
   Resource* observed = &task->observed;
@@ -259,6 +258,8 @@ void DispatchReadyResources(Orchestrator* orc) {
 }
 
 void QueueReconcileTask(Orchestrator* orc, Controller* ctrl, const ResourceGraphIndex index, Resource* res) {
+  static const size_t init_cap = 3;
+
   ReconcileTask* task = (ReconcileTask*)malloc(sizeof(ReconcileTask));
   memset(task, 0, sizeof(ReconcileTask));
   ResourceIdStr id_str;
@@ -271,12 +272,11 @@ void QueueReconcileTask(Orchestrator* orc, Controller* ctrl, const ResourceGraph
   task->ctrl = ctrl;
   task->action = kNoAction;
   task->status = kStatusOk;
-  memset(&task->observed, 0, sizeof(Resource));
-  const size_t init_cap = 3;
   InitPlan(&task->plan, init_cap);
   InitValidationLog(&task->vlog, init_cap);
   InitDeltaLog(&task->dlog, init_cap);
 
+  memset(&task->observed, 0, sizeof(Resource));
   StateEntry last;
   memset(&last, 0, sizeof(StateEntry));
   if (StateStoreGet(orc->state, id_str, &last)) {
@@ -284,20 +284,23 @@ void QueueReconcileTask(Orchestrator* orc, Controller* ctrl, const ResourceGraph
     uuid_parse(last.id, observed->id);
     observed->kind = FindResourceKind(last.kind);
     observed->info.name = strdup(last.name);
+    observed->spec.raw = strdup(last.observed_json);
+    observed->spec.hash = last.hash;
 
-    char* json = strdup(last.observed_json);
+    size_t num_labels = last.labels_len;
+    {
+      const size_t total_size = sizeof(Label) * num_labels;
+      Label* labels = (Label*)malloc(total_size);
+      memset(labels, 0, total_size);
+      memcpy(labels, last.labels, total_size);
+      observed->info.labels = labels;
+      observed->info.labels_len = observed->info.labels_cap = num_labels;
+    }
 
-    observed->spec.raw = strdup(json);
-    observed->spec.hash = XXH3_64bits((void*)json, strlen(json));
-
-    // Label* labels;
-    // size_t labels_len;
     // Annotation* annotations;
     // size_t annotations_len;
 
     // bool orphaned;
-    // uint64_t hash;
-    //
     // int last_status;
     // time_t applied_at;
   }

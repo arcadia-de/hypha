@@ -192,18 +192,6 @@ func (rg *ResourceGraph) IsEmpty() bool {
 	return bool(C.IsResourceGraphEmpty(rg.Handle))
 }
 
-// AddResource allocates a new Resource directly inside the underlying C
-// resource graph and populates every field on it in place.
-//
-// This replaces the old flow where Go built a standalone C.Resource and
-// passed it to OrchestratorAddResource, which then allocated a *second*
-// Resource in the graph and deep-copied every field (name, labels,
-// annotations, depends_on) across. There's now exactly one allocation of
-// each field, written straight into the resource that lives in the graph.
-//
-// Callers are expected to have already validated kind and namespace (see
-// Orchestrator.AddResource) — this function assumes both are valid and
-// focuses purely on construction.
 func (rg *ResourceGraph) AddResource(
 	store *C.StateStore,
 	kind ResourceKind,
@@ -251,12 +239,6 @@ func (rg *ResourceGraph) AddResource(
 	return nil
 }
 
-// resolveOrGenerateResourceId mirrors ResolveOrGenerateResourceId from the
-// old orchestrator_add.c: reuse the id already on record for (kind, name) in
-// the state store, the k8s-uid model of stable identity across runs
-// (see StateStoreFindIdByName), falling back to a freshly generated id if
-// there's no name to key off of, no prior record, or the recorded id string
-// doesn't parse.
 func resolveOrGenerateResourceId(store *C.StateStore, kind C.ResourceKind, name string) C.ResourceId {
 	var id C.ResourceId
 
@@ -311,9 +293,6 @@ func setResourceLabels(res *C.Resource, labels []string) {
 	res.info.labels_cap = C.size_t(n)
 }
 
-// setResourceAnnotations mallocs an Annotation array sized for annotations
-// and writes it directly onto res.info, truncating any key/value that
-// doesn't fit its fixed-size field.
 func setResourceAnnotations(res *C.Resource, annotations []ResourceAnnotation) {
 	n := len(annotations)
 	if n == 0 {
@@ -354,8 +333,6 @@ func setResourceAnnotations(res *C.Resource, annotations []ResourceAnnotation) {
 	res.info.annotations_cap = C.size_t(n)
 }
 
-// setResourceDependsOn mallocs a char* array sized for dependsOn and writes
-// it directly onto res.
 func setResourceDependsOn(res *C.Resource, dependsOn []string) {
 	n := len(dependsOn)
 	res.num_depends_on = C.size_t(n)

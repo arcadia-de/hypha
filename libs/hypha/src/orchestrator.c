@@ -45,9 +45,9 @@ __DEFINE_GETTER(lua_State, LuaState, ((Orchestrator*)handle)->L);
 DEFINE_GETTER(Plan, plan);
 _DEFINE_GETTER(StateStore, ((Orchestrator*)handle)->state);
 
-#undef DEFINE_GETTER
-#undef _DEFINE_GETTER
 #undef __DEFINE_GETTER
+#undef _DEFINE_GETTER
+#undef DEFINE_GETTER
 
 void GetOrchestratorMetrics(OrchestratorHandle handle, OrchestratorMetrics* out) {
   Orchestrator* orc = (Orchestrator*)handle;
