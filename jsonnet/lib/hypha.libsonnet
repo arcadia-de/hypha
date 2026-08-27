@@ -1,3 +1,15 @@
+local kinds = [
+  'Test',
+  'Controller',
+  'Archive',
+  'Directory',
+  'Template',
+  'Package',
+  'Repository',
+  'Symlink',
+  'PackageManager',
+];
+
 {
   Labels(labels):
     (if labels != null then
@@ -39,4 +51,9 @@
     } +
     $.Labels(labels) +
     $.Annotations(annotations),
+} +
+{
+  [kind + 'Manifest'](name, spec=null, labels=null, annotations=null):
+    $.Manifest(kind, name, spec=spec, labels=labels, annotations=annotations)
+  for kind in kinds
 }

@@ -1,9 +1,14 @@
 hypha_api_inc = include_directories('include/')
-
+api_headers_dep = declare_dependency(
+  include_directories: [
+    hypha_api_inc,
+  ],
+)
 hypha_api = static_library(
   'hypha-api',
   [
     'src/annotation.c',
+    'src/label.c',
     'src/name.c',
   ],
   dependencies: [

@@ -1,12 +1,17 @@
 #include "reconcile.h"
 
+#include <uuid.h>
+#include <xxhash.h>
+
 #include "hypha.h"
+#include "hypha/label.h"
 #include "hypha/log.h"
 #include "hypha/orchestrator.h"
 #include "hypha/planner.h"
 #include "hypha/resource.h"
 #include "hypha/resource_graph.h"
 #include "hypha/resource_kind.h"
+#include "hypha/state.h"
 #include "hypha/validation_log.h"
 #include "orc.h"
 
@@ -49,6 +54,15 @@ static inline void ReconcileWork(uv_work_t* req) {
   ReconcileTask* task = container_of(req, ReconcileTask, work);
   Controller* ctrl = task->ctrl;
   Resource* desired = GetResourceInGraph(task->orc->graph, task->index);
+
+  {
+    const Label* defaults = GetDefaultLabels();
+    const size_t num_defaults = GetNumberOfDefaultLabels();
+    DLOG_INFO("appending %zu default labels", num_defaults);
+    if (defaults != NULL && num_defaults > 0) {
+      ResourcePushLabels(desired, defaults, num_defaults);
+    }
+  }
 
   Resource* observed = &task->observed;
   memset(observed, 0, sizeof(Resource));
@@ -150,7 +164,7 @@ static inline void WriteHistory(Orchestrator* orc, const Resource* res, const Re
       .name = res->info.name ? strdup(res->info.name) : NULL,
       .action = task->action,
       .status = task->status,
-      .hash_before = task->has_last_applied ? task->last_applied.hash : 0,
+      .hash_before = task->observed.spec.hash,
       .hash_after = res->spec.hash,
       .applied_at = (int64_t)orc->metrics.run_finished,
       .labels = res->info.labels,
@@ -203,6 +217,7 @@ static inline void ReconcileAfterWork(uv_work_t* req, int status) {
     if (task->action != kNoAction)
       WriteHistory(orc, res, task);
   }
+
   free(task);
   orc->pending--;
   orc->metrics.num_processed++;
@@ -248,7 +263,7 @@ void QueueReconcileTask(Orchestrator* orc, Controller* ctrl, const ResourceGraph
   memset(task, 0, sizeof(ReconcileTask));
   ResourceIdStr id_str;
   ResourceIdCStr(&res->id, id_str);
-  task->has_last_applied = StateStoreGet(orc->state, id_str, &task->last_applied);
+
   task->orc = orc;
   clock_gettime(CLOCK_REALTIME, &task->start);
   task->mode = orc->run.mode;
@@ -261,6 +276,31 @@ void QueueReconcileTask(Orchestrator* orc, Controller* ctrl, const ResourceGraph
   InitPlan(&task->plan, init_cap);
   InitValidationLog(&task->vlog, init_cap);
   InitDeltaLog(&task->dlog, init_cap);
+
+  StateEntry last;
+  memset(&last, 0, sizeof(StateEntry));
+  if (StateStoreGet(orc->state, id_str, &last)) {
+    Resource* observed = &task->observed;
+    uuid_parse(last.id, observed->id);
+    observed->kind = FindResourceKind(last.kind);
+    observed->info.name = strdup(last.name);
+
+    char* json = strdup(last.observed_json);
+
+    observed->spec.raw = strdup(json);
+    observed->spec.hash = XXH3_64bits((void*)json, strlen(json));
+
+    // Label* labels;
+    // size_t labels_len;
+    // Annotation* annotations;
+    // size_t annotations_len;
+
+    // bool orphaned;
+    // uint64_t hash;
+    //
+    // int last_status;
+    // time_t applied_at;
+  }
 
   uv_queue_work(orc->loop, &task->work, ReconcileWork, ReconcileAfterWork);
 }

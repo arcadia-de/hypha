@@ -1,37 +1,39 @@
 bindings_matrix = {
   'host': {
     'deps': [
+      hypha_api_dep,
       hypha_utils_dep,
     ],
   },
   'sources': {
     'deps': [
+      hypha_api_dep,
       hypha_utils_dep,
     ],
   },
   'env': {
     'deps': [
       hypha_utils_dep,
+      hypha_api_dep,
     ],
   },
   'events': {
     'deps': [
+      hypha_api_dep,
       hypha_events_dep,
     ],
   },
   'runtime': {
     'deps': [
       hypha_utils_dep,
-      lua_controller_dep,
-      hypha_controller_dep,
-      hypha_resource_graph_dep,
-      hypha_validation_dep,
-      hypha_service_dep,
-      hypha_action_dep,
-      hypha_planner_dep,
+      api_headers_dep,
     ],
   },
-  'log': {},
+  'log': {
+    'deps': [
+      hypha_api_dep,
+    ],
+  },
   'packages': {
     'deps': [
       hypha_api_dep,
@@ -42,6 +44,7 @@ bindings_matrix = {
   },
   'query': {
     'deps': [
+      hypha_api_dep,
       hypha_dep,
       hypha_utils_dep,
       hypha_resource_graph_dep,
@@ -60,9 +63,12 @@ bindings_matrix = {
 base_override_opts = [
   'b_lundef=false',
 ]
+base_link_args = [
+  '-Wl,--allow-shlib-undefined',
+  '-Wl,--unresolved-symbols=ignore-all'
+]
 base_binding_deps = [
   lua54,
-  hypha_api_dep,
   hypha_log_dep,
 ]
 bindings_deps = []
@@ -75,6 +81,7 @@ foreach name, cfg : bindings_matrix
     name_prefix: '',
     include_directories: binding_inc,
     install: false,
+    link_args: base_link_args + cfg.get('link_args', []),
     c_args: cfg.get('c_args', []),
     dependencies: base_binding_deps + cfg.get('deps', []),
     override_options: base_override_opts + cfg.get('override_opts', []),

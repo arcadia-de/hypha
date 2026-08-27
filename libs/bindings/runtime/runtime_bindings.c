@@ -6,7 +6,8 @@
 #include <stdlib.h>
 
 #include "hypha/expander.h"
-#include "hypha/lua_controller.h"
+#include "hypha/label.h"
+#include "hypha/log.h"
 #include "hypha/process.h"
 
 static inline int lua_getVersion(lua_State* L) {
@@ -14,13 +15,31 @@ static inline int lua_getVersion(lua_State* L) {
   return 1;
 }
 
-LUA_FN(createController) {
-  const char* kind = luaL_checkstring(L, 1);
-  Controller* ctrl = NewLuaController(L, kind, 2);
-  if (!ctrl)
-    return luaL_error(L, "failed to create new lua controller for kind: %s", kind);
-  ControllerInit(ctrl);
-  return 0;
+LUA_FN(addDefaultLabels) {
+  const int type = lua_type(L, 1);
+
+  switch (type) {
+    case LUA_TSTRING: {
+      Label label;
+      strncpy(label, luaL_checkstring(L, 1), HYPHA_LABEL_MAX_SIZE);
+      DLOG_INFO("appending default label: %s", label);
+      AppendDefaultLabel(label);
+      return 0;
+    }
+    case LUA_TTABLE: {
+      size_t len = lua_rawlen(L, 1);
+      Label* labels = (Label*)malloc(sizeof(Label) * len);
+      for (size_t i = 1; i <= len; i++) {
+        lua_rawgeti(L, 1, (lua_Integer)i);
+        strncpy(labels[i - 1], luaL_checkstring(L, -1), HYPHA_LABEL_MAX_SIZE);
+        DLOG_INFO("appending default label: %s", labels[i - 1]);
+      }
+      AppendDefaultLabels(labels, len);
+      return 0;
+    }
+    default:
+      return luaL_error(L, "invalid lua type: %s", lua_typename(L, type));
+  }
 }
 
 LUA_FN(which) {
@@ -111,32 +130,11 @@ static const struct luaL_Reg kFuncs[] = {
 #define BIND(Name) {#Name, lua_##Name},
   BIND(which)
   BIND(expand)
-  BIND(createController)
   BIND(renderTemplate)
   BIND(renderJsonnet)
+  BIND(addDefaultLabels)
 #undef BIND
   {NULL, NULL},  // NOLINT(modernize-use-nullptr)
 };
 // clang-format on
-
-// --- Expand a string
-// ---@param value string
-// ---@return string
-// function M.expand(value) end
-//
-// --- Get the current working directory
-// ---@return string
-// function M.cwd() end
-//
-// --- Render a template using go-templates
-// ---@param template string The template to render
-// ---@param ctx? string The values to supply the template in yaml or json
-// ---@param yaml? boolean Whether or not the values are yaml. False means they are in json
-// function M.renderTemplate(template, ctx, yaml) end
-//
-// --- Render a Jsonnet file using go-jsonnet
-// ---@param filename string The name of the Jsonnet file
-// ---@param content string The contents of the Jsonnet file
-// function M.renderJsonnet(filename, content) end
-
 DEFINE_LUA_BINDINGS(hypha_runtime, kFuncs);

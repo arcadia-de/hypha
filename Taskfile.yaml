@@ -45,11 +45,12 @@ tasks:
     cmds:
       - |
         PKG_CONFIG_PATH="$(pwd)/build/meson-uninstalled:$PKG_CONFIG_PATH" \
-          go build {{.GO_BUILD_FLAGS}} \
-          -o {{.BIN_DIR}}/{{.GO_TARGET_NAME}} \
-          {{.GO_SOURCE_FILE}}
+        CGO_LDFLAGS="-Wl,-export-dynamic -Wl,--whole-archive -Wl,--no-whole-archive" \
+        go build {{.GO_BUILD_FLAGS}} \
+        -o {{.BIN_DIR}}/{{.GO_TARGET_NAME}} \
+        {{.GO_SOURCE_FILE}}
     vars:
-      GO_BUILD_FLAGS: -ldflags="-linkmode=external -extldflags=-Wl,--gc-sections"
+      GO_BUILD_FLAGS: -ldflags="-linkmode=external"
       GO_TARGET_NAME: hypha
       GO_SOURCE_FILE: cmd/hypha/main.go
   go:build:

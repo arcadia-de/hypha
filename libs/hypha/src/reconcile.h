@@ -19,8 +19,6 @@ typedef struct {
   Resource observed;
   ControllerAction action;
   ControllerStatus status;
-  StateEntry last_applied;
-  bool has_last_applied;  // whether last_applied was actually populated from the state store
   struct timespec start;
   Reason reason;
   Plan plan;

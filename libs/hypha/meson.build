@@ -50,7 +50,7 @@ hypha = static_library(
     hypha_inc,
   ],
   c_args: [ '-Wno-unused-variable' ],
-  install: true
+  install: true,
 )
 hypha_dep = declare_dependency(
   link_with: [
