@@ -177,7 +177,12 @@
     },
     "TestSpec": {
       "type": "object",
-      "properties": {},
+      "properties": {
+        "sleep": {
+          "type": "number",
+          "description": "The amount of seconds to sleep for"
+        }
+      },
       "required": [],
       "additionalProperties": false
     },
