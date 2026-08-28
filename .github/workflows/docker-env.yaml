@@ -5,6 +5,8 @@ on:
       - main
     paths:
       - 'Dockerfile'
+      - 'go.mod'
+      - 'go.sum'
 env:
   REGISTRY: ghcr.io
   IMAGE_NAME: ${{ github.repository }}/hypha-build-env
