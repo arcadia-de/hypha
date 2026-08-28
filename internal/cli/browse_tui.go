@@ -69,13 +69,8 @@ func (m Model) View() tea.View {
 	flatList := m.flatten()
 	var s strings.Builder
 
-	s.WriteString("═══════════════════════════════════════════════════════════════════════════\n")
-	s.WriteString(" RESOURCE HIERARCHY BROWSER\n")
-	s.WriteString(" Navigation: [↑/↓ or J/K] • Toggle: [Space/Enter/←/→] • Quit: [Q]\n")
-	s.WriteString("═══════════════════════════════════════════════════════════════════════════\n\n")
-
 	if len(flatList) == 0 {
-		return tea.NewView(s.String() + " No resources loaded.\n")
+		return tea.NewView(s.String() + " No resources found.\n")
 	}
 
 	for i, fn := range flatList {

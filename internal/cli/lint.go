@@ -12,7 +12,6 @@ func HandleLint(cmd *cobra.Command, args []string) error {
 func init() {
 	lintCmd := &cobra.Command{
 		Use:     "lint [manifests]",
-		Args:    cobra.MinimumNArgs(1),
 		Short:   "Lint the specified manifests",
 		GroupID: "inspection",
 		RunE:    HandleLint,

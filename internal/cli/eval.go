@@ -16,7 +16,10 @@ func HandleEval(cmd *cobra.Command, args []string) error {
 	}
 	defer orc.Close()
 
-	err = orc.Run(hypha.OrchestratorApplyMode) // TODO(@s0cks): should have a noop mode
+	info := hypha.RunInfo{
+		Mode: hypha.RunApplyMode,
+	}
+	err = orc.Run(info) // TODO(@s0cks): should have a noop mode
 	if err != nil {
 		return fmt.Errorf("failed to run Orchestrator: %v", err)
 	}

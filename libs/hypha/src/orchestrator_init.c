@@ -95,7 +95,6 @@ OrchestratorHandle NewOrchestrator(OrchestratorConfig config) {
     orc->config.root = strdup(config.root);
     orc->config.state_dir = strdup(config.state_dir);
     orc->config.cache_dir = strdup(config.cache_dir);
-    InitRunInfoWithNewId(&orc->run, kOrchestratorPlanMode);
     orc->loop = uv_default_loop();
     orc->graph = NewResourceGraph();
     BootstrapHyphaCoreResources(orc->graph);

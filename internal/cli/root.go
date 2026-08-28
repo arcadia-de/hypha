@@ -41,7 +41,13 @@ func Execute() error {
 	RootCmd.AddCommand(CreateGenCommand(kinds))
 	RootCmd.AddCommand(CreateDescribeCommand(kinds))
 	RootCmd.AddCommand(CreateListCommand(kinds))
-	return RootCmd.Execute()
+
+	if err = RootCmd.Execute(); err != nil {
+		fmt.Printf("Error:\n%v\n", err)
+		return nil
+	}
+
+	return nil
 }
 
 func initConfig(cmd *cobra.Command) error {

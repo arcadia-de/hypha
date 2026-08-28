@@ -43,8 +43,6 @@ static inline void OpenLuaLibs(lua_State* L) {
   lua_getglobal(L, "package");
   lua_getfield(L, -1, "preload");
 
-  LOG_INFO("binding lua libs");
-
 #define BIND(Name)                            \
   lua_pushcfunction(L, luaopen_hypha_##Name); \
   lua_setfield(L, -2, "hypha." #Name);

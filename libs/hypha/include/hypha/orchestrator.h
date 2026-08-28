@@ -9,6 +9,7 @@
 #include "hypha/event.h"
 #include "hypha/planner.h"
 #include "hypha/resource_graph.h"
+#include "hypha/run_info.h"
 #include "hypha/run_mode.h"
 #include "hypha/state.h"
 #include "hypha/validation_log.h"
@@ -39,7 +40,7 @@ StateStore* GetOrcStateStore(OrchestratorHandle);
 
 void OrchestratorSubscribe(OrchestratorHandle, const char* p, EventCallbackFn cb, void* data, void (*free_data)(void*));
 void OrchestratorPublish(OrchestratorHandle, const char* p, void* event);
-bool OrchestratorRunWithReason(OrchestratorHandle, const OrchestratorRunMode mode, const Reason reason);
+bool OrchestratorRun(OrchestratorHandle, RunInfo* info);
 bool OrchestratorPruneOrphans(OrchestratorHandle);
 bool OrchestratorCompact(OrchestratorHandle);
 bool OrchestratorEvalExpr(OrchestratorHandle, const char* expr, char** err);
@@ -49,12 +50,6 @@ void OrchestratorPrintRuntimeInfo(OrchestratorHandle);
 
 typedef bool (*VisitDiscoveredManifestFn)(const uint64_t, DiscoveredManifest*, void*);
 void VisitDiscoveredManifests(OrchestratorHandle, VisitDiscoveredManifestFn, void* data);
-
-static inline bool OrchestratorRun(OrchestratorHandle handle, const OrchestratorRunMode mode) {
-  Reason reason;
-  memset(reason, '\0', sizeof(Reason));
-  return OrchestratorRunWithReason(handle, mode, reason);
-}
 
 #ifdef HYPHA_GRAPHVIZ_ENABLED
 void OrchestratorRenderResourceGraphTo(OrchestratorHandle, const char* name, const char* layout, const char* render,

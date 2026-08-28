@@ -1,5 +1,6 @@
 #include "hypha/orchestrator.h"
 
+#include <bits/time.h>
 #include <lauxlib.h>
 #include <lua.h>
 #include <lualib.h>
@@ -77,6 +78,7 @@ bool OrchestratorCompact(OrchestratorHandle handle) {
     goto finished;
 
   Orchestrator* orc = (Orchestrator*)handle;
+  ASSERT(orc);
   success = StateStoreCompact(orc->state);
 finished:
   return success;
@@ -110,17 +112,14 @@ void OrchestratorPrintRuntimeInfo(OrchestratorHandle handle) {
   LOG_INFO("");
 }
 
-bool OrchestratorRunWithReason(OrchestratorHandle handle, const OrchestratorRunMode mode, const Reason reason) {
+bool OrchestratorRun(OrchestratorHandle handle, RunInfo* info) {
   bool success = false;
   if (!handle)
     goto finished;
 
   Orchestrator* orc = (Orchestrator*)handle;
+  ASSERT(orc);
   OrchestratorPublish(orc, GRAPH_SUBMITTED_EVENT, NewGraphSubmittedEvent());
-
-  uuid_t id;
-  uuid_generate_random(id);
-  InitRunInfoWithReason(&orc->run, mode, id, reason);
 
   RunInfoStart(&orc->run);
   uv_run(orc->loop, UV_RUN_DEFAULT);

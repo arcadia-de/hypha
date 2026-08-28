@@ -186,20 +186,11 @@ func (orc *Orchestrator) RenderAnonymousJsonnetManifest(code string) (string, er
 	return orc.RenderJsonnetManifest("manifest.jsonnet", code)
 }
 
-func (orc *Orchestrator) Run(mode OrchestratorRunMode) error {
-	success := C.OrchestratorRun(orc.Handle, C.OrchestratorRunMode(mode))
-	if !bool(success) {
-		return fmt.Errorf("failed to run Orchestrator")
-	}
+func (orc *Orchestrator) Run(info RunInfo) error {
+	i := info.ToC()
+	defer C.free(unsafe.Pointer(i))
 
-	return nil
-}
-
-func (orc *Orchestrator) RunWithReason(mode OrchestratorRunMode, reason string) error {
-	cReason := C.CString(reason)
-	defer C.free(unsafe.Pointer(cReason))
-
-	success := C.OrchestratorRunWithReason(orc.Handle, C.OrchestratorRunMode(mode), cReason)
+	success := C.OrchestratorRun(orc.Handle, i)
 	if !bool(success) {
 		return fmt.Errorf("failed to run Orchestrator")
 	}
