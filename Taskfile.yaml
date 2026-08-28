@@ -80,6 +80,11 @@ tasks:
     cmds:
       - task: build:lib:dev
       - task: go:build
+  build:build-image:
+    cmds:
+      - |
+        docker buildx build . \
+          -t ghcr.io/arcadia-de/hypha-build-env:latest
   test:
     deps:
       - build
