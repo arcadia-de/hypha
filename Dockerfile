@@ -10,6 +10,7 @@ ARG LIBUV_VERSION=1.52.1
 ARG UTIL_LINUX_VERSION=2.42.2
 ARG WAMR_VERSION=2.4.5
 ARG XXHASH_VERSION=0.8.3
+ARG LUA_VERSION=5.4.8
 
 ENV GRAPHVIZ_VERSION=${GRAPHVIZ_VERSION}
 ENV UTIL_LINUX_VERSION=${UTIL_LINUX_VERSION}
@@ -21,6 +22,7 @@ ENV WAMR_VERSION=${WAMR_VERSION}
 ENV LIBSODIUM_VERSION=${LIBSODIUM_VERSION}
 ENV GO_VERSION=${GO_VERSION}
 ENV JANSSON_VERSION=${JANSSON_VERSION}
+ENV LUA_VERSION=${LUA_VERSION}
 
 ENV DEBIAN_FRONTEND=noninteractive
 
@@ -31,8 +33,6 @@ RUN apt-get update \
     python3 \
     python3-pip \
     build-essential \
-    lua5.4  \
-    liblua5.4-dev \
     pkg-config \
     ca-certificates \
     curl \
@@ -171,7 +171,14 @@ RUN curl -L https://github.com/libuv/libuv/archive/refs/tags/v${LIBUV_VERSION}.t
  && make install \
  && cd ..
 
+RUN curl -L -R -O https://www.lua.org/ftp/lua-${LUA_VERSION}.tar.gz -o lua-${LUA_VERSION}.tar.gz \
+ && tar zxf lua-${LUA_VERSION}.tar.gz \
+ && cd lua-${LUA_VERSION} \
+ && make -j$(nproc) \
+ && make install
+
 #TODO(@s0cks):
 # FROM ubuntu:${UBUNTU_VERSION}
 # COPY --from=builder /usr/local/ /usr/local/
 # RUN ldconfig
+
