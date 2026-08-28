@@ -69,7 +69,7 @@ static inline void ExecInit(Orchestrator* orc) {
 
 static inline bool OnGraphSubmitted(const char* p, const void* event, void* data) {
   Orchestrator* orc = (Orchestrator*)data;
-  if (!ComputeExecutionSchedule(orc->graph, kDepthFirstScheduling)) {
+  if (!ComputeExecutionSchedule(orc->graph, kPriorityWeightedKahnScheduling)) {
     orc->run.success = false;
     OrchestratorPublish(orc, RECONCILE_FAILED_EVENT, NewReconcileFailedEvent(kStatusInvalidSpec));
     goto finished;

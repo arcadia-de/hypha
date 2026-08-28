@@ -11,6 +11,7 @@
 #include "hypha/annotation.h"
 #include "hypha/label.h"
 #include "hypha/orchestrator_state.h"
+#include "hypha/priority.h"
 #include "hypha/reason.h"
 #include "hypha/resource_flags.h"
 #include "hypha/resource_id.h"
@@ -69,9 +70,9 @@ struct _Resource {
   size_t num_depends_on;
   size_t depends_on_cap;
 
-  ResourceTelemetry telemetry;
-
+  Priority priority;
   ResourceFlags flags;
+  ResourceTelemetry telemetry;
 };
 
 #define DEFINE_STATE_CHECK(Name)                             \

@@ -35,9 +35,6 @@ void AppendDefaultLabels(const Label* rhs, const size_t len) {
   Label* dst = &labels[labels_len];
   labels_len += len;
   memcpy(dst, rhs, sizeof(Label) * len);
-
-  fprintf(stdout, "appending %zu labels\n", len);
-  fprintf(stdout, "new labels_len: %zu\n", labels_len);
 }
 
 void VisitAllDefaultLabels(VisitLabelFn fn, void* data) {

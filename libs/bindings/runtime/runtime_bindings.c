@@ -22,7 +22,6 @@ LUA_FN(addDefaultLabels) {
     case LUA_TSTRING: {
       Label label;
       strncpy(label, luaL_checkstring(L, 1), HYPHA_LABEL_MAX_SIZE);
-      DLOG_INFO("appending default label: %s", label);
       AppendDefaultLabel(label);
       return 0;
     }
@@ -32,7 +31,6 @@ LUA_FN(addDefaultLabels) {
       for (size_t i = 1; i <= len; i++) {
         lua_rawgeti(L, 1, (lua_Integer)i);
         strncpy(labels[i - 1], luaL_checkstring(L, -1), HYPHA_LABEL_MAX_SIZE);
-        DLOG_INFO("appending default label: %s", labels[i - 1]);
       }
       AppendDefaultLabels(labels, len);
       return 0;
