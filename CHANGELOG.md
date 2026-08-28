@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.2.0](https://github.com/arcadia-de/hypha/compare/1.1.0...v1.2.0) (2026-08-28)
+
+
+### Features
+
+* ✨ embed lua libraries into the runtime, no more hotloading ([7f96a26](https://github.com/arcadia-de/hypha/commit/7f96a2608a0a998e19957489b9c17789d2b8edd0))
+
 ## [1.1.0](https://github.com/arcadia-de/hypha/compare/v1.0.0...v1.1.0) (2026-08-28)
 
 
