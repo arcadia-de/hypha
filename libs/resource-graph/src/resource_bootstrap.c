@@ -13,7 +13,7 @@ static const uuid_t kHyphaBootstrapNamespaceUuid = {0xbd, 0x84, 0x2c, 0x9a, 0xef
                                                     0xa6, 0xa7, 0xda, 0x55, 0xd7, 0x33, 0x0c, 0xd4};
 
 static const AnnotationKey kDocsAnnotationKey = "hypha/docs";
-static const AnnotationKey kProvidesAnnotationKey = "hypha/provides";
+const AnnotationKey kProvidesAnnotationKey = "hypha/provides";
 
 static inline void DeriveBootstrapResourceId(const char* ns, const char* kind, const char* name, ResourceId* out) {
   char key[512];

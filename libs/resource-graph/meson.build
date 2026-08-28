@@ -3,6 +3,7 @@ hypha_resource_graph_deps = [
   libuv,
   threads,
   uuid,
+  jansson,
   hypha_api_dep,
   hypha_log_dep,
   hypha_utils_dep,

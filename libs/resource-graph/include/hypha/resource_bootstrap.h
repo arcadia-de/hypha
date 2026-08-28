@@ -7,10 +7,18 @@ extern "C" {
 
 #include <stddef.h>
 
+#include "hypha/annotation.h"
 #include "hypha/resource_flags.h"
 #include "hypha/resource_graph.h"
 #include "hypha/resource_kind.h"
 #include "hypha/resource_namespace.h"
+
+// The `hypha/provides` annotation records what a core (bootstrapped)
+// resource provides (e.g. a PackageManager resource provides "Brew"). It's
+// exported so other resource-graph code -- notably the scheduler, when
+// resolving which PackageManager a Package belongs to -- can look it up
+// without duplicating the key.
+extern const AnnotationKey kProvidesAnnotationKey;
 
 typedef struct {
   const char* kind;
