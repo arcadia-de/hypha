@@ -8,14 +8,15 @@ type ResourceStatus struct {
 }
 
 type Resource struct {
-	ID       string           `json:"id,omitempty" yaml:"id,omitempty"`
-	Kind     string           `json:"kind,omitempty" yaml:"kind,omitempty"`
-	State    string           `json:"state,omitempty" yaml:"state,omitempty"`
-	Action   string           `json:"action,omitempty" yaml:"action,omitempty"`
-	Reason   string           `json:"reason,omitempty" yaml:"reason,omitempty"`
-	Metadata ResourceMetadata `json:"metadata" yaml:"metadata"`
-	Spec     any              `json:"spec" yaml:"spec"`
-	Status   ResourceStatus   `json:"status" yaml:"status"`
+	ID        string           `json:"id,omitempty" yaml:"id,omitempty"`
+	Kind      string           `json:"kind,omitempty" yaml:"kind,omitempty"`
+	State     string           `json:"state,omitempty" yaml:"state,omitempty"`
+	Action    string           `json:"action,omitempty" yaml:"action,omitempty"`
+	Reason    string           `json:"reason,omitempty" yaml:"reason,omitempty"`
+	Metadata  ResourceMetadata `json:"metadata" yaml:"metadata"`
+	DependsOn []string         `json:"depends_on" yaml:"depends_on"`
+	Spec      any              `json:"spec" yaml:"spec"`
+	Status    ResourceStatus   `json:"status" yaml:"status"`
 }
 
 func (res *Resource) HasLabels() bool {

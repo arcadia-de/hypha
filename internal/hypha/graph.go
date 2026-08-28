@@ -4,6 +4,7 @@ package hypha
 #cgo pkg-config: hypha-uninstalled
 #include <stdlib.h>
 #include <string.h>
+#include <stdint.h>
 #include <xxhash.h>
 
 #include "hypha.h"
@@ -41,6 +42,21 @@ type ResourceGraph struct {
 }
 
 type ResourceVisitor func(uint64, Resource) bool
+
+func GetResourceDependsOn(res *C.Resource) []string {
+	dependsOn := []string{}
+	numDepends := int(res.num_depends_on)
+	baseDepends := uintptr(unsafe.Pointer(res.depends_on))
+
+	for i := range numDepends {
+		offset := baseDepends + (uintptr(i) * unsafe.Sizeof((*C.char)(nil)))
+		ptr := *(*(*C.char))(unsafe.Pointer(offset))
+		rawDepends := C.GoString(ptr)
+		dependsOn = append(dependsOn, rawDepends)
+	}
+
+	return dependsOn
+}
 
 //export goVisitResource
 func goVisitResource(idx C.ResourceGraphIndex, res *C.Resource, data unsafe.Pointer) C.bool {
@@ -110,7 +126,8 @@ func goVisitResource(idx C.ResourceGraphIndex, res *C.Resource, data unsafe.Poin
 			Labels:      labels,
 			Annotations: annotations,
 		},
-		Spec: spec,
+		DependsOn: GetResourceDependsOn(res),
+		Spec:      spec,
 		Status: ResourceStatus{
 			State:  ResourceState(res.status.state),
 			Action: ControllerAction(res.status.action),

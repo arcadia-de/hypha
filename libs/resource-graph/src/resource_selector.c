@@ -1,5 +1,7 @@
 #include "hypha/resource_selector.h"
 
+#include <stdlib.h>
+
 #include "hypha.h"
 #include "hypha/annotation.h"
 #include "hypha/assertions.h"
@@ -8,6 +10,8 @@
 
 #define FOR_EACH_RESOURCE_SELECTOR_KIND(V) \
   V(Atomic)                                \
+  V(Not)                                   \
+  V(Negate)                                \
   V(And)                                   \
   V(Or)
 
@@ -55,6 +59,32 @@ ResourceSelector* NewResourceSelector(ResourceSelectorFn fn, void* data, void (*
     selector->fn = fn;
     selector->data = data;
     selector->free_data = free_data;
+  }
+
+  return selector;
+}
+
+ResourceSelector* NewNotResourceSelector(ResourceSelectorFn fn, void* data, void (*free_data)(void*)) {
+  ASSERT(fn);
+  ResourceSelector* selector = (ResourceSelector*)malloc(sizeof(ResourceSelector));
+  if (selector) {
+    selector->kind = kNotSelector;
+    selector->fn = fn;
+    selector->data = data;
+    selector->free_data = free_data;
+  }
+
+  return selector;
+}
+
+ResourceSelector* NewNegateResourceSelector(ResourceSelector* delegate) {
+  ASSERT(delegate);
+  ResourceSelector* selector = (ResourceSelector*)malloc(sizeof(ResourceSelector));
+  if (selector) {
+    selector->kind = kNegateSelector;
+    selector->selectors = (ResourceSelector**)malloc(sizeof(ResourceSelector*) * 1);
+    selector->selectors[0] = delegate;
+    selector->num_selectors = 1;
   }
 
   return selector;
@@ -242,6 +272,10 @@ bool ResourceSelectorMatch(const ResourceSelector* rs, const Resource* res) {
   switch (rs->kind) {
     case kAtomicSelector:
       return Matches(rs, res);
+    case kNotSelector:
+      return !Matches(rs, res);
+    case kNegateSelector:
+      return !ResourceSelectorMatch(rs->selectors[0], res);
     case kAndSelector:
       return MatchAll(rs, res);
     case kOrSelector:

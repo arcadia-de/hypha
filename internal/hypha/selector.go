@@ -82,6 +82,13 @@ func NewLabelResourceSelector(rhs string) ResourceSelector {
 	}
 }
 
+func NewNegateSelector(selector ResourceSelector) ResourceSelector {
+	handle := C.NewNegateResourceSelector(selector.Handle)
+	return ResourceSelector{
+		Handle: handle,
+	}
+}
+
 func NewOrResourceSelector(selectors []ResourceSelector) ResourceSelector {
 	numSelectors := len(selectors)
 	cSelectors := C.malloc(C.size_t(numSelectors) * C.size_t(unsafe.Sizeof(uintptr(0))))

@@ -8,6 +8,8 @@ typedef bool (*ResourceSelectorFn)(const Resource*, void* data);
 typedef struct _ResourceSelector ResourceSelector;
 
 ResourceSelector* NewResourceSelector(ResourceSelectorFn fn, void* data, void (*free_data)(void*));
+ResourceSelector* NewNotResourceSelector(ResourceSelectorFn fn, void* data, void (*free_data)(void*));
+ResourceSelector* NewNegateResourceSelector(ResourceSelector* selector);
 ResourceSelector* NewAndResourceSelector(ResourceSelector** selectors, const uint64_t num_selectors);
 ResourceSelector* NewOrResourceSelector(ResourceSelector** selectors, const uint64_t num_selectors);
 ResourceSelector* NewRefResourceSelector(const char* rhs);
