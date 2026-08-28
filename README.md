@@ -20,7 +20,7 @@ First let's define some manifests
 local hypha = import 'lib/hypha.libsonnet';
 [
   // Create a symlink .gitconfig => ~/.gitconfig
-  hypha.Manifest('Symlink', 'gitconfig', spec={
+  hypha.SymlinkManifest('gitconfig', spec={
     source: ".gitconfig",
     target: "~/.gitconfig",
   }),
