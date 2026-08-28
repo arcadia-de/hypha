@@ -171,14 +171,7 @@ RUN curl -L https://github.com/libuv/libuv/archive/refs/tags/v${LIBUV_VERSION}.t
  && make install \
  && cd ..
 
+#TODO(@s0cks):
 # FROM ubuntu:${UBUNTU_VERSION}
 # COPY --from=builder /usr/local/ /usr/local/
-#
-# RUN apt-get update \
-#  && apt-get install -y --no-install-recommends \
-#     curl \
-#     ninja-build \
-#     python3 \
-#     python3-pip
-#
 # RUN ldconfig
