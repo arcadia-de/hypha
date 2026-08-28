@@ -1,0 +1,32 @@
+name: Build Hypha
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+    branches:
+      - main
+jobs:
+  compile:
+    runs-on: ubuntu-latest
+    container:
+      image: ghcr.io/arcadia-de/hypha/hypha-build-env:latest
+      credentials:
+        username: ${{ github.actor }}
+        password: ${{ secrets.GITHUB_TOKEN }}
+      options: --user root
+    steps:
+      - name: Checkout repository code
+        uses: actions/checkout@v4
+      - name: Check Environment Versions
+        run: |
+          go version
+          meson --version
+          ninja --version
+      - name: Compile Hypha
+        run: |
+          export CGO_ENABLED=1
+          export PKG_CONFIG_PATH="$(pwd)/build/meson-uninstalled:$PKG_CONFIG_PATH"
+          go build -ldflags="-linkmode=external -s -w -extldflags=-Wl,--gc-sections" \
+            -o hypha \
+            cmd/hypha/main.go
