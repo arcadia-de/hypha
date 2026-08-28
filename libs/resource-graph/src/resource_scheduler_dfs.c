@@ -40,8 +40,6 @@ static inline ResourceGraphIndex FindResourceIndex(DfsSchedulerContext* ctx, con
   ASSERT(ctx);
   ASSERT(ref);
 
-  // See resource_graph.c's FindResourceIndex: depends_on entries may be a name
-  // (expected) or an id (also allowed); id is tried first when it parses as one.
   ResourceId needle;
   if (uuid_parse(ref, needle) == 0) {
     for (ResourceGraphIndex i = 0; i < ctx->num_resources; i++) {
@@ -89,7 +87,7 @@ bool topological_sort_dfs(DfsSchedulerContext* ctx, ResourceGraphIndex node_idx,
   return true;
 }
 
-bool ComputeScheduleDepthFirst(const Resource* resources, const size_t num_resources, ResourceGraphIndex** results) {
+bool ComputeScheduleDepthFirst(Resource* resources, const size_t num_resources, ResourceGraphIndex** results) {
   ASSERT(resources);
   ASSERT(num_resources > 0);
 

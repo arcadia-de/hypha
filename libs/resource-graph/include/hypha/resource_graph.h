@@ -24,7 +24,7 @@ bool ComputeExecutionSchedule(ResourceGraph* graph, const SchedulingStrategy str
 const char* FindNameForResourceId(const ResourceGraph* gr, const uuid_t id);
 
 #define DECLARE_SCHEDULING_STRATEGY(Name) \
-  bool ComputeSchedule##Name(const Resource* resources, const size_t num_resources, ResourceGraphIndex** order);
+  bool ComputeSchedule##Name(Resource* resources, const size_t num_resources, ResourceGraphIndex** order);
 FOR_EACH_SCHEDULING_STRATEGY(DECLARE_SCHEDULING_STRATEGY)
 #undef DECLARE_SCHEDULING_STRATEGY
 
