@@ -9,7 +9,7 @@ extern "C" {
 #include <lua.h>
 #include <lualib.h>
 
-#define DECLARE_LUA_BINDINGS(Name) extern int luaopen_##Name(lua_State*);
+#define DECLARE_LUA_BINDINGS(Name) int luaopen_##Name(lua_State*);
 
 #define DEFINE_LUA_BINDINGS(Name, Funcs)    \
   extern int luaopen_##Name(lua_State* L) { \

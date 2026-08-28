@@ -32,12 +32,6 @@ static inline void InitOrcHistory(Orchestrator* orc) {
   LOG_FATAL_IF(!orc->history, "failed to open history log: %s", p);
 }
 
-lua_State* NewOrchestratorLuaState(Orchestrator* orc);
-static inline void InitOrcLuaState(Orchestrator* orc) {
-  orc->L = NewOrchestratorLuaState(orc);
-  LOG_FATAL_IF(!orc->L, "failed to create orchestrator lua state");
-}
-
 static inline bool StopLoopOnReconcileDone(const char* p, const void* event, void* data) {
   ASSERT(event);
   Orchestrator* orc = (Orchestrator*)data;
@@ -117,7 +111,8 @@ OrchestratorHandle NewOrchestrator(OrchestratorConfig config) {
     InitOrcHistory(orc);
     orc->bus = (EventBus*)malloc(sizeof(EventBus));
     InitEventBus(orc->loop, orc->bus);
-    InitOrcLuaState(orc);
+    orc->L = NewOrchestratorLuaState(orc);
+    LOG_FATAL_IF(!orc->L, "failed to create orchestrator lua state");
 
     OrchestratorSubscribe(orc, GRAPH_SUBMITTED_EVENT, &OnGraphSubmitted, orc, NULL);
     OrchestratorSubscribe(orc, RECONCILE_COMPLETE_EVENT, &OnReconcileComplete, orc, NULL);

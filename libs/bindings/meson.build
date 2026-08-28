@@ -42,22 +42,22 @@ bindings_matrix = {
     ],
     'c_args': ['-Wno-unused-variable'],
   },
-  'query': {
-    'deps': [
-      hypha_api_dep,
-      hypha_dep,
-      hypha_utils_dep,
-      hypha_resource_graph_dep,
-      hypha_query_dep,
-      hypha_state_dep,
-      hypha_planner_dep,
-      hypha_validation_dep,
-      hypha_service_dep,
-      hypha_events_dep,
-      hypha_controller_dep,
-      hypha_action_dep,
-    ],
-  },
+  #TODO(@s0cks):
+  # 'query': {
+  #   'deps': [
+  #     hypha_api_dep,
+  #     hypha_utils_dep,
+  #     hypha_resource_graph_dep,
+  #     hypha_query_dep,
+  #     hypha_state_dep,
+  #     hypha_planner_dep,
+  #     hypha_validation_dep,
+  #     hypha_service_dep,
+  #     hypha_events_dep,
+  #     hypha_controller_dep,
+  #     hypha_action_dep,
+  #   ],
+  # },
 }
 
 base_override_opts = [
@@ -73,12 +73,14 @@ base_binding_deps = [
 ]
 bindings_deps = []
 foreach name, cfg : bindings_matrix
-  binding_inc = include_directories(name)
-  binding_lib = shared_library(
+  binding_inc = include_directories(name / 'include')
+  binding_sources = [
+    name / 'src' / name + '_bindings.c',
+  ]
+  binding_sources += cfg.get('sources', [])
+  binding_lib = static_library(
     name,
-    files(name / name + '_bindings.c'),
-    build_subdir: 'hypha',
-    name_prefix: '',
+    binding_sources,
     include_directories: binding_inc,
     install: false,
     link_args: base_link_args + cfg.get('link_args', []),

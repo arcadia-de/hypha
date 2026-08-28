@@ -1,4 +1,4 @@
-#include "host_bindings.h"
+#include "hypha/host_bindings.h"
 
 #include <lauxlib.h>
 #include <lua.h>

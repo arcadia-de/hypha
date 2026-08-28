@@ -1,4 +1,4 @@
-#include "env_bindings.h"
+#include "hypha/env_bindings.h"
 
 #include <lauxlib.h>
 #include <lua.h>

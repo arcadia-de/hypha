@@ -49,6 +49,7 @@ struct _Orchestrator {
   DiscoveredManifest* discovered_manifests;
 };
 
+lua_State* NewOrchestratorLuaState(Orchestrator*);
 void QueueReconcileTask(Orchestrator* orc, Controller* ctrl, const ResourceGraphIndex index, Resource* res);
 void DispatchReadyResources(Orchestrator* orc);
 

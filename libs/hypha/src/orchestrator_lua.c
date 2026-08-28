@@ -1,10 +1,17 @@
-#include <dlfcn.h>
 #include <lauxlib.h>
 #include <lua.h>
 #include <lualib.h>
 
+#include "hypha/env_bindings.h"
+#include "hypha/events_bindings.h"
+#include "hypha/host_bindings.h"
 #include "hypha/log.h"
+#include "hypha/log_bindings.h"
 #include "hypha/orchestrator.h"
+#include "hypha/packages_bindings.h"
+#include "hypha/runtime_bindings.h"
+#include "hypha/sources_bindings.h"
+#include "orc.h"
 
 static inline void InitRegData(lua_State* L, Orchestrator* orc) {
   lua_pushlightuserdata(L, orc);
@@ -32,6 +39,26 @@ static inline void OpenLuaLibs(lua_State* L) {
 
   luaL_requiref(L, LUA_LOADLIBNAME, luaopen_package, 1);
   lua_pop(L, 1);
+
+  lua_getglobal(L, "package");
+  lua_getfield(L, -1, "preload");
+
+  LOG_INFO("binding lua libs");
+
+#define BIND(Name)                            \
+  lua_pushcfunction(L, luaopen_hypha_##Name); \
+  lua_setfield(L, -2, "hypha." #Name);
+
+  BIND(env);
+  BIND(events);
+  BIND(host);
+  BIND(log);
+  BIND(packages);
+  BIND(runtime);
+  BIND(sources);
+#undef BIND
+
+  lua_pop(L, 2);
 }
 
 lua_State* NewOrchestratorLuaState(Orchestrator* orc) {

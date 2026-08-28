@@ -1,4 +1,4 @@
-#include "query_bindings.h"
+#include "hypha/query_bindings.h"
 
 #include <lauxlib.h>
 #include <lua.h>

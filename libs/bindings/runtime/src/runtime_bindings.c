@@ -1,4 +1,4 @@
-#include "runtime_bindings.h"
+#include "hypha/runtime_bindings.h"
 
 #include <lauxlib.h>
 #include <lua.h>

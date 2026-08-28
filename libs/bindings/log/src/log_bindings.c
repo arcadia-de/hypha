@@ -1,4 +1,4 @@
-#include "log_bindings.h"
+#include "hypha/log_bindings.h"
 
 #include <lauxlib.h>
 #include <lua.h>

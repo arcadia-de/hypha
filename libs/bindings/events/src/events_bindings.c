@@ -1,4 +1,4 @@
-#include "events_bindings.h"
+#include "hypha/events_bindings.h"
 
 #include <lauxlib.h>
 #include <lua.h>

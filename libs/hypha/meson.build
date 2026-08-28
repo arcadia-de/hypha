@@ -27,6 +27,7 @@ hypha_deps = [
 ]
 hypha_deps += pkg_manager_deps
 hypha_deps += services_deps
+hypha_deps += bindings_deps
 hypha = static_library(
   'hypha',
   [

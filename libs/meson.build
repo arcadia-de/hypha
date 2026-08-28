@@ -14,6 +14,6 @@ subdir('action')
 subdir('service')
 
 subdir('controllers')
+subdir('bindings')
 subdir('hypha')
 
-subdir('bindings')
