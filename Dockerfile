@@ -175,7 +175,19 @@ RUN curl -L -R -O https://www.lua.org/ftp/lua-${LUA_VERSION}.tar.gz -o lua-${LUA
  && tar zxf lua-${LUA_VERSION}.tar.gz \
  && cd lua-${LUA_VERSION} \
  && make -j$(nproc) \
- && make install
+ && make install \
+ && mkdir -p /usr/local/lib/pkgconfig \
+ && echo "prefix=/usr/local" > /usr/local/lib/pkgconfig/liblua54.pc \
+ && echo "exec_prefix=\${prefix}" >> /usr/local/lib/pkgconfig/liblua54.pc \
+ && echo "libdir=\${exec_prefix}/lib" >> /usr/local/lib/pkgconfig/liblua54.pc \
+ && echo "includedir=\${prefix}/include" >> /usr/local/lib/pkgconfig/liblua54.pc \
+ && echo "" >> /usr/local/lib/pkgconfig/liblua54.pc \
+ && echo "Name: liblua54" >> /usr/local/lib/pkgconfig/libiwasm.pc \
+ && echo "Description: An Extensible Embedded Language" >> /usr/local/lib/pkgconfig/liblua54.pc \
+ && echo "Version: ${LUA_VERSION}" >> /usr/local/lib/pkgconfig/liblua54.pc \
+ && echo "Libs: -L\${libdir} -llua -lm" >> /usr/local/lib/pkgconfig/liblua54.pc \
+ && echo "Cflags: -I\${includedir}" >> /usr/local/lib/pkgconfig/liblua54.pc \
+ && cd ..
 
 #TODO(@s0cks):
 # FROM ubuntu:${UBUNTU_VERSION}
