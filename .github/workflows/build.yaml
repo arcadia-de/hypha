@@ -23,6 +23,10 @@ jobs:
           go version
           meson --version
           ninja --version
+      - name: Compile libhypha
+        run: |
+          meson setup build --reconfigure
+          ninja -C build
       - name: Compile Hypha
         run: |
           export CGO_ENABLED=1
