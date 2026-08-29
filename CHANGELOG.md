@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.4.0](https://github.com/arcadia-de/hypha/compare/1.3.0...v1.4.0) (2026-08-29)
+
+
+### Features
+
+* ✨ make discovery happen automatically when no sources specified ([1f7cdf0](https://github.com/arcadia-de/hypha/commit/1f7cdf0a91dedde7dc03f49ec9870be154b415fb))
+
 ## [1.3.0](https://github.com/arcadia-de/hypha/compare/v1.2.0...v1.3.0) (2026-08-29)
 
 
