@@ -9,10 +9,12 @@ extern "C" {
 #include <stdio.h>
 
 #include "hypha.h"
+#include "hypha/action_log.h"
 #include "hypha/controller_status.h"
 #include "hypha/planner.h"
 #include "hypha/resource.h"
 #include "hypha/resource_kind.h"
+#include "hypha/state.h"
 #include "hypha/validation_log.h"
 #include "hypha/validation_result.h"
 
@@ -25,8 +27,8 @@ typedef void (*ControllerDeInitFn)(void* data);
 #define DECLARE_CONTROLLER_FN(Name, RetType) typedef RetType (*Controller##Name##Fn)(Name##Context*, void*);
 
 typedef struct {
-  const Resource* observed;
-  Resource* desired;
+  Resource* observed;
+  StateEntry last;
 } ObserveContext;
 DECLARE_CONTROLLER_FN(Observe, ControllerStatus);
 
@@ -72,8 +74,10 @@ typedef struct {
 DECLARE_CONTROLLER_FN(Rollback, ControllerStatus);
 
 typedef struct {
+  ControllerAction action;
   const Resource* current;
-  const Resource* desired;
+  Resource* desired;
+  ActionLog* log;
 } ApplyContext;
 DECLARE_CONTROLLER_FN(Apply, ControllerStatus);
 
@@ -136,9 +140,9 @@ ResourceKind GetControllerKind(const Controller* ctrl);
 
 void ControllerInit(Controller*);
 void ControllerDeInit(Controller*);
-ControllerStatus ControllerObserve(Controller* ctrl, Resource* current, Resource* desired);
+ControllerStatus ControllerObserve(Controller* ctrl, Resource* current, StateEntry* last);
 ControllerAction ControllerPlan(Controller* ctrl, const Resource* current, Resource* desired, Plan* pl);
-ControllerStatus ControllerApply(Controller* ctrl, const Resource* desired, const ControllerAction action);
+ControllerStatus ControllerApply(Controller* ctrl, Resource* desired, const ControllerAction action, ActionLog* log);
 bool ControllerValidate(Controller* ctrl, Resource* current, ValidationLog* vl);
 ControllerStatus ControllerRollback(Controller* ctrl, const Resource* current);
 ControllerStatus ControllerDestroy(Controller* ctrl, const Resource* current);

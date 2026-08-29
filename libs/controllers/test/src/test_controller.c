@@ -66,8 +66,11 @@ DEFINE_CONTROLLER_PLAN_FN(Test) {
 }
 
 DEFINE_CONTROLLER_APPLY_FN(Test) {
-  DLOG_INFO("sleeping for %d seconds", test_spec.sleep);
-  sleep(test_spec.sleep);
+  const uint32_t total_seconds = test_spec.sleep;
+  DLOG_INFO("sleeping for %u seconds", total_seconds);
+  sleep(total_seconds);
+  AppliedAction* action = NewCreateAction(ctx->log, ctx->desired, "Slept for %u seconds", total_seconds);
+  ASSERT(action);
   return kStatusOk;
 }
 

@@ -25,6 +25,7 @@ typedef struct {
   ValidationLog vlog;
   DeltaLog dlog;
   StateEntry last;
+  ActionLog alog;
 } ReconcileTask;
 
 #define DEFINE_RUN_MODE_CHECK(Name)                                \

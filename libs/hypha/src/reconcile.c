@@ -66,6 +66,7 @@ static inline void MaybeFinishReconciliation(Orchestrator* orc) {
     goto finished;
 
 static inline void ReconcileWork(uv_work_t* req) {
+  ASSERT(req);
   ReconcileTask* task = container_of(req, ReconcileTask, work);
   Controller* ctrl = task->ctrl;
   Resource* desired = GetResourceInGraph(task->orc->graph, task->index);
@@ -73,45 +74,18 @@ static inline void ReconcileWork(uv_work_t* req) {
   Resource* observed = &task->observed;
 
   BEGIN_RESOURCE_LOG_CTX(desired);
-
-  ResourceInfo* observed_info = &observed->info;
-  size_t num_labels = task->last.labels_len;
-  if (num_labels > 0) {
-    const size_t total_size = sizeof(Label) * num_labels;
-    Label* labels = (Label*)malloc(total_size);
-    memset(labels, 0, total_size);
-    memcpy(labels, task->last.labels, total_size);
-    observed_info->labels = labels;
-    observed_info->labels_len = num_labels;
-    observed_info->labels_cap = num_labels;
+  const ControllerStatus status = ControllerObserve(ctrl, observed, &task->last);
+  if (status != kStatusOk)
+    goto finished;
+  if (task->mode <= kOrchestratorObserveMode) {
+    memcpy(desired, observed, sizeof(Resource));
+    goto finished;
   }
-  DLOG_INFO("decoded %zu/%zu labels", observed_info->labels_len, task->last.labels_len);
-
-  const size_t num_annotations = task->last.annotations_len;
-  if (num_annotations > 0) {
-    const size_t total_size = sizeof(Annotation) * num_annotations;
-    Annotation* annotations = (Annotation*)malloc(total_size);
-    memset(annotations, 0, total_size);
-    memcpy(annotations, task->last.annotations, total_size);
-    observed->info.annotations = annotations;
-    observed->info.annotations_len = observed->info.annotations_cap = num_annotations;
-  }
-  DLOG_INFO("decoded %zu annotations", observed->info.annotations_len);
 
   const Label* defaults = GetDefaultLabels();
   const size_t num_defaults = GetNumberOfDefaultLabels();
-  if (defaults != NULL && num_defaults > 0) {
-    ResourcePushLabels(observed, defaults, num_defaults);
+  if (defaults != NULL && num_defaults > 0)
     ResourcePushLabels(desired, defaults, num_defaults);
-    DLOG_INFO("added %zu default labels", num_defaults);
-  }
-  DLOG_INFO("total %zu labels", observed_info->labels_len);
-
-  const ControllerStatus status = ControllerObserve(ctrl, observed, desired);
-  if (status != kStatusOk)
-    goto finished;
-  CHECK_MODE(Observe);
-
   task->action = ControllerPlan(ctrl, observed, desired, &task->plan);
   if (IsPlanReconcileTask(task) || task->action == kNoAction)
     goto finished;
@@ -123,7 +97,7 @@ static inline void ReconcileWork(uv_work_t* req) {
 
   switch (task->mode) {
     case kOrchestratorApplyMode:
-      task->status = ControllerApply(ctrl, desired, task->action);
+      task->status = ControllerApply(ctrl, desired, task->action, &task->alog);
       break;
     case kOrchestratorDiffMode:
     case kOrchestratorDestroyMode:
@@ -223,6 +197,9 @@ static inline void ReconcileAfterWork(uv_work_t* req, int status) {
 
   orc->run.status = UpdateResourceState(status, task, &res->state);
   if (IsApplyReconcileTask(task)) {
+    if (!IsActionLogEmpty(&task->alog))
+      AppendActionLog(&orc->actions, &task->alog);
+
     WriteResourceState(orc, res);
     if (task->action != kNoAction)
       WriteHistory(orc, res, task);
@@ -285,6 +262,7 @@ void QueueReconcileTask(Orchestrator* orc, Controller* ctrl, const ResourceGraph
   InitPlan(&task->plan, init_cap);
   InitValidationLog(&task->vlog, init_cap);
   InitDeltaLog(&task->dlog, init_cap);
+  InitActionLog(&task->alog, init_cap);
 
   memset(&task->observed, 0, sizeof(Resource));
   memset(&task->last, 0, sizeof(StateEntry));
@@ -292,10 +270,11 @@ void QueueReconcileTask(Orchestrator* orc, Controller* ctrl, const ResourceGraph
     Resource* observed = &task->observed;
     uuid_parse(task->last.id, observed->id);
     observed->kind = FindResourceKind(task->last.kind);
+    observed->state = (ResourceState)task->last.last_status;
+    observed->spec.hash = task->last.hash;
     observed->info.name = strdup(task->last.name);
     observed->spec.raw = strdup(task->last.observed_json);
-    observed->spec.hash = task->last.hash;
-    observed->state = (ResourceState)task->last.last_status;
+    ResourceSpecParseJson(&observed->spec);
   } else {
     DLOG_WARN("failed to decode value from state store");
   }

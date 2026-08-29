@@ -9,11 +9,13 @@
 #include <unistd.h>
 
 #include "hypha.h"
+#include "hypha/action_log.h"
 #include "hypha/controller_status.h"
 #include "hypha/expander.h"
 #include "hypha/log.h"
 #include "hypha/planned_action.h"
 #include "hypha/planner.h"
+#include "hypha/reason.h"
 #include "hypha/validation_log.h"
 
 typedef struct {
@@ -38,15 +40,18 @@ thread_local SymlinkSpec spec;
 static const char kSourceField[] = "source";
 static const char kTargetField[] = "target";
 DEFINE_CONTROLLER_OBSERVE_FN(Symlink) {
-  Resource* desired = ctx->desired;
-  ASSERT(desired);
+  Resource* observed = ctx->observed;
+  ASSERT(observed);
 
-  if (!GetSpecField(desired, kSourceField, &spec.source, &spec.source_len)) {
+  if (!observed->spec.doc)
+    return kStatusOk;
+
+  if (!GetSpecField(observed, kSourceField, &spec.source, &spec.source_len)) {
     LOG_ERROR("failed to get source field");
     return kStatusInternalError;
   }
 
-  if (!GetSpecField(desired, kTargetField, &spec.target, &spec.target_len)) {
+  if (!GetSpecField(observed, kTargetField, &spec.target, &spec.target_len)) {
     LOG_ERROR("failed to get target field");
     return kStatusInternalError;
   }
@@ -115,6 +120,8 @@ DEFINE_CONTROLLER_APPLY_FN(Symlink) {
     return kStatusInternalError;
   }
 
+  AppliedAction* action = NewCreateAction(ctx->log, ctx->desired, "Symlink `%s` created", ctx->desired->info.name);
+  ASSERT(action);
   return kStatusOk;
 }
 

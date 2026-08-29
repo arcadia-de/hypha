@@ -133,18 +133,40 @@ Controller* GetControllerAt(const uint64_t i) {
   return &controllers[i];
 }
 
-ControllerStatus ControllerObserve(Controller* ctrl, Resource* observed, Resource* desired) {
+ControllerStatus ControllerObserve(Controller* ctrl, Resource* observed, StateEntry* last) {
   ASSERT(ctrl);
   ASSERT(observed);
-  ASSERT(desired);
   BEGIN_CONTROLLER_FUNC(Observe);
   ControllerStatus status = kStatusInternalError;
   if (!ctrl->config.observe)
     goto no_op;
 
+  ResourceInfo* observed_info = &observed->info;
+  size_t num_labels = last->labels_len;
+  if (num_labels > 0) {
+    const size_t total_size = sizeof(Label) * num_labels;
+    Label* labels = (Label*)malloc(total_size);
+    memset(labels, 0, total_size);
+    memcpy(labels, last->labels, total_size);
+    observed_info->labels = labels;
+    observed_info->labels_len = num_labels;
+    observed_info->labels_cap = num_labels;
+  }
+  DLOG_INFO("decoded %zu/%zu labels", observed_info->labels_len, last->labels_len);
+
+  const size_t num_annotations = last->annotations_len;
+  if (num_annotations > 0) {
+    const size_t total_size = sizeof(Annotation) * num_annotations;
+    Annotation* annotations = (Annotation*)malloc(total_size);
+    memset(annotations, 0, total_size);
+    memcpy(annotations, last->annotations, total_size);
+    observed->info.annotations = annotations;
+    observed->info.annotations_len = observed->info.annotations_cap = num_annotations;
+  }
+  DLOG_INFO("decoded %zu annotations", observed->info.annotations_len);
+
   ObserveContext ctx = {
       .observed = observed,
-      .desired = desired,
   };
   status = ctrl->config.observe(&ctx, ctrl->data);
   goto finished;
@@ -176,7 +198,7 @@ finished:
   return result;
 }
 
-ControllerStatus ControllerApply(Controller* ctrl, const Resource* desired, const ControllerAction action) {
+ControllerStatus ControllerApply(Controller* ctrl, Resource* desired, const ControllerAction action, ActionLog* log) {
   BEGIN_CONTROLLER_FUNC(Apply);
   ControllerStatus status = kStatusOk;
 
@@ -186,6 +208,8 @@ ControllerStatus ControllerApply(Controller* ctrl, const Resource* desired, cons
   ApplyContext ctx = {
       .desired = desired,
       .current = NULL,
+      .action = action,
+      .log = log,
   };
   status = ctrl->config.apply(&ctx, ctrl->data);
 finished:

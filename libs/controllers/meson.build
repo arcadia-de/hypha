@@ -44,6 +44,7 @@ base_controller_deps = [
   hypha_planner_dep,
   hypha_action_dep,
   hypha_validation_dep,
+  hypha_state_dep,
 ]
 controllers_deps = []
 foreach name, cfg : controllers_matrix

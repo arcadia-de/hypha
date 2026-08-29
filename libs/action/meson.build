@@ -5,6 +5,7 @@ hypha_action_deps = [
   hypha_api_dep,
   hypha_log_dep,
   hypha_utils_dep,
+  hypha_resource_graph_dep,
 ]
 hypha_action = static_library(
   'hypha-action',

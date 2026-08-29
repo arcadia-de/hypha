@@ -10,6 +10,7 @@ extern "C" {
 
 #include "hypha.h"
 #include "hypha/reason.h"
+#include "hypha/resource.h"
 
 typedef struct {
   uint32_t action;
@@ -56,6 +57,35 @@ void AppendActionLog(ActionLog* vl, ActionLog* rhs);
 void VisitAllActions(ActionLog* vl, VisitActionFn fn, void* data);
 void SortActionLog(ActionLog* alog);
 void FreeActionLog(ActionLog* alog, const size_t init_cap);
+
+static inline bool IsActionLogEmpty(ActionLog* rhs) {
+  if (rhs == NULL)
+    return true;
+  return rhs->actions == NULL || rhs->actions_len == 0;
+}
+
+#define DEFINE_NEW_ACTION(Name)                                                                         \
+  static inline AppliedAction* New##Name##Action(ActionLog* log, Resource* res, const char* fmt, ...) { \
+    AppliedAction* action = NewAppliedAction(log);                                                      \
+    if (action) {                                                                                       \
+      action->action = k##Name##Action;                                                                 \
+      action->resource = res;                                                                           \
+      clock_gettime(CLOCK_REALTIME, &action->timestamp);                                                \
+      va_list args;                                                                                     \
+      va_start(args, fmt);                                                                              \
+      vsnprintf(action->reason, HYPHA_REASON_MAX_LENGTH, fmt, args);                                    \
+      va_end(args);                                                                                     \
+    }                                                                                                   \
+    return action;                                                                                      \
+  }
+
+FOR_EACH_CONTROLLER_ACTION(DEFINE_NEW_ACTION);
+#undef DEFINE_NEW_ACTION
+
+// uint32_t action;
+// struct timespec timestamp;
+// Resource* resource;
+// Reason reason;
 
 #ifdef __cplusplus
 };

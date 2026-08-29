@@ -21,7 +21,7 @@ void InitActionLog(ActionLog* alog, const size_t init_cap) {
 static inline void EnsureLength(ActionLog* alog, const size_t new_len) {
   ASSERT(alog);
   if (new_len >= alog->actions_cap) {
-    const size_t new_cap = (alog->actions_cap + new_len) * 2;
+    const size_t new_cap = alog->actions_cap + new_len;
     const size_t total_size = sizeof(AppliedAction) * new_cap;
     AppliedAction* new_actions = (AppliedAction*)malloc(total_size);
     LOG_FATAL_IF(!new_actions, "failed to allocate new ActionLog of size %zu", new_cap);
