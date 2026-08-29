@@ -97,7 +97,7 @@ hypha apply
 
 ## Building From Source
 
-Check out the [build docs](https://github.com/arcadia-de/hypha/wiki) for how to build.
+Check out the [build docs](https://github.com/arcadia-de/hypha/wiki/Building) in the wiki.
 
 ## Wiki
 
