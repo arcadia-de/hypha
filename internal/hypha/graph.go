@@ -67,7 +67,6 @@ func goVisitResource(idx C.ResourceGraphIndex, res *C.Resource, data unsafe.Poin
 	count := int(res.info.labels_len)
 	labelSize := uintptr(C.HYPHA_LABEL_MAX_SIZE)
 	basePtr := uintptr(unsafe.Pointer(res.info.labels))
-
 	for i := range count {
 		offset := basePtr + (uintptr(i) * labelSize)
 		ptr := (*C.char)(unsafe.Pointer(offset))

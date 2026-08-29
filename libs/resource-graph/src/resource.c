@@ -167,14 +167,13 @@ finished:
 static inline void EnsureLabelsCapacity(ResourceInfo* info, const size_t num_labels) {
   if (num_labels < info->labels_cap)
     return;
-  else if ((info->labels_len + num_labels) >= info->labels_cap) {
-    const size_t new_cap = (info->labels_cap + num_labels + 1);  // TODO(@s0cks): round up pow2
-    const size_t total_size = sizeof(Label) * new_cap;
-    Label* new_labels = (Label*)realloc(info->labels, total_size);
-    LOG_FATAL_IF(!new_labels, "failed to allocate new %zu new resource labels", new_cap);
-    info->labels = new_labels;
-    info->labels_cap = new_cap;
-  }
+
+  const size_t new_cap = (info->labels_cap + num_labels + 1);  // TODO(@s0cks): round up pow2
+  const size_t total_size = sizeof(Label) * new_cap;
+  Label* new_labels = (Label*)realloc(info->labels, total_size);
+  LOG_FATAL_IF(!new_labels, "failed to allocate new %zu new resource labels", new_cap);
+  info->labels = new_labels;
+  info->labels_cap = new_cap;
 }
 
 void ResourcePushLabels(Resource* res, const Label* labels, const size_t num_labels) {
@@ -185,7 +184,7 @@ void ResourcePushLabels(Resource* res, const Label* labels, const size_t num_lab
   EnsureLabelsCapacity(info, info->labels_len + num_labels);
 
   const size_t total_size = sizeof(Label) * num_labels;
-  memcpy(&info->labels[info->labels_len], labels, total_size);
+  memcpy(&info->labels[info->labels_len], &labels[0], total_size);
   info->labels_len += num_labels;
 }
 

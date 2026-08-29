@@ -121,9 +121,6 @@ bool OrchestratorRun(OrchestratorHandle handle, RunInfo* info) {
   ASSERT(orc);
   memcpy(&orc->run, info, sizeof(RunInfo));
 
-  DLOG_INFO("run mode: %s (%d)", OrchestratorRunModeName(info->mode), info->mode);
-  DLOG_INFO("run mode: %s (%d)", OrchestratorRunModeName(orc->run.mode), orc->run.mode);
-
   OrchestratorPublish(orc, GRAPH_SUBMITTED_EVENT, NewGraphSubmittedEvent());
   RunInfoStart(&orc->run);
   uv_run(orc->loop, UV_RUN_DEFAULT);

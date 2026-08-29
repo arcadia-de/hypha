@@ -11,6 +11,7 @@ extern "C" {
 
 #include "hypha.h"
 #include "hypha/assertions.h"
+#include "hypha/controller_status.h"
 #include "hypha/reason.h"
 #include "hypha/run_mode.h"
 
@@ -20,19 +21,19 @@ typedef struct {
   struct timespec start;
   struct timespec finish;
   Reason reason;
-  bool success;
+  ControllerStatus status;
 } RunInfo;
 
 static inline void RunInfoStart(RunInfo* info) {
   ASSERT(info);
   clock_gettime(CLOCK_REALTIME, &info->start);
-  info->success = true;
+  info->status = kStatusOk;
 }
 
 static inline bool RunInfoFinish(RunInfo* info) {
   ASSERT(info);
   clock_gettime(CLOCK_REALTIME, &info->finish);
-  return info->success;
+  return info->status == kStatusOk;
 }
 
 static inline void FreeRunInfo(RunInfo* info) {

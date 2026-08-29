@@ -136,7 +136,7 @@ ResourceKind GetControllerKind(const Controller* ctrl);
 
 void ControllerInit(Controller*);
 void ControllerDeInit(Controller*);
-ControllerStatus ControllerObserve(Controller* ctrl, const Resource* current, Resource* desired);
+ControllerStatus ControllerObserve(Controller* ctrl, Resource* current, Resource* desired);
 ControllerAction ControllerPlan(Controller* ctrl, const Resource* current, Resource* desired, Plan* pl);
 ControllerStatus ControllerApply(Controller* ctrl, const Resource* desired, const ControllerAction action);
 bool ControllerValidate(Controller* ctrl, Resource* current, ValidationLog* vl);

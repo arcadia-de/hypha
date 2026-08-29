@@ -4,6 +4,8 @@
 #include <xxhash.h>
 
 #include "hypha.h"
+#include "hypha/annotation.h"
+#include "hypha/controller_status.h"
 #include "hypha/history.h"
 #include "hypha/label.h"
 #include "hypha/log.h"
@@ -32,7 +34,7 @@ static inline bool CheckPending(ResourceGraphIndex idx, Resource* res, void* dat
     ResourceIdCStr(&res->id, id_str);
     LOG_ERROR("resource %s unreachable: upstream dependency failed", id_str);
     res->state = kResourceFailed;
-    orc->run.success = false;
+    orc->run.status = kStatusInternalError;
   }
 
   return true;
@@ -50,12 +52,10 @@ static inline void MaybeFinishReconciliation(Orchestrator* orc) {
     LOG_ERROR("failed to flush state store");
 
   ControllerStatus status = kStatusInternalError;
-  if (orc->run.success) {
-    status = kStatusOk;
-    OrchestratorPublish(orc, RECONCILE_COMPLETE_EVENT, NewReconcileCompleteEvent(status));
-  } else {
-    status = kStatusInternalError;
+  if (orc->run.status != kStatusOk) {
     OrchestratorPublish(orc, RECONCILE_FAILED_EVENT, NewReconcileFailedEvent(status));
+  } else {
+    OrchestratorPublish(orc, RECONCILE_COMPLETE_EVENT, NewReconcileCompleteEvent(status));
   }
 
   OrchestratorPublish(orc, RECONCILE_FINISHED_EVENT, NewReconcileFinishedEvent(status));
@@ -72,8 +72,41 @@ static inline void ReconcileWork(uv_work_t* req) {
   ResourceSpecParseJson(&desired->spec);
   Resource* observed = &task->observed;
 
-  DLOG_INFO("running mode: %s", OrchestratorRunModeName(task->mode));
   BEGIN_RESOURCE_LOG_CTX(desired);
+
+  ResourceInfo* observed_info = &observed->info;
+  size_t num_labels = task->last.labels_len;
+  if (num_labels > 0) {
+    const size_t total_size = sizeof(Label) * num_labels;
+    Label* labels = (Label*)malloc(total_size);
+    memset(labels, 0, total_size);
+    memcpy(labels, task->last.labels, total_size);
+    observed_info->labels = labels;
+    observed_info->labels_len = num_labels;
+    observed_info->labels_cap = num_labels;
+  }
+  DLOG_INFO("decoded %zu/%zu labels", observed_info->labels_len, task->last.labels_len);
+
+  const size_t num_annotations = task->last.annotations_len;
+  if (num_annotations > 0) {
+    const size_t total_size = sizeof(Annotation) * num_annotations;
+    Annotation* annotations = (Annotation*)malloc(total_size);
+    memset(annotations, 0, total_size);
+    memcpy(annotations, task->last.annotations, total_size);
+    observed->info.annotations = annotations;
+    observed->info.annotations_len = observed->info.annotations_cap = num_annotations;
+  }
+  DLOG_INFO("decoded %zu annotations", observed->info.annotations_len);
+
+  const Label* defaults = GetDefaultLabels();
+  const size_t num_defaults = GetNumberOfDefaultLabels();
+  if (defaults != NULL && num_defaults > 0) {
+    ResourcePushLabels(observed, defaults, num_defaults);
+    ResourcePushLabels(desired, defaults, num_defaults);
+    DLOG_INFO("added %zu default labels", num_defaults);
+  }
+  DLOG_INFO("total %zu labels", observed_info->labels_len);
+
   const ControllerStatus status = ControllerObserve(ctrl, observed, desired);
   if (status != kStatusOk)
     goto finished;
@@ -106,7 +139,7 @@ finished:
 
 #undef CHECK_MODE
 
-static inline void WriteResourceState(Orchestrator* orc, const Resource* res, const ControllerStatus status) {
+static inline void WriteResourceState(Orchestrator* orc, const Resource* res) {
   ASSERT(res->spec.raw);
   ResourceIdStr id_str;
   ResourceIdCStr(&res->id, id_str);
@@ -117,7 +150,7 @@ static inline void WriteResourceState(Orchestrator* orc, const Resource* res, co
       .kind = strdup(kind),
       .name = res->info.name ? strdup(res->info.name) : NULL,
       .applied_at = orc->metrics.run_start,
-      .last_status = status,
+      .last_status = res->state,
       .orphaned = false,
       .hash = res->spec.hash,
       .observed_json = res->spec.raw,
@@ -127,6 +160,7 @@ static inline void WriteResourceState(Orchestrator* orc, const Resource* res, co
       .annotations_len = res->info.annotations_len,
   };
   LOG_ERROR_IF(!StateStorePut(orc->state, &entry), "failed to write state entry for %s", id_str);
+  DLOG_INFO("wrote %zu labels to state store", entry.labels_len);
   free(entry.id);
   free(entry.kind);
   free(entry.name);
@@ -160,7 +194,7 @@ static inline void WriteHistory(Orchestrator* orc, const Resource* res, const Re
   free(record.name);
 }
 
-static inline bool UpdateResourceState(const int status, const ReconcileTask* task, ResourceState* state) {
+static inline ControllerStatus UpdateResourceState(const int status, const ReconcileTask* task, ResourceState* state) {
   if (status != 0) {
     DLOG_ERROR("invalid status: %d", status);
     (*state) = kResourceFailed;
@@ -169,7 +203,7 @@ static inline bool UpdateResourceState(const int status, const ReconcileTask* ta
 
   (*state) = (task->status == kStatusOk) ? kResourceReady : kResourceFailed;
   DLOG_ERROR_IF(task->status != kStatusOk, "task status is not ok");
-  return (task->status == kStatusOk);
+  return task->status;
 }
 
 static inline void ReconcileAfterWork(uv_work_t* req, int status) {
@@ -187,9 +221,9 @@ static inline void ReconcileAfterWork(uv_work_t* req, int status) {
   if (!IsDeltaLogEmpty(&task->dlog))
     AppendDeltaLog(&orc->dlog, &task->dlog);
 
-  orc->run.success = UpdateResourceState(status, task, &res->state);
+  orc->run.status = UpdateResourceState(status, task, &res->state);
   if (IsApplyReconcileTask(task)) {
-    WriteResourceState(orc, res, task->status);
+    WriteResourceState(orc, res);
     if (task->action != kNoAction)
       WriteHistory(orc, res, task);
   }
@@ -216,7 +250,7 @@ static inline bool QueueReconcileTaskForResource(const ResourceGraphIndex idx, R
     ResourceIdCStr(&res->id, id_str);
     LOG_ERROR("no controller registered for kind '%s' (resource: %s)", res->kind, id_str);
     res->state = kResourceFailed;
-    orc->run.success = false;
+    orc->run.status = kStatusInternalError;
     return true;
   }
 
@@ -253,32 +287,17 @@ void QueueReconcileTask(Orchestrator* orc, Controller* ctrl, const ResourceGraph
   InitDeltaLog(&task->dlog, init_cap);
 
   memset(&task->observed, 0, sizeof(Resource));
-  StateEntry last;
-  memset(&last, 0, sizeof(StateEntry));
-  if (StateStoreGet(orc->state, id_str, &last)) {
+  memset(&task->last, 0, sizeof(StateEntry));
+  if (StateStoreGet(orc->state, id_str, &task->last)) {
     Resource* observed = &task->observed;
-    uuid_parse(last.id, observed->id);
-    observed->kind = FindResourceKind(last.kind);
-    observed->info.name = strdup(last.name);
-    observed->spec.raw = strdup(last.observed_json);
-    observed->spec.hash = last.hash;
-
-    size_t num_labels = last.labels_len;
-    {
-      const size_t total_size = sizeof(Label) * num_labels;
-      Label* labels = (Label*)malloc(total_size);
-      memset(labels, 0, total_size);
-      memcpy(labels, last.labels, total_size);
-      observed->info.labels = labels;
-      observed->info.labels_len = observed->info.labels_cap = num_labels;
-    }
-
-    // Annotation* annotations;
-    // size_t annotations_len;
-
-    // bool orphaned;
-    // int last_status;
-    // time_t applied_at;
+    uuid_parse(task->last.id, observed->id);
+    observed->kind = FindResourceKind(task->last.kind);
+    observed->info.name = strdup(task->last.name);
+    observed->spec.raw = strdup(task->last.observed_json);
+    observed->spec.hash = task->last.hash;
+    observed->state = (ResourceState)task->last.last_status;
+  } else {
+    DLOG_WARN("failed to decode value from state store");
   }
 
   uv_queue_work(orc->loop, &task->work, ReconcileWork, ReconcileAfterWork);

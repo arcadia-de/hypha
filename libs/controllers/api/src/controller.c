@@ -133,7 +133,7 @@ Controller* GetControllerAt(const uint64_t i) {
   return &controllers[i];
 }
 
-ControllerStatus ControllerObserve(Controller* ctrl, const Resource* observed, Resource* desired) {
+ControllerStatus ControllerObserve(Controller* ctrl, Resource* observed, Resource* desired) {
   ASSERT(ctrl);
   ASSERT(observed);
   ASSERT(desired);
@@ -220,11 +220,6 @@ bool ControllerValidate(Controller* ctrl, Resource* desired, ValidationLog* vl) 
   if (!ctrl->config.validate)
     goto no_op;
   ASSERT(ctrl->config.validate);
-
-  const Label* defaults = GetDefaultLabels();
-  const size_t num_defaults = GetNumberOfDefaultLabels();
-  if (defaults != NULL && num_defaults > 0)
-    ResourcePushLabels(desired, defaults, num_defaults);
 
   ValidateContext ctx = {
       .log = vl,

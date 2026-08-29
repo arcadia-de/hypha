@@ -60,6 +60,13 @@ func HandleListResourcesByKindCommand(kind string, args []string) error {
 		return fmt.Errorf("failed to process discovered manifests: %v", err)
 	}
 
+	info := hypha.RunInfo{
+		Mode: hypha.RunObserve,
+	}
+	if err := orc.Run(info); err != nil {
+		return fmt.Errorf("failed to run orchestrator: %v", err)
+	}
+
 	rg := orc.GetResourceGraph()
 	if !rg.IsEmpty() {
 		filter := CreateListFilter(kind)
@@ -96,6 +103,13 @@ func HandleDefaultListResources(args []string) error {
 
 	if err := orc.ProcessDiscoveredManifests(); err != nil {
 		return fmt.Errorf("failed to process discovered manifests: %v", err)
+	}
+
+	info := hypha.RunInfo{
+		Mode: hypha.RunObserve,
+	}
+	if err := orc.Run(info); err != nil {
+		return fmt.Errorf("failed to run orchestrator: %v", err)
 	}
 
 	rg := orc.GetResourceGraph()

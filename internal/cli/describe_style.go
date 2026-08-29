@@ -104,6 +104,7 @@ func (style *DescribeStyle) Print(resource hypha.Resource) {
 	style.PrintField("Kind", resource.Kind)
 	style.PrintField("ID", resource.ID)
 	style.PrintField("Namespace", resource.Metadata.Namespace)
+	style.PrintField("State", resource.State)
 
 	if resource.HasLabels() {
 		style.PrintLabels(resource.Metadata.Labels)

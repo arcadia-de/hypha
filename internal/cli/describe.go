@@ -32,7 +32,7 @@ func HandleDescribeKind(kind string, args []string) error {
 	}
 
 	info := hypha.RunInfo{
-		Mode: hypha.RunValidateMode,
+		Mode: hypha.RunObserve,
 	}
 	if err := orc.Run(info); err != nil {
 		return fmt.Errorf("failed to run orchestrator: %v", err)

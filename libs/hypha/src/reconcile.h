@@ -13,9 +13,9 @@ typedef struct {
   uv_work_t work;
 
   Orchestrator* orc;
+  Controller* ctrl;
   OrchestratorRunMode mode;
   ResourceGraphIndex index;
-  Controller* ctrl;
   Resource observed;
   ControllerAction action;
   ControllerStatus status;
@@ -24,6 +24,7 @@ typedef struct {
   Plan plan;
   ValidationLog vlog;
   DeltaLog dlog;
+  StateEntry last;
 } ReconcileTask;
 
 #define DEFINE_RUN_MODE_CHECK(Name)                                \
