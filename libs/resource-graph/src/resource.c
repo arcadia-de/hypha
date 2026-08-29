@@ -8,6 +8,31 @@
 #include "hypha/label.h"
 #include "hypha/log.h"
 
+void FreeResourceSpecJson(ResourceSpecDocument* rhs) {
+  if (!rhs)
+    return;
+  if (rhs->doc)
+    json_decref(rhs->doc);
+  rhs->doc = NULL;
+}
+
+bool ResourceSpecParseJson(ResourceSpecDocument* doc) {
+  if (!doc) {
+    DLOG_ERROR("doc is null", doc);
+    return false;
+  }
+
+  json_error_t err;
+  json_t* json_doc = json_loads(doc->raw, 0, &err);
+  if (!json_doc) {
+    DLOG_ERROR("invalid spec doc:\n%s", doc->raw);
+    DLOG_ERROR("error on line %d: %s", err.line, err.text);
+    return false;
+  }
+  doc->doc = json_doc;
+  return true;
+}
+
 bool ResourceHasId(const Resource* res, const char* id) {
   if (!res || !id)
     return false;

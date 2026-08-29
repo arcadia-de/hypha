@@ -190,6 +190,11 @@ bool ControllerValidate(Controller* ctrl, Resource* desired, ValidationLog* vl) 
   if (!desired || !ctrl || !ctrl->config.validate)
     goto finished;
 
+  const Label* defaults = GetDefaultLabels();
+  const size_t num_defaults = GetNumberOfDefaultLabels();
+  if (defaults != NULL && num_defaults > 0)
+    ResourcePushLabels(desired, defaults, num_defaults);
+
   valid = ctrl->config.validate(desired, vl, ctrl->data);
 finished:
   END_CONTROLLER_FUNC;

@@ -11,7 +11,6 @@
 #include "hypha/packages_bindings.h"
 #include "hypha/runtime_bindings.h"
 #include "hypha/sources_bindings.h"
-#include "orc.h"
 
 static inline void InitRegData(lua_State* L, Orchestrator* orc) {
   lua_pushlightuserdata(L, orc);

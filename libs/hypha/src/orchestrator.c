@@ -22,7 +22,6 @@
 #include "hypha/run_info.h"
 #include "hypha/state.h"
 #include "hypha/validation_log.h"
-#include "orc.h"
 #include "reconcile.h"
 
 #define __DEFINE_GETTER(Type, Name, Value)        \

@@ -5,8 +5,9 @@
 #include "bootstrap.h"
 #include "hypha.h"
 #include "hypha/action_log.h"
+#include "hypha/history.h"
+#include "hypha/log.h"
 #include "hypha/orchestrator.h"
-#include "orc.h"
 
 #ifdef HYPHA_ENABLE_PROFILING
 

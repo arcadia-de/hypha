@@ -4,6 +4,7 @@
 #include <xxhash.h>
 
 #include "hypha.h"
+#include "hypha/history.h"
 #include "hypha/label.h"
 #include "hypha/log.h"
 #include "hypha/orchestrator.h"
@@ -13,7 +14,6 @@
 #include "hypha/resource_kind.h"
 #include "hypha/state.h"
 #include "hypha/validation_log.h"
-#include "orc.h"
 
 static inline bool CheckPending(ResourceGraphIndex idx, Resource* res, void* data) {
   Orchestrator* orc = (Orchestrator*)data;
@@ -51,79 +51,45 @@ static inline void MaybeFinishReconciliation(Orchestrator* orc) {
   OrchestratorPublish(orc, RECONCILE_FINISHED_EVENT, NewReconcileFinishedEvent(status));
 }
 
+#define BEGIN_RESOURCE_LOG_CTX(Resource)                               \
+  ({                                                                   \
+    ResourceIdStr id;                                                  \
+    ResourceIdCStr(&(Resource)->id, id);                               \
+    SetLogResourceContext(id, FindResourceKindName((Resource)->kind)); \
+  })
+
+#define END_RESOURCE_LOG_CTX ClearLogResourceContext();
+
 static inline void ReconcileWork(uv_work_t* req) {
   ReconcileTask* task = container_of(req, ReconcileTask, work);
   Controller* ctrl = task->ctrl;
   Resource* desired = GetResourceInGraph(task->orc->graph, task->index);
-
-  {
-    const Label* defaults = GetDefaultLabels();
-    const size_t num_defaults = GetNumberOfDefaultLabels();
-    if (defaults != NULL && num_defaults > 0)
-      ResourcePushLabels(desired, defaults, num_defaults);
-  }
+  ResourceSpecParseJson(&desired->spec);
 
   Resource* observed = &task->observed;
   memset(observed, 0, sizeof(Resource));
+  ResourceSpecParseJson(&observed->spec);
 
-  if (desired->spec.raw) {
-    {
-      json_error_t err;
-      json_t* doc = json_loads(desired->spec.raw, 0, &err);
-      if (!doc) {
-        LOG_ERROR("invalid spec doc:\n%s", desired->spec.raw);
-        LOG_ERROR("error on line %d: %s", err.line, err.text);
-        return;
-      }
-      desired->spec.doc = doc;
-    }
+  BEGIN_RESOURCE_LOG_CTX(desired);
+  const ControllerStatus status = ControllerObserve(ctrl, observed, desired);
+  if (status != kStatusOk)
+    goto finished;
 
-    observed->spec.raw = strdup(desired->spec.raw);
-    {
-      json_error_t err;
-      json_t* doc = json_loads(observed->spec.raw, 0, &err);
-      if (!doc) {
-        LOG_ERROR("invalid spec doc:\n%s", observed->spec.raw);
-        LOG_ERROR("error on line %d: %s", err.line, err.text);
-        return;
-      }
-      observed->spec.doc = doc;
-    }
-  }
-  ASSERT(desired->spec.doc);
+  if (!ControllerValidate(ctrl, desired, &task->vlog))
+    goto finished;
+  if (IsValidateReconcileTask(task))
+    goto finished;
 
-  ResourceIdStr desired_id_str;
-  ResourceIdCStr(&desired->id, desired_id_str);
-  SetLogResourceContext(desired_id_str, FindResourceKindName(desired->kind));
-  {
-    {
-      const ControllerStatus status = ControllerObserve(ctrl, observed, desired);
-      if (status != kStatusOk)
-        goto finished;
-    }
+  task->action = ControllerPlan(ctrl, observed, desired, &task->plan);
+  if (IsPlanReconcileTask(task) || task->action == kNoAction)
+    goto finished;
 
-    if (!ControllerValidate(ctrl, desired, &task->vlog))
-      goto finished;
-    if (IsValidateReconcileTask(task))
-      goto finished;
-
-    task->action = ControllerPlan(ctrl, observed, desired, &task->plan);
-    if (IsPlanReconcileTask(task) || task->action == kNoAction)
-      goto finished;
-
-    if (IsApplyReconcileTask(task))
-      task->status = ControllerApply(ctrl, desired, task->action);
-  }
+  if (IsApplyReconcileTask(task))
+    task->status = ControllerApply(ctrl, desired, task->action);
 finished:
-  ClearLogResourceContext();
-
-  if (desired->spec.doc)
-    json_decref(desired->spec.doc);
-  desired->spec.doc = NULL;
-
-  if (observed->spec.doc)
-    json_decref(observed->spec.doc);
-  observed->spec.doc = NULL;
+  END_RESOURCE_LOG_CTX;
+  FreeResourceSpecJson(&desired->spec);
+  FreeResourceSpecJson(&observed->spec);
 }
 
 static inline void WriteResourceState(Orchestrator* orc, const Resource* res, const ControllerStatus status) {

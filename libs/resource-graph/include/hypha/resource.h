@@ -42,6 +42,8 @@ typedef struct {
   uint64_t hash;
 } ResourceSpecDocument;
 
+bool ResourceSpecParseJson(ResourceSpecDocument* rhs);
+void FreeResourceSpecJson(ResourceSpecDocument* rhs);
 uint64_t ResourceSpecDocumentGetHash(ResourceSpecDocument* rhs);
 
 typedef struct {
