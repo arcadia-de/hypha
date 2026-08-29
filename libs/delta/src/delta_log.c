@@ -47,21 +47,14 @@ Delta* NewDelta(DeltaLog* dlog) {
   return delta;
 }
 
-void AppendDelta(DeltaLog* dst, Delta* src) {
+void AppendDeltas(DeltaLog* dst, Delta* deltas, const size_t num_deltas) {
   ASSERT(dst);
-  ASSERT(src);
-  EnsureCap(dst, dst->deltas_len + 1);
-  Delta* delta = &dst->deltas[dst->deltas_len];
-  dst->deltas_len++;
-  memcpy(delta, src, sizeof(Delta));
-}
-
-void AppendDeltaLog(DeltaLog* dst, DeltaLog* src) {
-  ASSERT(dst);
-  ASSERT(src);
-  EnsureCap(dst, dst->deltas_len + src->deltas_len);
-  memcpy(&dst->deltas[dst->deltas_len], &src->deltas[0], sizeof(Delta) * src->deltas_len);
-  dst->deltas_len += src->deltas_len;
+  ASSERT(deltas);
+  ASSERT(num_deltas > 0);
+  EnsureCap(dst, dst->deltas_len + num_deltas);
+  const size_t total_size = sizeof(Delta) * num_deltas;
+  memcpy(&dst->deltas[dst->deltas_len], &deltas[0], total_size);
+  dst->deltas_len += num_deltas;
 }
 
 void VisitAllDeltas(DeltaLog* dlog, VisitDeltaFn fn, void* data) {
