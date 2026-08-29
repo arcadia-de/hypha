@@ -18,28 +18,69 @@ extern "C" {
 
 // init controller
 typedef void (*ControllerInitFn)(void* data);
+
 // de-init controller
 typedef void (*ControllerDeInitFn)(void* data);
-// discover changes
-typedef ControllerStatus (*ControllerObserveFn)(const Resource* current, Resource* desired, void*);
-// normalize the changes with standardized metadata
-typedef ControllerStatus (*ControllerNormalizeFn)(const Resource*, void*);
-// reject malformed specs before planning
-typedef bool (*ControllerValidateFn)(Resource*, ValidationLog* log, void*);
-// compute the change set
-typedef ControllerAction (*ControllerPlanFn)(const Resource* current, Resource* desired, Plan*, void*);
-// execute the changes
-typedef ControllerStatus (*ControllerApplyFn)(const Resource*, const ControllerAction, void*);
-// remove the resources cleanly
-typedef ControllerStatus (*ControllerDestroyFn)(const Resource*, void*);
-// report the changes between current and planned
-typedef ControllerStatus (*ControllerDiffFn)(const Resource*, void*);
-// report current state and drift
-typedef ControllerStatus (*ControllerStatusFn)(const Resource*, void*);
-// rollback changes
-typedef ControllerStatus (*ControllerRollbackFn)(const Resource*, void*);
+
+#define DECLARE_CONTROLLER_FN(Name, RetType) typedef RetType (*Controller##Name##Fn)(Name##Context*, void*);
+
+typedef struct {
+  const Resource* observed;
+  Resource* desired;
+} ObserveContext;
+DECLARE_CONTROLLER_FN(Observe, ControllerStatus);
+
+typedef struct {
+  Resource* desired;
+} NormalizeContext;
+DECLARE_CONTROLLER_FN(Normalize, ControllerStatus);
+
+typedef struct {
+  const Resource* desired;
+  ValidationLog* log;
+} ValidateContext;
+DECLARE_CONTROLLER_FN(Validate, bool);
+
+typedef struct {
+  const Resource* current;
+  const Resource* desired;
+  Plan* log;
+} PlanContext;
+DECLARE_CONTROLLER_FN(Plan, ControllerAction);
+
+typedef struct {
+  const Resource* current;
+  const Resource* desired;
+} StatusContext;
+DECLARE_CONTROLLER_FN(Status, ControllerStatus);
+
+typedef struct {
+  const Resource* current;
+} DestroyContext;
+DECLARE_CONTROLLER_FN(Destroy, ControllerStatus);
+
+typedef struct {
+  const Resource* current;
+  const Resource* desired;
+} DiffContext;
+DECLARE_CONTROLLER_FN(Diff, ControllerStatus);
+
+typedef struct {
+  const Resource* current;
+  const Resource* desired;
+} RollbackContext;
+DECLARE_CONTROLLER_FN(Rollback, ControllerStatus);
+
+typedef struct {
+  const Resource* current;
+  const Resource* desired;
+} ApplyContext;
+DECLARE_CONTROLLER_FN(Apply, ControllerStatus);
 
 // clang-format off
+#define _DEFINE_CONTROLLER_FN(Name, State, RetType) \
+  static inline RetType Name##State(State##Context* ctx, void* data)
+
 #define DEFINE_CONTROLLER_INIT_FN(Name) \
   static inline void Name##Init(void* data)
 
@@ -47,22 +88,22 @@ typedef ControllerStatus (*ControllerRollbackFn)(const Resource*, void*);
   static inline void Name##DeInit(void* data)
 
 #define DEFINE_CONTROLLER_OBSERVE_FN(Name) \
-  static inline ControllerStatus Name##Observe(const Resource* desired, Resource* out, void* data)
+  _DEFINE_CONTROLLER_FN(Name, Observe, ControllerStatus)
 
 #define DEFINE_CONTROLLER_PLAN_FN(Name) \
-  static inline ControllerAction Name##Plan(const Resource* current, Resource* desired, Plan* pl, void* data)
+  _DEFINE_CONTROLLER_FN(Name, Plan, ControllerAction)
 
 #define DEFINE_CONTROLLER_APPLY_FN(Name) \
-  static inline ControllerStatus Name##Apply(const Resource* desired, const ControllerAction action, void* data)
+  _DEFINE_CONTROLLER_FN(Name, Apply, ControllerStatus)
 
 #define DEFINE_CONTROLLER_DESTROY_FN(Name) \
-  static inline ControllerStatus Name##Destroy(const Resource* current, void* data)
+  _DEFINE_CONTROLLER_FN(Name, Destroy, ControllerStatus)
 
 #define DEFINE_CONTROLLER_STATUS_FN(Name) \
-  static inline ControllerStatus Name##Status(const Resource* current, void* data)
+  _DEFINE_CONTROLLER_FN(Name, Status, ControllerStatus)
 
 #define DEFINE_CONTROLLER_VALIDATE_FN(Name) \
-  static inline bool Name##Validate(Resource* desired, ValidationLog* vlog, void* data)
+  _DEFINE_CONTROLLER_FN(Name, Validate, bool)
 // clang-format on
 
 typedef struct {
@@ -103,7 +144,7 @@ ControllerStatus ControllerRollback(Controller* ctrl, const Resource* current);
 ControllerStatus ControllerDestroy(Controller* ctrl, const Resource* current);
 ControllerStatus ControllerDiff(Controller* ctrl, const Resource* current);
 ControllerStatus ControllerStat(Controller* ctrl, const Resource* current);
-ControllerStatus ControllerNormalize(Controller* ctrl, const Resource* current);
+ControllerStatus ControllerNormalize(Controller* ctrl, Resource* desired);
 
 #define DECLARE_CONTROLLER(Name)                           \
   static const char k##Name##ControllerKindName[] = #Name; \

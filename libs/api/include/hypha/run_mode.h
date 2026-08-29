@@ -6,9 +6,10 @@ extern "C" {
 #endif  // __cplusplus
 
 #define FOR_EACH_ORCHESTRATOR_RUN_MODE(V) \
+  V(Observe)                              \
+  V(Validate)                             \
   V(Plan)                                 \
   V(Diff)                                 \
-  V(Validate)                             \
   V(Apply)                                \
   V(Destroy)
 

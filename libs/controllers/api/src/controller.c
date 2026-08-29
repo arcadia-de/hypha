@@ -133,25 +133,43 @@ Controller* GetControllerAt(const uint64_t i) {
 }
 
 ControllerStatus ControllerObserve(Controller* ctrl, const Resource* observed, Resource* desired) {
+  ASSERT(ctrl);
+  ASSERT(observed);
+  ASSERT(desired);
   BEGIN_CONTROLLER_FUNC(Observe);
   ControllerStatus status = kStatusInternalError;
-  if (!desired || !desired || !ctrl || !ctrl->config.observe)
-    goto finished;
+  if (!ctrl->config.observe)
+    goto no_op;
 
-  status = ctrl->config.observe(observed, desired, ctrl->data);
+  ObserveContext ctx = {
+      .observed = observed,
+      .desired = desired,
+  };
+  status = ctrl->config.observe(&ctx, ctrl->data);
+  goto finished;
+no_op:
+  status = kStatusNoOp;
 finished:
   END_CONTROLLER_FUNC;
   return status;
 }
 
 ControllerAction ControllerPlan(Controller* ctrl, const Resource* current, Resource* desired, Plan* pl) {
+  ASSERT(ctrl);
+  ASSERT(current);
+  ASSERT(desired);
   BEGIN_CONTROLLER_FUNC(Plan);
   ControllerAction result = kNoAction;
 
   if (!current || !desired || !ctrl || !ctrl->config.plan)
     goto finished;
 
-  result = ctrl->config.plan(current, desired, pl, ctrl->data);
+  PlanContext ctx = {
+      .current = current,
+      .desired = desired,
+      .log = pl,
+  };
+  result = ctrl->config.plan(&ctx, ctrl->data);
 finished:
   END_CONTROLLER_FUNC;
   return result;
@@ -164,38 +182,57 @@ ControllerStatus ControllerApply(Controller* ctrl, const Resource* desired, cons
   if (!desired || !ctrl || !ctrl->config.apply || action == kNoAction)
     goto finished;
 
-  status = ctrl->config.apply(desired, action, ctrl->data);
+  ApplyContext ctx = {
+      .desired = desired,
+      .current = NULL,
+  };
+  status = ctrl->config.apply(&ctx, ctrl->data);
 finished:
   END_CONTROLLER_FUNC;
   return status;
 }
 
 ControllerStatus ControllerDestroy(Controller* ctrl, const Resource* current) {
+  ASSERT(ctrl);
+  ASSERT(current);
   BEGIN_CONTROLLER_FUNC(Destroy);
   ControllerStatus status = kStatusOk;
 
   if (!current || !ctrl || !ctrl->config.destroy)
     goto finished;
 
-  status = ctrl->config.destroy(current, ctrl->data);
+  DestroyContext ctx = {
+      .current = current,
+  };
+  status = ctrl->config.destroy(&ctx, ctrl->data);
 finished:
   END_CONTROLLER_FUNC;
   return status;
 }
 
 bool ControllerValidate(Controller* ctrl, Resource* desired, ValidationLog* vl) {
+  ASSERT(ctrl);
+  ASSERT(desired);
   BEGIN_CONTROLLER_FUNC(Validate);
   bool valid = false;
 
-  if (!desired || !ctrl || !ctrl->config.validate)
-    goto finished;
+  if (!ctrl->config.validate)
+    goto no_op;
+  ASSERT(ctrl->config.validate);
 
   const Label* defaults = GetDefaultLabels();
   const size_t num_defaults = GetNumberOfDefaultLabels();
   if (defaults != NULL && num_defaults > 0)
     ResourcePushLabels(desired, defaults, num_defaults);
 
-  valid = ctrl->config.validate(desired, vl, ctrl->data);
+  ValidateContext ctx = {
+      .log = vl,
+      .desired = desired,
+  };
+  valid = ctrl->config.validate(&ctx, ctrl->data);
+  goto finished;
+no_op:
+  valid = true;
 finished:
   END_CONTROLLER_FUNC;
   return valid;
@@ -208,7 +245,11 @@ ControllerStatus ControllerDiff(Controller* ctrl, const Resource* current) {
   if (!current || !ctrl || !ctrl->config.diff)
     goto finished;
 
-  status = ctrl->config.diff(current, ctrl->data);
+  DiffContext ctx = {
+      .current = current,
+      .desired = NULL,
+  };
+  status = ctrl->config.diff(&ctx, ctrl->data);
 finished:
   END_CONTROLLER_FUNC;
   return status;
@@ -221,7 +262,11 @@ ControllerStatus ControllerStat(Controller* ctrl, const Resource* current) {
   if (!current || !ctrl || !ctrl->config.status)
     goto finished;
 
-  status = ctrl->config.status(current, ctrl->data);
+  StatusContext ctx = {
+      .current = current,
+      .desired = NULL,
+  };
+  status = ctrl->config.status(&ctx, ctrl->data);
 finished:
   END_CONTROLLER_FUNC;
   return status;
@@ -234,20 +279,31 @@ ControllerStatus ControllerRollback(Controller* ctrl, const Resource* current) {
   if (!current || !ctrl || !ctrl->config.rollback)
     goto finished;
 
-  status = ctrl->config.rollback(current, ctrl->data);
+  RollbackContext ctx = {
+      .current = current,
+      .desired = NULL,
+  };
+  status = ctrl->config.rollback(&ctx, ctrl->data);
 finished:
   END_CONTROLLER_FUNC;
   return status;
 }
 
-ControllerStatus ControllerNormalize(Controller* ctrl, const Resource* current) {
+ControllerStatus ControllerNormalize(Controller* ctrl, Resource* desired) {
+  ASSERT(ctrl);
+  ASSERT(desired);
   BEGIN_CONTROLLER_FUNC(Normalize);
   ControllerStatus status = kStatusOk;
+  if (!ctrl->config.normalize)
+    goto no_op;
 
-  if (!current || !ctrl || !ctrl->config.normalize)
-    goto finished;
-
-  status = ctrl->config.normalize(current, ctrl->data);
+  NormalizeContext ctx = {
+      .desired = desired,
+  };
+  status = ctrl->config.normalize(&ctx, ctrl->data);
+  goto finished;
+no_op:
+  status = kStatusNoOp;
 finished:
   END_CONTROLLER_FUNC;
   return status;

@@ -25,6 +25,12 @@ void FreeDeltaLog(DeltaLog* dlog);
 typedef bool (*VisitDeltaFn)(uint64_t, const Delta*, void*);
 void VisitAllDeltas(DeltaLog* dlog, VisitDeltaFn fn, void* data);
 
+static inline bool IsDeltaLogEmpty(DeltaLog* rhs) {
+  if (rhs == NULL)
+    return true;
+  return rhs->deltas == NULL || rhs->deltas_len == 0;
+}
+
 static inline void AppendDelta(DeltaLog* dst, Delta* delta) {
   ASSERT(dst);
   ASSERT(delta);

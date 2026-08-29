@@ -38,6 +38,7 @@ thread_local SymlinkSpec spec;
 static const char kSourceField[] = "source";
 static const char kTargetField[] = "target";
 DEFINE_CONTROLLER_OBSERVE_FN(Symlink) {
+  Resource* desired = ctx->desired;
   ASSERT(desired);
 
   if (!GetSpecField(desired, kSourceField, &spec.source, &spec.source_len)) {
@@ -54,26 +55,35 @@ DEFINE_CONTROLLER_OBSERVE_FN(Symlink) {
 }
 
 DEFINE_CONTROLLER_VALIDATE_FN(Symlink) {
+  ValidationLog* log = ctx->log;
+  ASSERT(log);
+  Resource* desired = (Resource*)ctx->desired;  // TODO(@s0cks): const cast
+  ASSERT(desired);
+
   if (!spec.source || spec.source_len == 0) {
-    NewFailedValidationResult(vlog, desired, "Failed to get `source` spec field");
+    NewFailedValidationResult(log, desired, "Failed to get `source` spec field");
     return false;
   }
 
   if (!spec.target || spec.target_len == 0) {
-    NewFailedValidationResult(vlog, desired, "Failed to get `target` spec field");
+    NewFailedValidationResult(log, desired, "Failed to get `target` spec field");
     return false;
   }
 
-  NewPassedValidationResult(vlog, desired, "Spec is valid");
+  NewPassedValidationResult(log, desired, "Spec is valid");
   return true;
 }
 
 DEFINE_CONTROLLER_PLAN_FN(Symlink) {
+  Plan* log = ctx->log;
+  ASSERT(log);
+  Resource* desired = (Resource*)ctx->desired;  // TODO(@s0cks): const cast
+  ASSERT(desired);
   ASSERT(desired);
 
   struct stat source_stat;
   if (stat(spec.source, &source_stat) != 0) {
-    PlannedAction* action = NewNoPlannedAction(pl, desired, "Source `%s` does not exist", spec.source);
+    PlannedAction* action = NewNoPlannedAction(log, desired, "Source `%s` does not exist", spec.source);
     ASSERT(action);
     return kNoAction;
   }
@@ -82,19 +92,19 @@ DEFINE_CONTROLLER_PLAN_FN(Symlink) {
   if (lstat(spec.target, &target_stat) == 0) {
     if (S_ISLNK(target_stat.st_mode)) {
       PlannedAction* action =
-          NewNoPlannedAction(pl, desired, "Target `%s` already exists and is a valid symlink", spec.target);
+          NewNoPlannedAction(log, desired, "Target `%s` already exists and is a valid symlink", spec.target);
       // TODO(@s0cks): check symlink dest
       ASSERT(action);
       return kNoAction;
     }
 
     PlannedAction* action =
-        NewNoPlannedAction(pl, desired, "Target `%s` already exists but is not a symlink", spec.target);
+        NewNoPlannedAction(log, desired, "Target `%s` already exists but is not a symlink", spec.target);
     ASSERT(action);
     return kNoAction;
   }
 
-  PlannedAction* action = NewCreatePlannedAction(pl, desired, "Target `%s` doesn't exist", spec.target);
+  PlannedAction* action = NewCreatePlannedAction(log, desired, "Target `%s` doesn't exist", spec.target);
   ASSERT(action);
   return kCreateAction;
 }
@@ -109,6 +119,9 @@ DEFINE_CONTROLLER_APPLY_FN(Symlink) {
 }
 
 DEFINE_CONTROLLER_STATUS_FN(Symlink) {
+  const Resource* current = ctx->current;
+  ASSERT(current);
+
   ASSERT(current);
   struct stat source_stat;
   if (stat(spec.source, &source_stat) != 0) {

@@ -17,10 +17,7 @@ void FreeResourceSpecJson(ResourceSpecDocument* rhs) {
 }
 
 bool ResourceSpecParseJson(ResourceSpecDocument* doc) {
-  if (!doc) {
-    DLOG_ERROR("doc is null", doc);
-    return false;
-  }
+  DLOG_FATAL_IF(doc == NULL || doc->raw == NULL, "doc is null");
 
   json_error_t err;
   json_t* json_doc = json_loads(doc->raw, 0, &err);
@@ -29,6 +26,7 @@ bool ResourceSpecParseJson(ResourceSpecDocument* doc) {
     DLOG_ERROR("error on line %d: %s", err.line, err.text);
     return false;
   }
+
   doc->doc = json_doc;
   return true;
 }

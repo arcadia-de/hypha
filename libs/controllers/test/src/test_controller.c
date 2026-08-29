@@ -38,15 +38,29 @@ DEFINE_CONTROLLER_OBSERVE_FN(Test) {
 }
 
 DEFINE_CONTROLLER_VALIDATE_FN(Test) {
-  ValidationResult* vr = NewWarningValidationResult(vlog, desired, "This message always exists for Test resources");
+  ASSERT(ctx);
+  ValidationLog* log = ctx->log;
+  ASSERT(log);
+  const Resource* desired = ctx->desired;
+  ASSERT(desired);
+
+  // TODO(@s0cks): const cast
+  ValidationResult* vr =
+      NewWarningValidationResult(log, (Resource*)desired, "This message always exists for Test resources");
   ASSERT(vr);
   return true;
 }
 
 DEFINE_CONTROLLER_PLAN_FN(Test) {
+  ASSERT(ctx);
+  Plan* pl = ctx->log;
+  ASSERT(pl);
+  const Resource* desired = ctx->desired;
   ASSERT(desired);
+
   GetSleepField(desired, &test_spec.sleep);
-  PlannedAction* action = NewCreatePlannedAction(pl, desired, "Test resources are always created");
+  // TODO(@s0cks): const cast
+  PlannedAction* action = NewCreatePlannedAction(pl, (Resource*)desired, "Test resources are always created");
   ASSERT(action);
   return kCreateAction;
 }

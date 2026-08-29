@@ -22,11 +22,17 @@ DEFINE_CONTROLLER_OBSERVE_FN(Template) {
 }
 
 DEFINE_CONTROLLER_VALIDATE_FN(Template) {
+  ASSERT(ctx);
+  ValidationLog* log = ctx->log;
+  ASSERT(log);
+  Resource* desired = (Resource*)ctx->desired;  // TODO(@s0cks): const cast
+  ASSERT(desired);
+
   char* target = NULL;
   size_t target_len = 0;
   if (!GetSpecField(desired, "target", &target, &target_len)) {
     ValidationResult* result =
-        NewFailedValidationResult(vlog, desired, "failed to get `%s` field from template spec", "target");
+        NewFailedValidationResult(log, desired, "failed to get `%s` field from template spec", "target");
     ASSERT(result);
     return false;
   }
@@ -37,7 +43,7 @@ DEFINE_CONTROLLER_VALIDATE_FN(Template) {
   json_t* dataField = json_object_get(doc, "data");
   if (dataField && !json_is_object(dataField)) {
     ValidationResult* result = NewFailedValidationResult(
-        vlog, desired, "expected template spec field `%s` to be an object, got %s", "data", json_typeof(dataField));
+        log, desired, "expected template spec field `%s` to be an object, got %s", "data", json_typeof(dataField));
     ASSERT(result);
     return false;
   }
@@ -48,7 +54,7 @@ DEFINE_CONTROLLER_VALIDATE_FN(Template) {
   templateField = json_object_get(doc, "template");
   if (templateField && !json_is_string(templateField)) {
     ValidationResult* result =
-        NewFailedValidationResult(vlog, desired, "expected template spec field `%s` to be a string", "template");
+        NewFailedValidationResult(log, desired, "expected template spec field `%s` to be a string", "template");
     ASSERT(result);
     return false;
   }
@@ -58,7 +64,7 @@ DEFINE_CONTROLLER_VALIDATE_FN(Template) {
   templateFileField = json_object_get(doc, "templateFile");
   if (templateFileField && !json_is_string(templateFileField)) {
     ValidationResult* result =
-        NewFailedValidationResult(vlog, desired, "expected template spec field `%s` to be a string", "templateFile");
+        NewFailedValidationResult(log, desired, "expected template spec field `%s` to be a string", "templateFile");
     ASSERT(result);
     return false;
   }
@@ -80,12 +86,12 @@ DEFINE_CONTROLLER_VALIDATE_FN(Template) {
 
   {
     ValidationResult* result =
-        NewFailedValidationResult(vlog, desired, "template spec requires a template or templateFile field");
+        NewFailedValidationResult(log, desired, "template spec requires a template or templateFile field");
     ASSERT(result);
     return false;
   }
 finished:
-  ValidationResult* result = NewPassedValidationResult(vlog, desired, "spec is valid");
+  ValidationResult* result = NewPassedValidationResult(log, desired, "spec is valid");
   ASSERT(result);
   return true;
 }
@@ -110,6 +116,12 @@ static inline uint32_t crc32_file(const char* filename) {
 }
 
 DEFINE_CONTROLLER_PLAN_FN(Template) {
+  ASSERT(ctx);
+  Plan* log = ctx->log;
+  ASSERT(log);
+  Resource* desired = (Resource*)ctx->desired;  // TODO(@s0cks): const cast
+  ASSERT(desired);
+
   char* target = NULL;
   size_t target_len = 0;
   LOG_FATAL_IF(!GetSpecField(desired, "target", &target, &target_len),
@@ -139,12 +151,12 @@ DEFINE_CONTROLLER_PLAN_FN(Template) {
     if (rendered) {
       uint32_t rendered_digest = crc32((const uint8_t*)rendered, strlen(rendered));
       if (rendered_digest == target_digest) {
-        PlannedAction* action = NewNoPlannedAction(pl, desired, "template target file exists and has expected digest");
+        PlannedAction* action = NewNoPlannedAction(log, desired, "template target file exists and has expected digest");
         ASSERT(action);
         return kNoAction;
       }
 
-      PlannedAction* action = NewCreatePlannedAction(pl, desired, "template spec is valid");
+      PlannedAction* action = NewCreatePlannedAction(log, desired, "template spec is valid");
       ASSERT(action);
       return kCreateAction;
     }
@@ -161,6 +173,10 @@ finished:
 }
 
 DEFINE_CONTROLLER_APPLY_FN(Template) {
+  ASSERT(ctx);
+  Resource* desired = (Resource*)ctx->desired;  // TODO(@s0cks): const cast
+  ASSERT(desired);
+
   json_t* doc = desired->spec.doc;
 
   char* target = NULL;

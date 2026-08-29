@@ -31,6 +31,13 @@ func HandleDescribeKind(kind string, args []string) error {
 		return fmt.Errorf("failed to process discovered manifests: %v", err)
 	}
 
+	info := hypha.RunInfo{
+		Mode: hypha.RunValidateMode,
+	}
+	if err := orc.Run(info); err != nil {
+		return fmt.Errorf("failed to run orchestrator: %v", err)
+	}
+
 	filter := CreateDescribeFilter(kind, args)
 	defer filter.Close()
 

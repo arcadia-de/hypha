@@ -240,12 +240,15 @@ func (rg *ResourceGraph) AddResource(
 	newRes.id = resolveOrGenerateResourceId(store, cKind, resolvedName)
 	newRes.kind = cKind
 
+	var cRawSpec *C.char
 	if rawSpec != "" {
-		cRawSpec := C.CString(rawSpec)
-		newRes.spec.raw = cRawSpec
-		newRes.spec.doc = nil
-		newRes.spec.hash = C.uint64_t(C.XXH3_64bits(unsafe.Pointer(cRawSpec), C.size_t(len(rawSpec))))
+		cRawSpec = C.CString(rawSpec)
+	} else {
+		cRawSpec = C.CString("{}")
 	}
+	newRes.spec.raw = cRawSpec
+	newRes.spec.doc = nil
+	newRes.spec.hash = C.uint64_t(C.XXH3_64bits(unsafe.Pointer(cRawSpec), C.size_t(len(rawSpec))))
 
 	setResourceLabels(newRes, labels)
 	setResourceAnnotations(newRes, annotations)

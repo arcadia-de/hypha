@@ -12,8 +12,18 @@
 #include "hypha/resource.h"
 #include "hypha/resource_graph.h"
 #include "hypha/resource_kind.h"
+#include "hypha/run_mode.h"
 #include "hypha/state.h"
 #include "hypha/validation_log.h"
+
+#define BEGIN_RESOURCE_LOG_CTX(Resource)                               \
+  ({                                                                   \
+    ResourceIdStr id;                                                  \
+    ResourceIdCStr(&(Resource)->id, id);                               \
+    SetLogResourceContext(id, FindResourceKindName((Resource)->kind)); \
+  })
+
+#define END_RESOURCE_LOG_CTX ClearLogResourceContext();
 
 static inline bool CheckPending(ResourceGraphIndex idx, Resource* res, void* data) {
   Orchestrator* orc = (Orchestrator*)data;
@@ -51,41 +61,42 @@ static inline void MaybeFinishReconciliation(Orchestrator* orc) {
   OrchestratorPublish(orc, RECONCILE_FINISHED_EVENT, NewReconcileFinishedEvent(status));
 }
 
-#define BEGIN_RESOURCE_LOG_CTX(Resource)                               \
-  ({                                                                   \
-    ResourceIdStr id;                                                  \
-    ResourceIdCStr(&(Resource)->id, id);                               \
-    SetLogResourceContext(id, FindResourceKindName((Resource)->kind)); \
-  })
-
-#define END_RESOURCE_LOG_CTX ClearLogResourceContext();
-
 static inline void ReconcileWork(uv_work_t* req) {
   ReconcileTask* task = container_of(req, ReconcileTask, work);
   Controller* ctrl = task->ctrl;
   Resource* desired = GetResourceInGraph(task->orc->graph, task->index);
   ResourceSpecParseJson(&desired->spec);
-
   Resource* observed = &task->observed;
-  memset(observed, 0, sizeof(Resource));
-  ResourceSpecParseJson(&observed->spec);
 
   BEGIN_RESOURCE_LOG_CTX(desired);
+
+#define CHECK_MODE(Name)                       \
+  if (task->mode >= kOrchestrator##Name##Mode) \
+    goto finished;
+
   const ControllerStatus status = ControllerObserve(ctrl, observed, desired);
   if (status != kStatusOk)
     goto finished;
-
-  if (!ControllerValidate(ctrl, desired, &task->vlog))
-    goto finished;
-  if (IsValidateReconcileTask(task))
-    goto finished;
+  CHECK_MODE(Observe);
 
   task->action = ControllerPlan(ctrl, observed, desired, &task->plan);
   if (IsPlanReconcileTask(task) || task->action == kNoAction)
     goto finished;
+  CHECK_MODE(Plan);
 
-  if (IsApplyReconcileTask(task))
-    task->status = ControllerApply(ctrl, desired, task->action);
+  if (!ControllerValidate(ctrl, desired, &task->vlog))
+    goto finished;
+  CHECK_MODE(Validate);
+
+  switch (task->mode) {
+    case kOrchestratorApplyMode:
+      task->status = ControllerApply(ctrl, desired, task->action);
+    case kOrchestratorDiffMode:
+    case kOrchestratorDestroyMode:
+    default:
+      DLOG_WARN("task status is no-op because mode `%s` is set", OrchestratorRunModeName(task->mode));
+      task->status = kStatusNoOp;
+  }
 finished:
   END_RESOURCE_LOG_CTX;
   FreeResourceSpecJson(&desired->spec);
@@ -146,37 +157,34 @@ static inline void WriteHistory(Orchestrator* orc, const Resource* res, const Re
   free(record.name);
 }
 
+static inline bool UpdateResourceState(const int status, const ReconcileTask* task, ResourceState* state) {
+  if (status != 0) {
+    DLOG_ERROR("invalid status: %d", status);
+    (*state) = kResourceFailed;
+    return false;
+  }
+
+  (*state) = (task->status == kStatusOk) ? kResourceReady : kResourceFailed;
+  DLOG_ERROR_IF(task->status != kStatusOk, "task status is not ok");
+  return (task->status == kStatusOk);
+}
+
 static inline void ReconcileAfterWork(uv_work_t* req, int status) {
   ASSERT(req);
   ReconcileTask* task = container_of(req, ReconcileTask, work);
   Orchestrator* orc = task->orc;
   Resource* res = GetResourceInGraph(orc->graph, task->index);
 
-  ResourceIdStr res_id_str;
-  ResourceIdCStr(&res->id, res_id_str);
-  SetLogResourceContext(res_id_str, FindResourceKindName(res->kind));
+  BEGIN_RESOURCE_LOG_CTX(res);
   orc->metrics.num_actions[task->action]++;
 
   AppendPlan(&orc->plan, &task->plan);
   AppendValidationLog(&orc->vlog, &task->vlog);
-  AppendDeltaLog(&orc->dlog, &task->dlog);
-  if (IsApplyReconcileTask(task)) {
-    AppliedAction* action = NewAppliedAction(&orc->actions);
-    ASSERT(action);
-    action->resource = res;
-    memcpy(action->reason, task->reason, sizeof(Reason));
-    action->action = task->action;
-    memcpy(&action->timestamp, &task->start, sizeof(struct timespec));
-  }
 
-  if (status != 0) {
-    res->state = kResourceFailed;
-    orc->run.success = false;
-  } else {
-    res->state = (task->status == kStatusOk) ? kResourceReady : kResourceFailed;
-    orc->run.success = (task->status == kStatusOk);
-  }
+  if (!IsDeltaLogEmpty(&task->dlog))
+    AppendDeltaLog(&orc->dlog, &task->dlog);
 
+  orc->run.success = UpdateResourceState(status, task, &res->state);
   if (IsApplyReconcileTask(task)) {
     WriteResourceState(orc, res, task->status);
     if (task->action != kNoAction)
@@ -186,8 +194,7 @@ static inline void ReconcileAfterWork(uv_work_t* req, int status) {
   free(task);
   orc->pending--;
   orc->metrics.num_processed++;
-  ClearLogResourceContext();
-
+  END_RESOURCE_LOG_CTX;
   DispatchReadyResources(orc);
 }
 
