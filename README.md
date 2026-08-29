@@ -14,9 +14,8 @@ First let's define some manifests
 
 > Hypha allows you to define manifests using Jsonnet, JSON, & YAML
 
-`~/.config/hypha/example.jsonnet`:
-
 ```jsonnet
+// ~/.config/hypha/example.jsonnet:
 local hypha = import 'lib/hypha.libsonnet';
 [
   // Create a symlink .gitconfig => ~/.gitconfig
@@ -29,9 +28,8 @@ local hypha = import 'lib/hypha.libsonnet';
 
 > Create another manifest, this time using YAML.
 
-`~/.config/hypha/git.yaml`:
-
 ```yaml
+# ~/.config/hypha/git.yaml:
 ---
 kind: Package
 metadata:
@@ -53,9 +51,8 @@ spec:
 >
 > However, you can also provide an `init.lua` in the config directory to customize how and what manifests get loaded:
 
-`~/.config/hypha/init.lua`:
-
 ```lua
+--- ~/.config/hypha/init.lua:
 local sources = require('hypha.sources')
 return {
   -- load the new manifests from ~/.config/hypha/example.jsonnet
