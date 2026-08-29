@@ -20,6 +20,7 @@
 #include "hypha/resource_decorator.h"
 #include "hypha/resource_graph.h"
 #include "hypha/run_info.h"
+#include "hypha/run_mode.h"
 #include "hypha/state.h"
 #include "hypha/validation_log.h"
 #include "reconcile.h"
@@ -118,8 +119,12 @@ bool OrchestratorRun(OrchestratorHandle handle, RunInfo* info) {
 
   Orchestrator* orc = (Orchestrator*)handle;
   ASSERT(orc);
-  OrchestratorPublish(orc, GRAPH_SUBMITTED_EVENT, NewGraphSubmittedEvent());
+  memcpy(&orc->run, info, sizeof(RunInfo));
 
+  DLOG_INFO("run mode: %s (%d)", OrchestratorRunModeName(info->mode), info->mode);
+  DLOG_INFO("run mode: %s (%d)", OrchestratorRunModeName(orc->run.mode), orc->run.mode);
+
+  OrchestratorPublish(orc, GRAPH_SUBMITTED_EVENT, NewGraphSubmittedEvent());
   RunInfoStart(&orc->run);
   uv_run(orc->loop, UV_RUN_DEFAULT);
   success = RunInfoFinish(&orc->run);

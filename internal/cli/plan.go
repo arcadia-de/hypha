@@ -37,6 +37,7 @@ func HandlePlan(cmd *cobra.Command, args []string) error {
 	info := hypha.RunInfo{
 		Mode: hypha.RunPlanMode,
 	}
+	fmt.Printf("mode: %d\n", info.Mode)
 	orc.Run(info)
 	fmt.Println()
 

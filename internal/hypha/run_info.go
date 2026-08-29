@@ -18,6 +18,7 @@ import (
 type RunMode int
 
 const (
+	RunObserve      RunMode = C.kOrchestratorObserveMode
 	RunPlanMode     RunMode = C.kOrchestratorPlanMode
 	RunDiffMode     RunMode = C.kOrchestratorDiffMode
 	RunValidateMode RunMode = C.kOrchestratorValidateMode
@@ -40,6 +41,8 @@ func (info *RunInfo) ToC() *C.RunInfo {
 	defer C.free(unsafe.Pointer(cReason))
 
 	C.memcpy(unsafe.Pointer(&ptr.reason[0]), unsafe.Pointer(cReason), min(C.strlen(cReason), C.HYPHA_REASON_MAX_LENGTH))
+
+	ptr.mode = (C.OrchestratorRunMode)(info.Mode)
 
 	return ptr
 }

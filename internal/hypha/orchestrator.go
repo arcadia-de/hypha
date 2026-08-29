@@ -510,6 +510,8 @@ func (orc *Orchestrator) ProcessDiscoveredManifests() error {
 		var err error
 		var specs []ResourceSpec
 
+		fmt.Printf("processing %s\n", dm.Value)
+
 		switch dm.Kind {
 		case DiscoveredManifestPath:
 			specs, err = orc.ParseResourceSpecsFromPath(dm.Value)
@@ -529,8 +531,21 @@ func (orc *Orchestrator) ProcessDiscoveredManifests() error {
 			return false
 		}
 
+		if len(specs) == 0 {
+			fmt.Printf("empty manifest: %s\n", dm.Value)
+			return false
+		}
+
 		for _, s := range specs {
-			manifests = append(manifests, s)
+			bytes, err := json.MarshalIndent(s, "", "  ")
+			if err != nil {
+				return false
+			}
+
+			if err == nil {
+				fmt.Printf("appending:\n%s\n", bytes)
+				manifests = append(manifests, s)
+			}
 		}
 
 		return true

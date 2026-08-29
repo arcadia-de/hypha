@@ -61,6 +61,10 @@ static inline void MaybeFinishReconciliation(Orchestrator* orc) {
   OrchestratorPublish(orc, RECONCILE_FINISHED_EVENT, NewReconcileFinishedEvent(status));
 }
 
+#define CHECK_MODE(Name)                       \
+  if (task->mode <= kOrchestrator##Name##Mode) \
+    goto finished;
+
 static inline void ReconcileWork(uv_work_t* req) {
   ReconcileTask* task = container_of(req, ReconcileTask, work);
   Controller* ctrl = task->ctrl;
@@ -68,12 +72,8 @@ static inline void ReconcileWork(uv_work_t* req) {
   ResourceSpecParseJson(&desired->spec);
   Resource* observed = &task->observed;
 
+  DLOG_INFO("running mode: %s", OrchestratorRunModeName(task->mode));
   BEGIN_RESOURCE_LOG_CTX(desired);
-
-#define CHECK_MODE(Name)                       \
-  if (task->mode >= kOrchestrator##Name##Mode) \
-    goto finished;
-
   const ControllerStatus status = ControllerObserve(ctrl, observed, desired);
   if (status != kStatusOk)
     goto finished;
@@ -91,6 +91,7 @@ static inline void ReconcileWork(uv_work_t* req) {
   switch (task->mode) {
     case kOrchestratorApplyMode:
       task->status = ControllerApply(ctrl, desired, task->action);
+      break;
     case kOrchestratorDiffMode:
     case kOrchestratorDestroyMode:
     default:
@@ -102,6 +103,8 @@ finished:
   FreeResourceSpecJson(&desired->spec);
   FreeResourceSpecJson(&observed->spec);
 }
+
+#undef CHECK_MODE
 
 static inline void WriteResourceState(Orchestrator* orc, const Resource* res, const ControllerStatus status) {
   ASSERT(res->spec.raw);
