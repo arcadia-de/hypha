@@ -1,10 +1,14 @@
 #include "hypha/sources_bindings.h"
 
 #include <ctype.h>
+#include <dirent.h>
+#include <fnmatch.h>
+#include <stdbool.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 #include <strings.h>
+#include <sys/stat.h>
 
 #include "hypha.h"
 #include "hypha/discovered_manifest.h"
@@ -145,6 +149,93 @@ LUA_FN(glob) {
   return 1;
 }
 
+typedef bool (*WalkContextCallbackFn)(uint32_t idx, const char* path, void* data);
+
+typedef struct {
+  WalkContextCallbackFn fn;
+  void* data;
+
+  char** patterns;
+  size_t patterns_len;
+
+  size_t num_files;
+} WalkContext;
+
+typedef struct {
+  lua_State* L;
+  int result_index;
+} LuaWalkData;
+
+static inline void WalkDir(const char* base_path, WalkContext* ctx) {
+  DIR* dir = opendir(base_path);
+  if (!dir)
+    return;
+
+  char path[PATH_MAX];
+  struct dirent* dp = NULL;
+  while ((dp = readdir(dir)) != NULL) {
+    if (strcmp(dp->d_name, ".") != 0 && strcmp(dp->d_name, "..") != 0) {
+      snprintf(path, sizeof(path), "%s/%s", base_path, dp->d_name);
+
+      struct stat statbuf;
+      if (stat(path, &statbuf) == 0) {
+        if (S_ISDIR(statbuf.st_mode)) {
+          WalkDir(path, ctx);
+        } else if (S_ISREG(statbuf.st_mode)) {
+          for (size_t i = 0; i < ctx->patterns_len; i++) {
+            const char* pattern = ctx->patterns[i];
+            if (fnmatch(pattern, dp->d_name, 0) == 0) {
+              if (ctx->fn) {
+                if (!ctx->fn(ctx->num_files, path, ctx->data))
+                  goto finished;
+                ctx->num_files++;
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+finished:
+  closedir(dir);
+}
+
+static inline bool OnDefaultSourceFound(uint32_t idx, const char* p, void* data) {
+#define L ((LuaWalkData*)data)->L
+  lua_newtable(L);
+  const int new_tbl_idx = lua_gettop(L);
+  lua_pushnumber(L, kDiscoveredPath);
+  lua_setfield(L, new_tbl_idx, "kind");
+
+  lua_pushstring(L, p);
+  lua_setfield(L, new_tbl_idx, "value");
+
+  lua_rawseti(L, -2, idx + 1);
+#undef L
+  return true;
+}
+
+LUA_FN(getDefaultSources) {
+  WalkContext ctx;
+  ctx.patterns = (char**)malloc(sizeof(char*) * 3);
+  ctx.patterns[0] = "*.jsonnet";
+  ctx.patterns[1] = "*.json";
+  ctx.patterns[2] = "*.yaml";
+  ctx.patterns_len = 3;
+  ctx.fn = &OnDefaultSourceFound;
+  ctx.num_files = 0;
+
+  lua_newtable(L);
+  int result_index = lua_gettop(L);
+  LuaWalkData data = {
+      .L = L,
+      .result_index = result_index,
+  };
+  ctx.data = &data;
+  WalkDir("/home/tazz/.config/hypha", &ctx);
+  return 1;
+}
+
 LUA_FN(dir) {
   return 0;
 }
@@ -182,6 +273,7 @@ static const struct luaL_Reg kFuncs[] = {
   BIND(file)
   BIND(glob)
   BIND(dir)
+  BIND(getDefaultSources)
   BIND(raw)
 #undef BIND
   {NULL, NULL},  // NOLINT(modernize-use-nullptr)

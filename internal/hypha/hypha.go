@@ -61,6 +61,7 @@ func InitHypha(luarocksDir string) {
 	libs := []string{
 		"$HOME/.local/state/hypha/?.lua",
 		"$HOME/.local/state/hypha/lua/?.lua",
+		"$HOME/.local/state/hypha/share/lua/5.5/?.lua",
 		"$XDG_CONFIG_HOME/hypha/?.lua",
 		"$XDG_CONFIG_HOME/hypha/lua/?.lua",
 	}

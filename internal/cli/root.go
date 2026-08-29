@@ -25,13 +25,13 @@ func Execute() error {
 		// ignore?
 	}
 
-	if flag := RootCmd.PersistentFlags().Lookup("config-dir"); flag != nil {
-		if err := viper.BindPFlag("config-dir", flag); err != nil {
+	if flag := RootCmd.PersistentFlags().Lookup("state-dir"); flag != nil {
+		if err := viper.BindPFlag("state-dir", flag); err != nil {
 			return fmt.Errorf("failed to bind early config-dir flag: %w", err)
 		}
 	}
 
-	config_dir, err := hypha.EnsureConfigDirExists()
+	config_dir, err := hypha.EnsureStateDirExists()
 	if err != nil {
 		return err
 	}
