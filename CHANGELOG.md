@@ -1,5 +1,17 @@
 # Changelog
 
+## [1.3.0](https://github.com/arcadia-de/hypha/compare/v1.2.0...v1.3.0) (2026-08-29)
+
+
+### Features
+
+* ✨ get apply log visible in the console ([60eae5d](https://github.com/arcadia-de/hypha/commit/60eae5db6e38b7d11829c787e37c0e297e9ae32b))
+
+
+### Bug Fixes
+
+* 🐛 fix RunModes ([16f7791](https://github.com/arcadia-de/hypha/commit/16f7791ae0f5c876cfa424f833e1fb8cb10292ab))
+
 ## [1.2.0](https://github.com/arcadia-de/hypha/compare/1.1.0...v1.2.0) (2026-08-28)
 
 
