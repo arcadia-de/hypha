@@ -95,6 +95,8 @@ hypha apply
 
 ![Example](./docs/example.gif)
 
+You can find more in the [Getting Started](https://github.com/arcadia-de/hypha/wiki/Getting-Started) page in the wiki.
+
 ## Building From Source
 
 Check out the [build docs](https://github.com/arcadia-de/hypha/wiki/Building) in the wiki.
