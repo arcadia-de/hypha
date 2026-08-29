@@ -24,7 +24,7 @@ void VisitAllEnvVars(EnvVarVisitor vis, void* data) {
 void AppendToEnvVar(const char* k, const char* value) {
   const char* current = getenv(k);
   if (current == NULL)
-    return;
+    current = "";
   const size_t new_size = snprintf(NULL, 0, "%s:%s", current, value) + 1;
   char* updated = (char*)malloc(new_size);
   LOG_FATAL_IF(!updated, "failed to create new env var for `%s`", k);
