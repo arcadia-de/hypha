@@ -8,9 +8,13 @@ package hypha
 import "C"
 import (
 	"fmt"
-	"github.com/spf13/viper"
 	"os"
+	"strings"
 	"unsafe"
+
+	"github.com/spf13/viper"
+
+	"errors"
 )
 
 func EnsureStateDirExists() (string, error) {
@@ -25,7 +29,17 @@ func EnsureStateDirExists() (string, error) {
 
 func EnsureConfigDirExists() (string, error) {
 	config_dir := viper.GetString("config-dir")
-	err := os.MkdirAll(config_dir, 0755)
+
+	info, err := os.Lstat(config_dir)
+	if err != nil {
+		return "", fmt.Errorf("Error checking directory (e.g., permission denied): %v\n", err)
+	} else if info.IsDir() || info.Mode()&os.ModeSymlink != 0 {
+		return config_dir, nil
+	} else if !errors.Is(err, os.ErrNotExist) {
+		return "", fmt.Errorf("path `%s` exists, but is not a directory", config_dir)
+	}
+
+	err = os.MkdirAll(config_dir, 0755)
 	if err != nil {
 		return "", fmt.Errorf("failed to create configuration dir '%s': %v", config_dir, err)
 	}
@@ -44,6 +58,15 @@ func EnsureCacheDirExists() (string, error) {
 }
 
 func InitHypha(luarocksDir string) {
+	libs := []string{
+		"$HOME/.local/state/hypha/?.lua",
+		"$HOME/.local/state/hypha/lua/?.lua",
+		"$XDG_CONFIG_HOME/hypha/?.lua",
+		"$XDG_CONFIG_HOME/hypha/lua/?.lua",
+	}
+	expandedPath := os.ExpandEnv(strings.Join(libs, ";") + ";;")
+	os.Setenv("LUA_PATH", expandedPath)
+
 	cLuarocksDir := C.CString(luarocksDir)
 	defer C.free(unsafe.Pointer(cLuarocksDir))
 

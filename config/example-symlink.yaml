@@ -1,8 +1,0 @@
-kind: Symlink
-metadata:
-  name: example-symlink
-  labels:
-    - test
-spec:
-  source: "%h/init.lua"
-  target: "%h/init-test.lua"

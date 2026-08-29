@@ -134,11 +134,15 @@ func NewOrchestratorWithDefaultConfig() (*Orchestrator, error) {
 	state_dir, err := EnsureStateDirExists()
 	if err != nil {
 		return nil, err
+		// } else if config_dir == nil {
+		// 	return nil, fmt.Errorf("state dir is nil")
 	}
 
 	cache_dir, err := EnsureCacheDirExists()
 	if err != nil {
 		return nil, err
+		// } else if cache_dir == nil {
+		// 	return nil, fmt.Errorf("cache dir is nil")
 	}
 
 	config := OrchestratorConfig{
@@ -405,6 +409,16 @@ func (orc *Orchestrator) PrintRuntimeInfo() {
 		": ",
 		valueStyle.Render(fmt.Sprintf("%.1f", luaVersion)),
 	)))
+
+	luaPath := os.Getenv("LUA_PATH")
+	luaRowStyle := rowStyle.MarginLeft(rowStyle.GetMarginLeft() + 2)
+	fmt.Println(luaRowStyle.Render(lg.JoinHorizontal(
+		lg.Left,
+		keyStyle.Render("LUA_PATH"),
+		": ",
+		valueStyle.Render(luaPath),
+	)))
+
 	goLibuvVersion := C.GoString(C.uv_version_string())
 	fmt.Println(rowStyle.Render(lg.JoinHorizontal(
 		lg.Left,

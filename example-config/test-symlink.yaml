@@ -1,0 +1,6 @@
+kind: Symlink
+metadata:
+  name: symlink-0
+spec:
+  source: "%h/test-symlink.yaml"
+  target: "~/test-symlink.yaml"

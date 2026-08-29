@@ -6,6 +6,8 @@
 #include "bootstrap.h"
 #include "hypha/assertions.h"
 #include "hypha/controllers.h"
+#include "hypha/env.h"
+#include "hypha/expander.h"
 #include "hypha/log.h"
 #include "hypha/package_manager.h"
 #include "hypha/process.h"

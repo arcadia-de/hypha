@@ -35,6 +35,7 @@ func Execute() error {
 	if err != nil {
 		return err
 	}
+
 	hypha.InitHypha(config_dir)
 
 	kinds := hypha.GetAllResourceKindNames()
