@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.6.0](https://github.com/arcadia-de/hypha/compare/v1.5.0...v1.6.0) (2026-08-30)
+
+
+### Features
+
+* ✨ force another version bump for release please ([85a0319](https://github.com/arcadia-de/hypha/commit/85a03199b53a3290185fc0518f43b2faa964f1f9))
+
 ## [1.5.0](https://github.com/arcadia-de/hypha/compare/1.4.0...v1.5.0) (2026-08-30)
 
 
