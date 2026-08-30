@@ -54,8 +54,8 @@ flowchart LR
     RES5 --- PKG1
     RES6 --- PKG2
     subgraph SYSTEM["System Resources"]
-        SYM0["sym-0<br/>.gitconfig => ~/.gitconfig"]
-        SYM1["sym-1<br/>.zshrc => ~/.zshrc"]
+        SYM0[".gitconfig => ~/.gitconfig"]
+        SYM1[".zshrc => ~/.zshrc"]
 
         DIR0["~/Photos"]
         DIR1["~/Documents"]
