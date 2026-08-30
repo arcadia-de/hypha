@@ -41,7 +41,7 @@ __DEFINE_GETTER(const char, ConfigDir, ((Orchestrator*)handle)->config.root);
 __DEFINE_GETTER(const char, StateDir, ((Orchestrator*)handle)->config.state_dir);
 __DEFINE_GETTER(const char, CacheDir, ((Orchestrator*)handle)->config.cache_dir);
 DEFINE_GETTER(ValidationLog, vlog);
-DEFINE_GETTER(ActionLog, actions);
+DEFINE_GETTER(AppliedActionLog, actions);
 __DEFINE_GETTER(lua_State, LuaState, ((Orchestrator*)handle)->L);
 DEFINE_GETTER(Plan, plan);
 _DEFINE_GETTER(StateStore, ((Orchestrator*)handle)->state);

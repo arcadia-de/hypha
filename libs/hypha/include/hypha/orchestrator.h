@@ -51,7 +51,7 @@ typedef struct {
   ValidationLog vlog;
   OrchestratorMetrics metrics;
   ResourceDecoratorPipeline decorator;
-  ActionLog actions;
+  AppliedActionLog actions;
 
   size_t num_discovered_manifests;
   DiscoveredManifest* discovered_manifests;
@@ -66,7 +66,7 @@ lua_State* GetOrcLuaState(OrchestratorHandle);
 EventRoute* GetOrcRootEventRoute(OrchestratorHandle);
 EventBus* GetOrcEventBus(OrchestratorHandle);
 ValidationLog* GetOrcValidationLog(OrchestratorHandle);
-ActionLog* GetOrcActionLog(OrchestratorHandle);
+AppliedActionLog* GetOrcAppliedActionLog(OrchestratorHandle);
 Plan* GetOrcPlan(OrchestratorHandle);
 const char* GetOrcConfigDir(OrchestratorHandle);
 const char* GetOrcStateDir(OrchestratorHandle);

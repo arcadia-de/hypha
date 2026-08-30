@@ -191,14 +191,11 @@ static inline void ReconcileAfterWork(uv_work_t* req, int status) {
 
   AppendPlan(&orc->plan, &task->plan);
   AppendValidationLog(&orc->vlog, &task->vlog);
-
-  if (!IsDeltaLogEmpty(&task->dlog))
-    AppendDeltaLog(&orc->dlog, &task->dlog);
+  AppendDeltaLog(&orc->dlog, &task->dlog);
 
   orc->run.status = UpdateResourceState(status, task, &res->state);
   if (IsApplyReconcileTask(task)) {
-    if (!IsActionLogEmpty(&task->alog))
-      AppendActionLog(&orc->actions, &task->alog);
+    AppendAppliedActionLog(&orc->actions, &task->alog);
 
     WriteResourceState(orc, res);
     if (task->action != kNoAction)
@@ -262,7 +259,7 @@ void QueueReconcileTask(Orchestrator* orc, Controller* ctrl, const ResourceGraph
   InitPlan(&task->plan, init_cap);
   InitValidationLog(&task->vlog, init_cap);
   InitDeltaLog(&task->dlog, init_cap);
-  InitActionLog(&task->alog, init_cap);
+  InitAppliedActionLog(&task->alog, init_cap);
 
   memset(&task->observed, 0, sizeof(Resource));
   memset(&task->last, 0, sizeof(StateEntry));

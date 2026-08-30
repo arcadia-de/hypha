@@ -198,7 +198,8 @@ finished:
   return result;
 }
 
-ControllerStatus ControllerApply(Controller* ctrl, Resource* desired, const ControllerAction action, ActionLog* log) {
+ControllerStatus ControllerApply(Controller* ctrl, Resource* desired, const ControllerAction action,
+                                 AppliedActionLog* log) {
   BEGIN_CONTROLLER_FUNC(Apply);
   ControllerStatus status = kStatusOk;
 

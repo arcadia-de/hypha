@@ -10,39 +10,9 @@ extern "C" {
 
 #include "hypha/assertions.h"
 #include "hypha/delta.h"
+#include "hypha/structured_log.h"
 
-typedef struct {
-  Delta* deltas;
-  size_t deltas_len;
-  size_t deltas_cap;
-} DeltaLog;
-
-void InitDeltaLog(DeltaLog* dlog, const size_t init_cap);
-Delta* NewDelta(DeltaLog* dlog);
-void AppendDeltas(DeltaLog* dst, Delta* deltas, const size_t num_deltas);
-void FreeDeltaLog(DeltaLog* dlog);
-
-typedef bool (*VisitDeltaFn)(uint64_t, const Delta*, void*);
-void VisitAllDeltas(DeltaLog* dlog, VisitDeltaFn fn, void* data);
-
-static inline bool IsDeltaLogEmpty(DeltaLog* rhs) {
-  if (rhs == NULL)
-    return true;
-  return rhs->deltas == NULL || rhs->deltas_len == 0;
-}
-
-static inline void AppendDelta(DeltaLog* dst, Delta* delta) {
-  ASSERT(dst);
-  ASSERT(delta);
-  return AppendDeltas(dst, delta, 1);
-}
-
-static inline void AppendDeltaLog(DeltaLog* dst, DeltaLog* src) {
-  ASSERT(dst);
-  ASSERT(src);
-  ASSERT(src->deltas_len > 0);
-  return AppendDeltas(dst, src->deltas, src->deltas_len);
-}
+DECLARE_STRUCTURED_LOG(Delta);
 
 #ifdef __cplusplus
 };

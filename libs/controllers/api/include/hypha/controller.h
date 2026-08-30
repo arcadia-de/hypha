@@ -77,7 +77,7 @@ typedef struct {
   ControllerAction action;
   const Resource* current;
   Resource* desired;
-  ActionLog* log;
+  AppliedActionLog* log;
 } ApplyContext;
 DECLARE_CONTROLLER_FN(Apply, ControllerStatus);
 
@@ -142,7 +142,8 @@ void ControllerInit(Controller*);
 void ControllerDeInit(Controller*);
 ControllerStatus ControllerObserve(Controller* ctrl, Resource* current, StateEntry* last);
 ControllerAction ControllerPlan(Controller* ctrl, const Resource* current, Resource* desired, Plan* pl);
-ControllerStatus ControllerApply(Controller* ctrl, Resource* desired, const ControllerAction action, ActionLog* log);
+ControllerStatus ControllerApply(Controller* ctrl, Resource* desired, const ControllerAction action,
+                                 AppliedActionLog* log);
 bool ControllerValidate(Controller* ctrl, Resource* current, ValidationLog* vl);
 ControllerStatus ControllerRollback(Controller* ctrl, const Resource* current);
 ControllerStatus ControllerDestroy(Controller* ctrl, const Resource* current);

@@ -281,9 +281,9 @@ func (orc *Orchestrator) VisitAppliedActions(vis AppliedActionVisitor) {
 	handle := cgo.NewHandle(vis)
 	defer handle.Delete()
 
-	C.VisitAllActions(
-		C.GetOrcActionLog(orc.Handle),
-		(C.VisitActionFn)(unsafe.Pointer(C.goVisitAppliedActions)),
+	C.VisitAllAppliedActions(
+		C.GetOrcAppliedActionLog(orc.Handle),
+		(C.VisitAppliedActionFn)(unsafe.Pointer(C.goVisitAppliedActions)),
 		unsafe.Pointer(&handle),
 	)
 

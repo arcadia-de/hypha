@@ -2,6 +2,7 @@ delta_inc = include_directories('include')
 delta_deps = [
   hypha_api_dep,
   hypha_log_dep,
+  hypha_utils_dep,
 ]
 delta = static_library(
   'hypha-delta',
