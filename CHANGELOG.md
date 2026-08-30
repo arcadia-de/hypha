@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.7.0](https://github.com/arcadia-de/hypha/compare/v1.6.0...v1.7.0) (2026-08-30)
+
+
+### Features
+
+* ✨ cleanup docker builds and add a sandbox image ([336936a](https://github.com/arcadia-de/hypha/commit/336936a2500c063e6c0ba6b7ee6e186ec06b44fd))
+
 ## [1.6.0](https://github.com/arcadia-de/hypha/compare/v1.5.0...v1.6.0) (2026-08-30)
 
 
