@@ -1,0 +1,14 @@
+.cache/
+.git/
+.github/
+.rumdl_cache/
+.task/
+assets/
+bin/
+build/
+docs/
+example-config/
+private/
+wiki/
+dashboard/dist/
+dashboard/node_modules/
