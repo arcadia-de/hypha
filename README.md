@@ -57,6 +57,7 @@ local sources = require('hypha.sources')
 return {
   -- load the new manifests from ~/.config/hypha/example.jsonnet
   sources.file("%h/example.jsonnet"),
+  sources.file("%h/git.yaml"),
   -- manifests can also be provided directly from lua
   -- create the directory:  ~/.config/hypha/test-dir
   sources.raw([[
