@@ -1,5 +1,18 @@
 # Changelog
 
+## [1.8.0](https://github.com/arcadia-de/hypha/compare/v1.7.0...v1.8.0) (2026-08-30)
+
+
+### Features
+
+* ✨ add a Task resource and controller ([e1bb9fb](https://github.com/arcadia-de/hypha/commit/e1bb9fb7fddc5893247903918cb5717dbc57566d))
+* ✨ add Task resources for ad-hoc commands ([e1bb9fb](https://github.com/arcadia-de/hypha/commit/e1bb9fb7fddc5893247903918cb5717dbc57566d))
+
+
+### Bug Fixes
+
+* 🐛 fix tasks ([e1bb9fb](https://github.com/arcadia-de/hypha/commit/e1bb9fb7fddc5893247903918cb5717dbc57566d))
+
 ## [1.7.0](https://github.com/arcadia-de/hypha/compare/v1.6.0...v1.7.0) (2026-08-30)
 
 
