@@ -109,7 +109,7 @@ sudo mv ./hypha /usr/local/bin/hypha
 
 ## Quick Start
 
-First let's define some manifests
+### Declare Some Resources
 
 > Hypha allows you to define manifests using Jsonnet, JSON, & YAML
 
@@ -138,6 +138,8 @@ metadata:
 spec:
   target: git
 ```
+
+### Script the Manifest Discovery Process
 
 > By default, Hypha can discover manifests automatically.
 > 
@@ -176,6 +178,8 @@ return {
 }
 ```
 
+### Plan & Apply Your Changes
+
 Once your config is defined, you can preview the changes Hypha would make with `plan`:
 
 > Optional, but highly recommended
@@ -192,7 +196,7 @@ hypha apply
 
 ![Example](./docs/example.gif)
 
-> You can find more in the [Getting Started](https://github.com/arcadia-de/hypha/wiki/Getting-Started) page in the wiki.
+### Observe Your Resources
 
 Once your resources are managed by Hypha, you can inspect them using:
 
@@ -202,6 +206,8 @@ Once your resources are managed by Hypha, you can inspect them using:
 | `hypha describe`<br/>`hypha desc`                                            | Describe resources, show a horizontal slice of the resource graph | ![Describe Example](./docs/describe.gif) |
 | `hypha query`<br/>`hypha query --expr 'resources(kind: "Controller"){ id }'` | Query the resource graph, filter and pick by the data you want    |                    TBD                   |
 | `hypha browse`<br/>`hypha browse --web`                                      | Browse the resource graph using a TUI or web browser              |   ![Browse Example](./docs/browse.gif)   |
+
+> You can find more in the [Getting Started](https://github.com/arcadia-de/hypha/wiki/Getting-Started) page in the wiki.
 
 ## Building From Source
 
