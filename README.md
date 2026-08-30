@@ -73,7 +73,41 @@ flowchart LR
     class SYM0,SYM1,RES0,RES1,MAN0,MAN1,SYM_CONTROLLER sym;
 ```
 
-## Example
+## Features
+
+- Fully self-contained static binary
+- Define dotfiles and configurations using Jsonnet, YAML or JSON
+- Scriptable engine to programmatically discover, filter or procedurally generate manifests and react to orchestration events.
+- Interactive and pipe-able TUI
+- Read-only local web dashboard for inspecting the resource graph
+
+## Installation
+
+Hypha is distributed as a single static binary.
+You can download from the [Releases](https://github.com/arcadia-de/hypha/releases) page, or by using one of the tools below:
+
+```sh
+# using curl:
+curl -L https://github.com/arcadia-de/hypha/releases/latest/download/hypha -o hypha
+# using wget:
+wget https://github.com/arcadia-de/hypha/releases/latest/download/hypha
+# using httpie:
+https --download https://github.com/arcadia-de/hypha/releases/latest/download/hypha
+```
+
+Once you have downloaded, you will most likely need to set it to executable:
+
+```sh
+chmod +x ./hypha
+```
+
+Then move it to your system path:
+
+```sh
+sudo mv ./hypha /usr/local/bin/hypha
+```
+
+## Quick Start
 
 First let's define some manifests
 
@@ -160,91 +194,37 @@ hypha apply
 
 > You can find more in the [Getting Started](https://github.com/arcadia-de/hypha/wiki/Getting-Started) page in the wiki.
 
-Now that you have created some resources....
+Once your resources are managed by Hypha, you can inspect them using:
 
-You can `list` them:
-
-![List Example](./docs/list.gif)
-
-You can `describe` them:
-
-![Describe Example](./docs/describe.gif)
-
-Or `browse` them:
-
-![Browse Example](./docs/browse.gif)
-
-> You can also use --web with the `browse` command to open a read-only web dashboard to visualize the resource graph
->
-> By default, the `browse` command just opens a TUI for visualizing the resource graph
+| Command                                                                      | Description                                                       |                  Example                 |
+|:-----------------------------------------------------------------------------|:------------------------------------------------------------------|:----------------------------------------:|
+| `hypha list`<br/>`hypha ls`                                                  | List resources, show a vertical slice of the resource graph       |     ![List Example](./docs/list.gif)     |
+| `hypha describe`<br/>`hypha desc`                                            | Describe resources, show a horizontal slice of the resource graph | ![Describe Example](./docs/describe.gif) |
+| `hypha query`<br/>`hypha query --expr 'resources(kind: "Controller"){ id }'` | Query the resource graph, filter and pick by the data you want    |                    TBD                   |
+| `hypha browse`<br/>`hypha browse --web`                                      | Browse the resource graph using a TUI or web browser              |   ![Browse Example](./docs/browse.gif)   |
 
 ## Building From Source
 
 Check out the [build docs](https://github.com/arcadia-de/hypha/wiki/Building) and [developer guide](https://github.com/arcadia-de/hypha/wiki/DeveloperGuide) in the wiki.
 
-## Running Using the Sandbox
+## Running the Sandbox
+
+You can run Hypha in a sandbox to try it out if you'd like:
+
+```sh
+docker run                                          \
+  -it                                               \
+  --rm                                              \
+  --name hypha-sandbox                              \
+  -v /path/to/your/local/config:/root/.config/hypha \
+  ghcr.io/arcadia-de/hypha/sandbox:latest
+```
+
+> More information available in the [developer guide](https://github.com/arcadia-de/hypha/wiki/DeveloperGuide).
 
 ## Wiki
 
 Check out the [wiki](https://github.com/arcadia-de/hypha/wiki) for more information.
-
-## CLI
-
-> A preview of the sub-commands for Hypha, you can find out more in the wiki
-
-```sh
-hypha --help
-```
-
-```text
-A dotfile manager
-
-Usage:
-  hypha [command]
-
-Configuration Commands
-  adopt       Adopt specific resources into the resource graph
-  apply       Apply your configuration
-  gc          Cleanup orphaned resources
-  generate    generate a manifest for a given resource
-  init        Initialize hypha on a system
-  plan        Preview the pending changes
-  status      Show resource drift
-  tidy        Cleanup the configuration dir
-
-Inspection Commands
-  browse      Open a read-only interactive browser session
-  describe    Describe a resource
-  explain     Explain why a resource exists
-  graph       Graph the resources
-  history     Show the history of the resource graph
-  lint        Lint the specified manifests
-  list        List resources in the graph
-  query       Query the resource graph using an expression
-  validate    Validate the specified manifests
-
-Development Commands
-  docs        Open the documentation for a specific resource kind in the system browser
-  eval        Evaluate a lua expression or file
-  lsp         Run the LSP service for a manifest
-
-Resource Commands
-
-Additional Commands:
-  completion  Generate the autocompletion script for the specified shell
-  help        Help about any command
-  info        Show runtime info
-  rocks       Manipulate luarocks packages
-
-Flags:
-      --cache-dir string    The cache dir for hypha (default "/home/tazz/.cache/hypha")
-      --config-dir string   The configuration dir for hypha (default "/home/tazz/.config/hypha")
-  -h, --help                help for hypha
-      --state-dir string    The state dir for hypha (default "/home/tazz/.local/state/hypha")
-  -v, --verbose             add more detailed output
-
-Use "hypha [command] --help" for more information about a command.
-```
 
 ## Status
 
@@ -253,7 +233,7 @@ This project is currently experimental and not every planned feature is working.
 |      OS | Description                                                                                                                    |
 |--------:|:-------------------------------------------------------------------------------------------------------------------------------|
 |   Linux | So far the most active development for this project has been on [Arch](https://archlinux.org/) & [Ubuntu](https://ubuntu.com/) |
-|     OSX | I have plans to support OSX, TBD still                                                                                         |
+|   macOS | I have plans to support OSX, TBD still                                                                                         |
 | Windows | Windows support is a long way away                                                                                             |
 
 > If your OS doesn't work:
