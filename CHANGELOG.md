@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.5.0](https://github.com/arcadia-de/hypha/compare/1.4.0...v1.5.0) (2026-08-30)
+
+
+### Features
+
+* **README:** ✨ add missing git.yaml manifest from example and force a version bump from previous commits ([454d468](https://github.com/arcadia-de/hypha/commit/454d468b0bc3abf7b2dc401a016fe4daf83a71b8))
+
 ## [1.4.0](https://github.com/arcadia-de/hypha/compare/1.3.0...v1.4.0) (2026-08-29)
 
 
