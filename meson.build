@@ -1,7 +1,7 @@
 project(
   'hypha',
   [ 'c', 'cpp' ],
-  version: get_option('hypha_version'),
+  version: files('VERSION'),
   default_options: ['c_std=c23,c2x'],
   meson_version: '>= 1.10.0',
 )
