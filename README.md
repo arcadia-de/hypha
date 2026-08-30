@@ -99,6 +99,8 @@ You can find more in the [Getting Started](https://github.com/arcadia-de/hypha/w
 
 Check out the [build docs](https://github.com/arcadia-de/hypha/wiki/Building) and [developer guide](https://github.com/arcadia-de/hypha/wiki/DeveloperGuide) in the wiki.
 
+## Running Using the Sandbox
+
 ## Wiki
 
 Check out the [wiki](https://github.com/arcadia-de/hypha/wiki) for more information.
