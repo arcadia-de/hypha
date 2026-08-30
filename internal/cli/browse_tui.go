@@ -68,6 +68,7 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 func (m Model) View() tea.View {
 	flatList := m.flatten()
 	var s strings.Builder
+	s.WriteString(fmt.Sprintln())
 
 	if len(flatList) == 0 {
 		return tea.NewView(s.String() + " No resources found.\n")

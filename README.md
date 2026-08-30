@@ -93,7 +93,25 @@ hypha apply
 
 ![Example](./docs/example.gif)
 
-You can find more in the [Getting Started](https://github.com/arcadia-de/hypha/wiki/Getting-Started) page in the wiki.
+> You can find more in the [Getting Started](https://github.com/arcadia-de/hypha/wiki/Getting-Started) page in the wiki.
+
+Now that you have created some resources....
+
+You can `list` them:
+
+![List Example](./docs/list.gif)
+
+You can `describe` them:
+
+![Describe Example](./docs/describe.gif)
+
+Or `browse` them:
+
+![Browse Example](./docs/browse.gif)
+
+> You can also use --web with the `browse` command to open a read-only web dashboard to visualize the resource graph
+>
+> By default, the `browse` command just opens a TUI for visualizing the resource graph
 
 ## Building From Source
 

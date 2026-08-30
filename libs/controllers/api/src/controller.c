@@ -10,7 +10,6 @@
 #include <tracy/tracy/TracyC.h>
 
 #define BEGIN_CONTROLLER_FUNC(Name)          \
-  DLOG_INFO("begin %s", #Name);              \
   TracyCZone(ctx, 1);                        \
   TracyCZoneName(ctx, #Name, strlen(#Name)); \
   TracyCZoneText(ctx, GetControllerKind(ctrl), strlen(GetControllerKind(ctrl)));
@@ -19,7 +18,7 @@
 
 #else
 
-#define BEGIN_CONTROLLER_FUNC(Name) DLOG_INFO("begin %s", #Name);
+#define BEGIN_CONTROLLER_FUNC(Name)
 
 #define END_CONTROLLER_FUNC
 
