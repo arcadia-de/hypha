@@ -1,11 +1,12 @@
 project(
   'hypha',
   [ 'c', 'cpp' ],
-  version: '1.0',
+  version: get_option('hypha_version'),
   default_options: ['c_std=c23,c2x'],
   meson_version: '>= 1.10.0',
 )
 add_project_arguments('-D_XOPEN_SOURCE=700', language: 'c')
+add_project_arguments('-DHYPHA_VERSION="' + meson.project_version() + '"', language: 'c')
 
 enable_profiling = get_option('enable_profiling')
 

@@ -40,17 +40,30 @@ jobs:
           ninja --version
       - name: Compile libhypha
         run: |
-          meson setup build --reconfigure
+          VERSION="${{ needs.release-please.outputs.version }}"
+          if [ -z "$VERSION" ]; then
+            VERSION="${{ github.event.release.tag_name }}"
+            VERSION="${VERSION#v}"
+          fi
+
+          meson setup build --reconfigure -Dhypha_version="${VERSION}"
           ninja -C build
       - name: Compile Hypha
         run: |
           export CGO_ENABLED=1
           export PKG_CONFIG_PATH="$(pwd)/build/meson-uninstalled:$PKG_CONFIG_PATH"
-          go build -ldflags="-X main.Version=${{ needs.release-please.outputs.version }} -linkmode=external -s -w -extldflags=-Wl,--gc-sections" \
+
+          VERSION="${{ needs.release-please.outputs.version }}"
+          if [ -z "$VERSION" ]; then
+            VERSION="${{ github.event.release.tag_name }}"
+            VERSION="${VERSION#v}"
+          fi
+
+          go build -ldflags="-X main.Version=$VERSION -linkmode=external -s -w -extldflags=-Wl,--gc-sections" \
             -o hypha \
             cmd/hypha/main.go
       - name: Upload Artifacts to Release
         uses: softprops/action-gh-release@v2
         with:
-          tag_name: ${{ needs.release-please.outputs.version }}
+          tag_name: ${{ needs.release-please.outputs.tag_name || github.event.release.tag_name }}
           files: hypha
