@@ -69,8 +69,14 @@ func PrintAppliedActions(orc *hypha.Orchestrator, rowStyle *lg.Style, cs *hypha.
 		style.HeaderReasonStyle.Render("Reason"),
 	)))
 
+	log := orc.GetActionLog()
+	if log == nil {
+		fmt.Println("action log is nil")
+		return
+	}
+
 	var summary ApplySummary
-	orc.VisitAppliedActions(func(idx uint64, action hypha.AppliedAction) bool {
+	log.VisitAppliedActions(func(idx uint64, action hypha.AppliedAction) bool {
 		act := hypha.GetControllerActionName(hypha.ControllerAction(action.Action))
 		switch act {
 		case "No Action":

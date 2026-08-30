@@ -23,7 +23,6 @@ import (
 	"os"
 	"runtime"
 	"runtime/cgo"
-	"strings"
 	"unsafe"
 
 	lg "charm.land/lipgloss/v2"
@@ -257,37 +256,15 @@ func (orc *Orchestrator) VisitDiscoveredManifests(vis DiscoveredManifestVisitor)
 	runtime.KeepAlive(handle)
 }
 
-//export goVisitAppliedActions
-func goVisitAppliedActions(idx C.uint64_t, act *C.AppliedAction, data unsafe.Pointer) C.bool {
-	handle := *(*cgo.Handle)(data)
-	vis := handle.Value().(AppliedActionVisitor)
-
-	goName := C.GoString(act.resource.info.name)
-
-	goKind := C.GoString(C.FindResourceKindName(act.resource.kind))
-
-	rawReason := C.GoStringN(&act.reason[0], C.int(C.HYPHA_REASON_MAX_LENGTH))
-	goReason, _, _ := strings.Cut(rawReason, "\x00")
-	goAction := AppliedAction{
-		Action: uint32(act.action),
-		Name:   goName,
-		Kind:   goKind,
-		Reason: goReason,
+func (orc *Orchestrator) GetActionLog() *AppliedActionLog {
+	handle := C.GetOrcAppliedActionLog(orc.Handle)
+	if handle == nil {
+		return nil
 	}
-	return C.bool(vis(uint64(idx), goAction))
-}
 
-func (orc *Orchestrator) VisitAppliedActions(vis AppliedActionVisitor) {
-	handle := cgo.NewHandle(vis)
-	defer handle.Delete()
-
-	C.VisitAllAppliedActions(
-		C.GetOrcAppliedActionLog(orc.Handle),
-		(C.VisitAppliedActionFn)(unsafe.Pointer(C.goVisitAppliedActions)),
-		unsafe.Pointer(&handle),
-	)
-
-	runtime.KeepAlive(handle)
+	return &AppliedActionLog{
+		Handle: handle,
+	}
 }
 
 func (orc *Orchestrator) ParseResourceSpecsFromJsonnet(content string) ([]ResourceSpec, error) {
