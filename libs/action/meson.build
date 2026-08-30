@@ -26,6 +26,6 @@ hypha_action_dep = declare_dependency(
   ],
 )
 
-# if gtest_dep.found()
-#   subdir('test/')
-# endif
+if gtest_dep.found()
+  subdir('test')
+endif
