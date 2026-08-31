@@ -101,6 +101,10 @@ static inline bool IsResourceDynamic(const Resource* res) {
   return !IsResourceStatic(res);
 }
 
+static inline bool IsResourceSynthetic(const Resource* res) {
+  return res && ResourceFlagsHas(res->flags, kResourceFlagSynthetic);
+}
+
 typedef bool (*VisitResourceLabelFn)(uint64_t, const Label, void*);
 void ResourceVisitLabels(const Resource* res, VisitResourceLabelFn fn, void* data);
 

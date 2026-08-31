@@ -14,7 +14,7 @@ func HandleInfo(cmd *cobra.Command, args []string) error {
 	}
 	defer orc.Close()
 
-	if err := orc.ProcessDiscoveredManifests(); err != nil {
+	if err := orc.ProcessDiscoveredManifests(hypha.RunObserve); err != nil {
 		return fmt.Errorf("failed to process discovered manifests: %v", err)
 	}
 

@@ -117,12 +117,12 @@ func handleApply(cmd *cobra.Command, args []string) error {
 	}
 	defer orc.Close()
 
-	if err := orc.ProcessDiscoveredManifests(); err != nil {
-		return fmt.Errorf("failed to process discovered manifests: %v", err)
-	}
-
 	info := hypha.RunInfo{
 		Mode: hypha.RunApplyMode,
+	}
+
+	if err := orc.ProcessDiscoveredManifests(info.Mode); err != nil {
+		return fmt.Errorf("failed to process discovered manifests: %v", err)
 	}
 	err = orc.Run(info)
 	if err != nil {

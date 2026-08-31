@@ -17,15 +17,22 @@ extern "C" {
 // implementation detail. Adding a flag means picking the next free bit and appending a
 // line to FOR_EACH_RESOURCE_FLAG below; it must never mean renumbering an existing one.
 //
-// Bit 0 (Static) is the only flag defined today: it marks a resource as compiled-in and
-// pre-converged (see IsResourceStatic in resource.h). Bits 1-7 are reserved for future use
-// -- e.g. a Provider bit distinguishing provider-style resources (Controller,
-// PackageBackend, ...) from the things they provide for, without a string comparison on
-// kind, or a Protected bit rejecting manifest-driven destroy/mutation of a given resource.
-// This is exactly why a bitfield was chosen over a plain enum-valued "mode" field: multiple
-// independent axes can be added later without a schema migration on the field itself.
-#define FOR_EACH_RESOURCE_FLAG(V) \
-  V(Static, 0) /* compiled-in, pre-converged; bypasses observe/normalize/plan/apply entirely */
+// Bit 0 (Static) marks a resource as compiled-in and pre-converged (see IsResourceStatic in
+// resource.h). Bit 1 (Synthetic) marks a resource as graph-visible bookkeeping rather than a
+// user-managed resource: like Static it bypasses observe/normalize/plan/apply entirely, but
+// unlike Static it isn't necessarily compiled-in -- it may be materialized at runtime (e.g. a
+// Manifest resource created from something discovered on disk). Synthetic resources exist so
+// generic graph consumers (list/desc/get, selectors, the DOT/graph visualizers) work over them
+// for free; they are never a valid `depends_on` target and never enter kResourcePending, so the
+// scheduler and reconcile loop never have to know they exist as a special case. Bits 2-7 remain
+// reserved -- e.g. a Provider bit distinguishing provider-style resources (Controller,
+// PackageBackend, ...) from the things they provide for, without a string comparison on kind, or
+// a Protected bit rejecting manifest-driven destroy/mutation of a given resource. This is exactly
+// why a bitfield was chosen over a plain enum-valued "mode" field: multiple independent axes can
+// be added later without a schema migration on the field itself.
+#define FOR_EACH_RESOURCE_FLAG(V)                                                                       \
+  V(Static, 0)    /* compiled-in, pre-converged; bypasses observe/normalize/plan/apply entirely */      \
+  V(Synthetic, 1) /* graph-visible bookkeeping, not user-managed; same bypass, not compiled-in */
 
 typedef uint8_t ResourceFlags;
 

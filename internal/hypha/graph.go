@@ -217,10 +217,11 @@ func (rg *ResourceGraph) AddResource(
 	annotations []ResourceAnnotation,
 	dependsOn []string,
 	rawSpec string,
-) error {
+	flags C.ResourceFlags,
+) (*C.Resource, error) {
 	newRes := C.AllocNewResouceInGraph(rg.Handle)
 	if newRes == nil {
-		return fmt.Errorf("failed to allocate resource in graph")
+		return nil, fmt.Errorf("failed to allocate resource in graph")
 	}
 
 	cKind := C.ResourceKind(kind)
@@ -252,10 +253,24 @@ func (rg *ResourceGraph) AddResource(
 	setResourceLabels(newRes, labels)
 	setResourceAnnotations(newRes, annotations)
 
+	newRes.flags = flags
+	// Synthetic resources (e.g. Manifest) are graph-visible bookkeeping: they bypass
+	// observe/normalize/plan/apply entirely by never entering kResourcePending in the first
+	// place, exactly like the Static Controller/PackageManager bootstrap resources. This is
+	// also why they must never carry depends_on -- QueueReconcileTaskForResource only consults
+	// depends_on to gate the reconcile loop, but a Pending resource depending on a resource
+	// that will never leave kResourceReady would deadlock it forever.
+	if C.ResourceFlagsHas(flags, C.kResourceFlagSynthetic) {
+		newRes.state = C.kResourceReady
+		newRes.status.state = C.kResourceReady
+		setResourceDependsOn(newRes, nil)
+		return newRes, nil
+	}
+
 	newRes.state = C.kResourcePending
 	setResourceDependsOn(newRes, dependsOn)
 
-	return nil
+	return newRes, nil
 }
 
 func resolveOrGenerateResourceId(store *C.StateStore, kind C.ResourceKind, name string) C.ResourceId {
