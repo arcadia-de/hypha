@@ -1,11 +1,12 @@
+---
 name: Build Hypha
 on:
   push:
     branches:
-      - main
+    - main
   release:
     types:
-      - published
+    - published
 permissions:
   contents: write
   pull-requests: write
@@ -20,8 +21,8 @@ jobs:
       tag_name: ${{ steps.release.outputs.tag_name }}
       version: ${{ steps.release.outputs.version }}
     steps:
-      - uses: googleapis/release-please-action@v4
-        id: release
+    - uses: googleapis/release-please-action@v4
+      id: release
   compile:
     runs-on: ubuntu-latest
     needs: release-please
@@ -33,42 +34,37 @@ jobs:
         password: ${{ secrets.GITHUB_TOKEN }}
       options: --user root
     steps:
-      - name: Checkout repository code
-        uses: actions/checkout@v4
-      - name: Check Environment Versions
-        run: |
-          go version
-          meson --version
-          ninja --version
-      - name: Compile libhypha
-        run: |
-          VERSION="${{ needs.release-please.outputs.version }}"
-          if [ -z "$VERSION" ]; then
-            VERSION="${{ github.event.release.tag_name }}"
-            VERSION="${VERSION#v}"
-          fi
+    - name: Checkout repository code
+      uses: actions/checkout@v4
+    - name: Compile libhypha
+      run: |
+        VERSION="${{ needs.release-please.outputs.version }}"
+        if [ -z "$VERSION" ]; then
+          VERSION="${{ github.event.release.tag_name }}"
+          VERSION="${VERSION#v}"
+        fi
 
-          meson setup build --reconfigure -Dhypha_version="${VERSION}"
-          ninja -C build
-      - name: Compile Hypha
-        run: |
-          export CGO_ENABLED=1
-          export PKG_CONFIG_PATH="$(pwd)/build/meson-uninstalled:$PKG_CONFIG_PATH"
+        meson setup build --reconfigure
+        ninja -C build
+    - name: Compile Hypha
+      run: |
+        export CGO_ENABLED=1
+        export PKG_CONFIG_PATH="$(pwd)/build/meson-uninstalled:$PKG_CONFIG_PATH"
 
-          VERSION="${{ needs.release-please.outputs.version }}"
-          if [ -z "$VERSION" ]; then
-            VERSION="${{ github.event.release.tag_name }}"
-            VERSION="${VERSION#v}"
-          fi
+        VERSION="${{ needs.release-please.outputs.version }}"
+        if [ -z "$VERSION" ]; then
+          VERSION="${{ github.event.release.tag_name }}"
+          VERSION="${VERSION#v}"
+        fi
 
-          go build -ldflags="-X main.Version=$VERSION -linkmode=external -s -w -extldflags=-Wl,--gc-sections" \
-            -o hypha \
-            cmd/hypha/main.go
-      - name: Upload Artifacts to Release
-        uses: softprops/action-gh-release@v2
-        with:
-          tag_name: ${{ needs.release-please.outputs.tag_name || github.event.release.tag_name }}
-          files: hypha
+        go build -ldflags="-X main.Version=$VERSION -linkmode=external -s -w -extldflags=-Wl,--gc-sections" \
+          -o hypha \
+          cmd/hypha/main.go
+    - name: Upload Artifacts to Release
+      uses: softprops/action-gh-release@v2
+      with:
+        tag_name: ${{ needs.release-please.outputs.tag_name || github.event.release.tag_name }}
+        files: hypha
   build-sandbox:
     runs-on: ubuntu-latest
     needs: release-please
@@ -77,24 +73,24 @@ jobs:
       contents: read
       packages: write
     steps:
-      - name: Checkout repository
-        uses: actions/checkout@v4
-      - name: Set up Docker Buildx
-        uses: docker/setup-buildx-action@v3
-      - name: Log in to GitHub Container Registry
-        uses: docker/login-action@v3
-        with:
-          registry: ghcr.io
-          username: ${{ github.actor }}
-          password: ${{ secrets.GITHUB_TOKEN }}
-      - name: Build and push Environment
-        uses: docker/build-push-action@v6
-        with:
-          context: .
-          file: ./docker/sandbox/Dockerfile
-          push: true
-          tags: |
-            ${{ env.REGISTRY }}/${{ github.repository }}/sandbox:latest
-            ${{ env.REGISTRY }}/${{ github.repository }}/sandbox:${{ needs.release-please.outputs.tag_name || github.event.release.tag_name }}
-          cache-from: type=gha
-          cache-to: type=gha,mode=max
+    - name: Checkout repository
+      uses: actions/checkout@v4
+    - name: Set up Docker Buildx
+      uses: docker/setup-buildx-action@v3
+    - name: Log in to GitHub Container Registry
+      uses: docker/login-action@v3
+      with:
+        registry: ghcr.io
+        username: ${{ github.actor }}
+        password: ${{ secrets.GITHUB_TOKEN }}
+    - name: Build and push Environment
+      uses: docker/build-push-action@v6
+      with:
+        context: .
+        file: ./docker/sandbox/Dockerfile
+        push: true
+        tags: |
+          ${{ env.REGISTRY }}/${{ github.repository }}/sandbox:latest
+          ${{ env.REGISTRY }}/${{ github.repository }}/sandbox:${{ needs.release-please.outputs.tag_name || github.event.release.tag_name }}
+        cache-from: type=gha
+        cache-to: type=gha,mode=max
