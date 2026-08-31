@@ -4,7 +4,7 @@
 
 class ExpanderTest : public ::testing::Test {  // NOLINT(cppcoreguidelines-special-member-functions)
  protected:
-  Expander expander_;
+  Expander expander_{};
 
   inline auto expander() -> Expander* {
     return &expander_;

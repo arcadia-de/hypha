@@ -224,7 +224,8 @@ func (orc *Orchestrator) AddResource(spec ResourceSpec) error {
 
 	graph := orc.GetResourceGraph()
 	store := C.GetOrcStateStore(orc.Handle)
-	return graph.AddResource(store, kind, spec.Metadata.Name, ns, spec.Metadata.Labels, spec.Metadata.Annotations, spec.DependsOn, rawSpec)
+	_, err := graph.AddResource(store, kind, spec.Metadata.Name, ns, spec.Metadata.Labels, spec.Metadata.Annotations, spec.DependsOn, rawSpec, C.kResourceFlagsNone)
+	return err
 }
 
 func (orc *Orchestrator) Close() {
@@ -476,7 +477,7 @@ func (orc *Orchestrator) GetValidationLog() ValidationLog {
 	return GetValidationLog(C.GetOrcValidationLog(orc.Handle))
 }
 
-func (orc *Orchestrator) ProcessDiscoveredManifests() error {
+func (orc *Orchestrator) ProcessDiscoveredManifests(mode RunMode) error {
 	validator, err := NewSchemaValidator()
 	if err != nil {
 		return fmt.Errorf("failed to initialize schema validator: %w", err)
@@ -508,7 +509,10 @@ func (orc *Orchestrator) ProcessDiscoveredManifests() error {
 
 		if len(specs) == 0 {
 			fmt.Printf("empty manifest: %s\n", dm.Value)
-			return false
+		}
+
+		if err := orc.addManifestResource(dm, len(specs), mode == RunApplyMode); err != nil {
+			fmt.Printf("failed to record manifest resource for %s (%s): %v\n", dm.Value, dm.Kind.String(), err)
 		}
 
 		for _, s := range specs {
