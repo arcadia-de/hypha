@@ -27,3 +27,4 @@ pre-commit:
     hadolint-format:
       glob: "**/Dockerfile*"
       run: hadolint {staged_files}
+      stage_fixed: true
