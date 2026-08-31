@@ -24,3 +24,6 @@ pre-commit:
       glob: "*.{yaml,yml}"
       run: yamlfmt {staged_files}
       stage_fixed: true
+    hadolint-format:
+      glob: "**/Dockerfile*"
+      run: hadolint {staged_files}
