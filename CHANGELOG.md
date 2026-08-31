@@ -1,5 +1,21 @@
 # Changelog
 
+## [1.9.0](https://github.com/arcadia-de/hypha/compare/v1.8.0...v1.9.0) (2026-08-31)
+
+
+### Features
+
+* ✨ add code for .hyphaignore files ([671c101](https://github.com/arcadia-de/hypha/commit/671c1016ca7d6ad16bf7822fd33d51ccee30ab1d))
+* ✨ add code for .hyphaignore files ([b14afcd](https://github.com/arcadia-de/hypha/commit/b14afcd38bfd32eb6ab53cf5fffcea2f8f7dd183))
+* ✨ add Manifests as a read-only Resource kind ([38bf2ed](https://github.com/arcadia-de/hypha/commit/38bf2edc4f9049e359cd7ed7978faa653215b1d3))
+* ✨ add manifests as a Resource kind ([38bf2ed](https://github.com/arcadia-de/hypha/commit/38bf2edc4f9049e359cd7ed7978faa653215b1d3)), closes [#48](https://github.com/arcadia-de/hypha/issues/48)
+* **hyphaignore:** ✨ add ignore class for fnmatching against files from a .hyphaignore ([b14afcd](https://github.com/arcadia-de/hypha/commit/b14afcd38bfd32eb6ab53cf5fffcea2f8f7dd183)), closes [#46](https://github.com/arcadia-de/hypha/issues/46)
+
+
+### Bug Fixes
+
+* 🐛 fix warning in expander test ([38bf2ed](https://github.com/arcadia-de/hypha/commit/38bf2edc4f9049e359cd7ed7978faa653215b1d3))
+
 ## [1.8.0](https://github.com/arcadia-de/hypha/compare/v1.7.0...v1.8.0) (2026-08-30)
 
 
