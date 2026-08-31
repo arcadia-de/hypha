@@ -14,13 +14,9 @@
 
 #ifndef FNM_CASEFOLD
 #ifdef FNM_IGNORECASE
-
 #define FNM_CASEFOLD FNM_IGNORECASE
-
 #else
-
 #define FNM_CASEFOLD 0
-
 #endif  // FNM_IGNORECASE
 #endif  // FNM_CASEFOLD
 
