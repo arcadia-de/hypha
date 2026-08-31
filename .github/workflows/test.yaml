@@ -1,0 +1,42 @@
+name: Test Hypha
+on:
+  push:
+    branches:
+      - main
+      - develop
+jobs:
+  compile:
+    runs-on: ubuntu-latest
+    container:
+      image: ghcr.io/arcadia-de/hypha/hypha-build-env:latest
+      credentials:
+        username: ${{ github.actor }}
+        password: ${{ secrets.GITHUB_TOKEN }}
+      options: --user root
+    steps:
+      - name: Checkout repository code
+        uses: actions/checkout@v4
+      - name: Compile libhypha
+        run: |
+          meson setup build --reconfigure
+          ninja -C build
+      - name: Test libhypha
+        run: |
+          meson test -C build --print-errorlogs
+      - name: Compile Hypha
+        run: |
+          export CGO_ENABLED=1
+          export PKG_CONFIG_PATH="$(pwd)/build/meson-uninstalled:$PKG_CONFIG_PATH"
+          go build -ldflags="-X main.Version=latest -linkmode=external -s -w -extldflags=-Wl,--gc-sections" \
+            -o hypha \
+            cmd/hypha/main.go
+      - name: Test Hypha (CGo lib)
+        run: |
+          export CGO_ENABLED=1
+          export PKG_CONFIG_PATH="$(pwd)/build/meson-uninstalled:$PKG_CONFIG_PATH"
+          go test ./internal/hypha
+      - name: Test Hypha (CLI lib)
+        run: |
+          export CGO_ENABLED=1
+          export PKG_CONFIG_PATH="$(pwd)/build/meson-uninstalled:$PKG_CONFIG_PATH"
+          go test ./internal/cli

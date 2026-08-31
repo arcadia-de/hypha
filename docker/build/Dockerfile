@@ -47,6 +47,7 @@ RUN apt-get update \
     flex \
     bzip2 \
     gettext \
+    libgtest-dev \
     libltdl-dev \
  && rm -rf /var/lib/apt/lists/* \
  && pip3 install --break-system-packages \

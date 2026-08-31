@@ -1,0 +1,26 @@
+---
+commit-msg:
+  commands:
+    conventional-commits:
+      run: cog verify --file {1}
+pre-commit:
+  parallel: true
+  commands:
+    go-fmt:
+      glob: "*.go"
+      run: gofmt -w {staged_files} && git add {staged_files}
+    # go-lint:
+    #   glob: "*.go"
+    #   run: golangci-lint run {staged_files}
+    c-format:
+      glob: "*.[ch]"
+      run: clang-format -i {staged_files}
+      stage_fixed: true
+    meson-lint:
+      glob: "meson.build"
+      run: meson format -e -i {staged_files}
+      stage_fixed: true
+    yaml-format:
+      glob: "*.{yaml,yml}"
+      run: yamlfmt {staged_files}
+      stage_fixed: true

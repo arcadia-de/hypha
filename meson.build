@@ -1,18 +1,21 @@
 project(
   'hypha',
-  [ 'c', 'cpp' ],
+  ['c', 'cpp'],
   version: files('VERSION'),
   default_options: ['c_std=c23,c2x'],
   meson_version: '>= 1.10.0',
 )
 add_project_arguments('-D_XOPEN_SOURCE=700', language: 'c')
-add_project_arguments('-DHYPHA_VERSION="' + meson.project_version() + '"', language: 'c')
+add_project_arguments(
+  '-DHYPHA_VERSION="' + meson.project_version() + '"',
+  language: 'c',
+)
 
 enable_profiling = get_option('enable_profiling')
 
 if get_option('buildtype') == 'debug'
   message('debug mode is enabled')
-  add_project_arguments('-DHYPHA_DEBUG', language: [ 'c', 'cpp' ])
+  add_project_arguments('-DHYPHA_DEBUG', language: ['c', 'cpp'])
 endif
 
 threads = dependency('threads', required: true)
@@ -36,26 +39,26 @@ all_hypha_deps = [
 archive = dependency('libarchive', version: '>=3.8.8', required: false)
 if archive.found()
   all_hypha_deps += archive
-  add_project_arguments('-DHYPHA_HAS_ARCHIVE', language: [ 'c', 'cpp' ])
+  add_project_arguments('-DHYPHA_HAS_ARCHIVE', language: ['c', 'cpp'])
 endif
 
 git2 = dependency('libgit2', version: '>=1.9.4', required: false)
 if git2.found()
   all_hypha_deps += git2
-  add_project_arguments('-DHYPHA_HAS_GIT2', language: [ 'c', 'cpp' ])
+  add_project_arguments('-DHYPHA_HAS_GIT2', language: ['c', 'cpp'])
 endif
 
 gvc = dependency('libgvc', version: '>= 15.1.0', required: false)
 if gvc.found()
   message('graphviz is enabled')
-  add_project_arguments('-DHYPHA_GRAPHVIZ_ENABLED', language: [ 'c', 'cpp' ])
+  add_project_arguments('-DHYPHA_GRAPHVIZ_ENABLED', language: ['c', 'cpp'])
   all_hypha_deps += gvc
 endif
 
-wamr = dependency('libiwasm', version: '>=2.2.0', required: false) 
+wamr = dependency('libiwasm', version: '>=2.2.0', required: false)
 if wamr.found()
   message('wamr is enabled')
-  add_project_arguments('-DHYPHA_WAMR_ENABLED', language: [ 'c', 'cpp' ])
+  add_project_arguments('-DHYPHA_WAMR_ENABLED', language: ['c', 'cpp'])
   all_hypha_deps += wamr
 endif
 
@@ -64,7 +67,7 @@ if enable_profiling
   if tracy_dep.found()
     message('profiling is enabled with tracy')
     all_hypha_deps += tracy_dep
-    add_project_arguments('-DHYPHA_ENABLE_PROFILING', language: [ 'c', 'cpp' ])
+    add_project_arguments('-DHYPHA_ENABLE_PROFILING', language: ['c', 'cpp'])
   endif
 endif
 
@@ -88,7 +91,7 @@ pkg.generate(
     hypha_state,
     hypha_log,
     hypha_utils,
-  ], 
+  ],
   requires: all_hypha_deps,
   libraries_private: [
     m_dep,
