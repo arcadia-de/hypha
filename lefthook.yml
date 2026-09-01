@@ -9,9 +9,6 @@ pre-commit:
     go-fmt:
       glob: "*.go"
       run: gofmt -w {staged_files} && git add {staged_files}
-    # go-lint:
-    #   glob: "*.go"
-    #   run: golangci-lint run {staged_files}
     c-format:
       glob: "*.[ch]"
       run: clang-format -i {staged_files}
@@ -29,7 +26,7 @@ pre-commit:
       run: hadolint {staged_files}
       stage_fixed: true
     render-vhs-tapes:
-      glob: "*.{tape}"
+      glob: "*.tape"
       run: |
         for tape in {staged_files}; do
           vhs "${tape}" || exit 1
