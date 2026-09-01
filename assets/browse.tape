@@ -1,7 +1,7 @@
 Output ./assets/browse.gif
 
 Set Shell "zsh"
-Set FontSize 12
+Set FontSize 13
 Set Width 1200
 Set Height 600
 
