@@ -23,12 +23,12 @@ jobs:
       uses: actions/checkout@v4
     - name: Install VHS and Dependencies
       run: |
-        sudo apt-get update
-        sudo apt-get install -y chromium-browser ffmpeg
-        sudo mkdir -p /etc/apt/keyrings
-        curl -fsSL https://charm.sh | sudo gpg --dearmor -o /etc/apt/keyrings/charm.gpg
-        echo "deb [signed-by=/etc/apt/keyrings/charm.gpg] https://charm.sh * *" | sudo tee /etc/apt/sources.list.d/charm.list
-        sudo apt-get update && sudo apt-get install vhs
+        apt-get update
+        apt-get install -y chromium-browser ffmpeg
+        mkdir -p /etc/apt/keyrings
+        curl -fsSL https://charm.sh | gpg --dearmor -o /etc/apt/keyrings/charm.gpg
+        echo "deb [signed-by=/etc/apt/keyrings/charm.gpg] https://charm.sh * *" | tee /etc/apt/sources.list.d/charm.list
+        apt-get update && apt-get install vhs
     - name: Compile libhypha
       run: |
         VERSION="${{ needs.release-please.outputs.version }}"
