@@ -1,5 +1,4 @@
-Output describe.gif
-Output describe.mp4
+Output ./assets/describe.gif
 
 Set Shell "zsh"
 Set FontSize 12

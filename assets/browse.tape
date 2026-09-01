@@ -1,5 +1,4 @@
-Output browse.gif
-Output browse.mp4
+Output ./assets/browse.gif
 
 Set Shell "zsh"
 Set FontSize 12

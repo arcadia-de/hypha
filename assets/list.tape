@@ -1,5 +1,4 @@
-Output list.gif
-Output list.mp4
+Output ./assets/list.gif
 
 Set Shell "zsh"
 Set FontSize 12
