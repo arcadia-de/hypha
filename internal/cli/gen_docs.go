@@ -8,7 +8,11 @@ import (
 	"github.com/spf13/cobra/doc"
 )
 
-func HandleGenDocs(cmd *cobra.Command, args []string) error {
+func HandleGenTldrDocs(cmd *cobra.Command, args []string) error {
+	return GenTldrPage(os.Stdout)
+}
+
+func HandleGenManDocs(cmd *cobra.Command, args []string) error {
 	outDir := os.Getenv("MESON_INSTALL_DESTDIR_MAN")
 	if outDir == "" {
 		outDir = "./dist/man" // fallback
@@ -31,7 +35,19 @@ func init() {
 	gendocs := &cobra.Command{
 		Use:    "gen-docs",
 		Hidden: true,
-		RunE:   HandleGenDocs,
 	}
+
+	genmandocs := &cobra.Command{
+		Use:  "man",
+		RunE: HandleGenManDocs,
+	}
+	gendocs.AddCommand(genmandocs)
+
+	gentldrdocs := &cobra.Command{
+		Use:  "tldr",
+		RunE: HandleGenTldrDocs,
+	}
+	gendocs.AddCommand(gentldrdocs)
+
 	RootCmd.AddCommand(gendocs)
 }

@@ -111,7 +111,13 @@ if get_option('buildtype') == 'debug'
   hypha = custom_target(
     'hypha',
     output: 'hypha',
-    input: 'cmd' / 'hypha' / 'main.go',
+    input:  'cmd' / 'hypha' / 'main.go',
+    depend_files: [
+      'go.mod',
+      'go.sum',
+      'cmd',
+      'internal',
+    ],
     env : go_build_env,
     command: [
       go,
@@ -126,7 +132,13 @@ else
   hypha = custom_target(
     'hypha',
     output: 'hypha',
-    input: 'cmd' / 'hypha' / 'main.go',
+    input:  'cmd' / 'hypha' / 'main.go',
+    depend_files: [
+      'go.mod',
+      'go.sum',
+      'internal',
+      'cmd',
+    ],
     env : go_build_env,
     command: [
       go,
