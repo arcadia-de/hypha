@@ -35,6 +35,7 @@ ResourceValidator* NewResourceValidator(ResourceValidatorFn fn, void* data, void
     rv->data = data;
     rv->free_data = free_data;
   }
+
   return rv;
 }
 

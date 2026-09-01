@@ -100,3 +100,67 @@ pkg.generate(
     'libs/hypha/include/',
   ],
 )
+
+go_build_env = environment()
+go_build_env.set('CGO_ENABLED', '1')
+go_build_env.set('CGO_LDFLAGS', '-Wl,-export-dynamic -Wl,--whole-archive -Wl,--no-whole-archive')
+go_build_env.prepend('PKG_CONFIG_PATH', meson.project_source_root() / 'build' / 'meson-uninstalled')
+
+go = find_program('go', required: true)
+if get_option('buildtype') == 'debug'
+  hypha = custom_target(
+    'hypha',
+    output: 'hypha',
+    input: 'cmd' / 'hypha' / 'main.go',
+    env : go_build_env,
+    command: [
+      go,
+      'build',
+      '-ldflags=-linkmode=external',
+      '-o', '@OUTPUT@',
+      '@INPUT@',
+    ],
+    build_by_default: true,
+  )
+else
+  hypha = custom_target(
+    'hypha',
+    output: 'hypha',
+    input: 'cmd' / 'hypha' / 'main.go',
+    env : go_build_env,
+    command: [
+      go,
+      'build',
+      '-ldflags=-linkmode=external',
+      '-s', '-w',
+      '-o', '@OUTPUT@',
+      '@INPUT@',
+    ],
+    build_by_default: true,
+  )
+endif
+
+go_test_env = environment()
+go_test_env.prepend('PKG_CONFIG_PATH', meson.project_source_root() / 'build' / 'meson-uninstalled')
+
+test(
+  'Hypha CGo Tests',
+  go,
+  workdir: meson.project_source_root(),
+  env: go_test_env,
+  args: [
+    'test',
+    './internal/hypha',
+  ],
+)
+
+test(
+  'Hypha CLI Tests',
+  go,
+  workdir: meson.project_source_root(),
+  env: go_test_env,
+  args: [
+    'test',
+    './internal/cli',
+  ],
+)
