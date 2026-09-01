@@ -5,6 +5,7 @@
 
 #include "hypha.h"
 #include "hypha/log.h"
+#include "hypha/repository_spec.h"
 
 static inline void InitController(void* data) {
   git_libgit2_init();

@@ -16,15 +16,8 @@
 #include "hypha/planned_action.h"
 #include "hypha/planner.h"
 #include "hypha/reason.h"
+#include "hypha/symlink_spec.h"
 #include "hypha/validation_log.h"
-
-typedef struct {
-  char* source;
-  size_t source_len;
-
-  char* target;
-  size_t target_len;
-} SymlinkSpec;
 
 static inline bool GetSpecField(const Resource* res, const char* field, char** result, size_t* result_len) {
   ASSERT(res);
@@ -35,7 +28,7 @@ static inline bool GetSpecField(const Resource* res, const char* field, char** r
   return ExpandStr(&expander, json_string_value(source), result, result_len);
 }
 
-thread_local SymlinkSpec spec;
+thread_local SymlinkSpec symlink_spec;
 
 static const char kSourceField[] = "source";
 static const char kTargetField[] = "target";
@@ -46,12 +39,12 @@ DEFINE_CONTROLLER_OBSERVE_FN(Symlink) {
   if (!observed->spec.doc)
     return kStatusOk;
 
-  if (!GetSpecField(observed, kSourceField, &spec.source, &spec.source_len)) {
+  if (!GetSpecField(observed, kSourceField, &symlink_spec.source, &symlink_spec.source_len)) {
     LOG_ERROR("failed to get source field");
     return kStatusInternalError;
   }
 
-  if (!GetSpecField(observed, kTargetField, &spec.target, &spec.target_len)) {
+  if (!GetSpecField(observed, kTargetField, &symlink_spec.target, &symlink_spec.target_len)) {
     LOG_ERROR("failed to get target field");
     return kStatusInternalError;
   }
@@ -65,13 +58,13 @@ DEFINE_CONTROLLER_VALIDATE_FN(Symlink) {
   Resource* desired = (Resource*)ctx->desired;  // TODO(@s0cks): const cast
   ASSERT(desired);
 
-  if (!spec.source || spec.source_len == 0) {
-    NewFailedValidationResult(log, desired, "Failed to get `source` spec field");
+  if (!symlink_spec.source || symlink_spec.source_len == 0) {
+    NewFailedValidationResult(log, desired, "Failed to get `source` symlink_spec field");
     return false;
   }
 
-  if (!spec.target || spec.target_len == 0) {
-    NewFailedValidationResult(log, desired, "Failed to get `target` spec field");
+  if (!symlink_spec.target || symlink_spec.target_len == 0) {
+    NewFailedValidationResult(log, desired, "Failed to get `target` symlink_spec field");
     return false;
   }
 
@@ -87,36 +80,37 @@ DEFINE_CONTROLLER_PLAN_FN(Symlink) {
   ASSERT(desired);
 
   struct stat source_stat;
-  if (stat(spec.source, &source_stat) != 0) {
-    PlannedAction* action = NewNoPlannedAction(log, desired, "Source `%s` does not exist", spec.source);
+  if (stat(symlink_spec.source, &source_stat) != 0) {
+    PlannedAction* action = NewNoPlannedAction(log, desired, "Source `%s` does not exist", symlink_spec.source);
     ASSERT(action);
     return kNoAction;
   }
 
   struct stat target_stat;
-  if (lstat(spec.target, &target_stat) == 0) {
+  if (lstat(symlink_spec.target, &target_stat) == 0) {
     if (S_ISLNK(target_stat.st_mode)) {
       PlannedAction* action =
-          NewNoPlannedAction(log, desired, "Target `%s` already exists and is a valid symlink", spec.target);
+          NewNoPlannedAction(log, desired, "Target `%s` already exists and is a valid symlink", symlink_spec.target);
       // TODO(@s0cks): check symlink dest
       ASSERT(action);
       return kNoAction;
     }
 
     PlannedAction* action =
-        NewNoPlannedAction(log, desired, "Target `%s` already exists but is not a symlink", spec.target);
+        NewNoPlannedAction(log, desired, "Target `%s` already exists but is not a symlink", symlink_spec.target);
     ASSERT(action);
     return kNoAction;
   }
 
-  PlannedAction* action = NewCreatePlannedAction(log, desired, "Target `%s` doesn't exist", spec.target);
+  PlannedAction* action = NewCreatePlannedAction(log, desired, "Target `%s` doesn't exist", symlink_spec.target);
   ASSERT(action);
   return kCreateAction;
 }
 
 DEFINE_CONTROLLER_APPLY_FN(Symlink) {
-  if (symlink(spec.source, spec.target) != 0) {
-    LOG_ERROR("Failed to create symlink from '%s' to '%s': %s", spec.source, spec.target, strerror(errno));
+  if (symlink(symlink_spec.source, symlink_spec.target) != 0) {
+    LOG_ERROR("Failed to create symlink from '%s' to '%s': %s", symlink_spec.source, symlink_spec.target,
+              strerror(errno));
     return kStatusInternalError;
   }
 
@@ -131,17 +125,17 @@ DEFINE_CONTROLLER_STATUS_FN(Symlink) {
 
   ASSERT(current);
   struct stat source_stat;
-  if (stat(spec.source, &source_stat) != 0) {
-    LOG_ERROR("Source '%s' does not exist", spec.source);
+  if (stat(symlink_spec.source, &source_stat) != 0) {
+    LOG_ERROR("Source '%s' does not exist", symlink_spec.source);
     return kStatusInternalError;
   }
 
   struct stat target_stat;
-  if (lstat(spec.target, &target_stat) == 0) {
+  if (lstat(symlink_spec.target, &target_stat) == 0) {
     if (S_ISLNK(target_stat.st_mode))
       return kStatusOk;
 
-    LOG_ERROR("Target '%s' is not a symlink", spec.target);
+    LOG_ERROR("Target '%s' is not a symlink", symlink_spec.target);
     return kStatusInternalError;
   }
 

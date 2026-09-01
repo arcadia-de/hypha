@@ -9,14 +9,9 @@
 #include "hypha/log.h"
 #include "hypha/planned_action.h"
 #include "hypha/planner.h"
+#include "hypha/test_spec.h"
 #include "hypha/validation_log.h"
 #include "hypha/validation_result.h"
-
-static const uint32_t kDefaultSleepSeconds = 1;
-
-typedef struct {
-  uint32_t sleep;
-} TestSpec;
 
 static const char kSleepField[] = "sleep";
 static inline void GetSleepField(const Resource* res, uint32_t* result) {

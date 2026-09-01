@@ -9,6 +9,7 @@
 #include <unistd.h>
 
 #include "hypha.h"
+#include "hypha/archive_spec.h"
 #include "hypha/log.h"
 
 static inline bool Extract(const char* filename, const char* out_dir, const uint32_t buffer_size) {

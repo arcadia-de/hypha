@@ -8,8 +8,11 @@
 #include "hypha/log.h"
 #include "hypha/planned_action.h"
 #include "hypha/planner.h"
+#include "hypha/template_spec.h"
 #include "hypha/validation_log.h"
 #include "hypha/validation_result.h"
+
+thread_local TemplateSpec template_spec;
 
 static inline bool GetSpecField(const Resource* res, const char* field, char** result, size_t* result_len) {
   Expander expander;

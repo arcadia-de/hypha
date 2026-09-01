@@ -2,6 +2,9 @@
 
 #include "hypha.h"
 #include "hypha/log.h"
+#include "hypha/package_manager_spec.h"
+
+thread_local PackageManagerSpec spec;
 
 DEFINE_CONTROLLER_OBSERVE_FN(PackageManager) {
   return kStatusOk;

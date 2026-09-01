@@ -3,12 +3,36 @@ subdir('lua-runtime')
 subdir('wasm-runtime')
 
 controllers_matrix = {
-  'test': {},
-  'directory': {},
-  'package': {},
-  'symlink': {},
-  'template': {},
-  'package_manager': {},
+  'test': {
+    'sources': [
+      'src' / 'test_spec.c',
+    ],
+  },
+  'directory': {
+    'sources': [
+      'src' / 'directory_spec.c',
+    ],
+  },
+  'package': {
+    'sources': [
+      'src' / 'package_spec.c',
+    ],
+  },
+  'symlink': {
+    'sources': [
+      'src' / 'symlink_spec.c',
+    ],
+  },
+  'template': {
+    'sources': [
+      'src' / 'template_spec.c',
+    ],
+  },
+  'package_manager': {
+    'sources': [
+      'src' / 'package_manager_spec.c',
+    ],
+  },
   'task': {
     'sources': [
       'src' / 'task_spec.c',

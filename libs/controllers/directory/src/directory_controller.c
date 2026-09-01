@@ -9,6 +9,7 @@
 #include <unistd.h>
 
 #include "hypha.h"
+#include "hypha/directory_spec.h"
 #include "hypha/expander.h"
 #include "hypha/log.h"
 #include "hypha/planned_action.h"
