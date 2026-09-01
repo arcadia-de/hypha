@@ -46,6 +46,9 @@ jobs:
 
         meson setup build --reconfigure
         ninja -C build
+    - name: Run Tests
+      run: |
+        meson test -C build --print-errorlogs
     - name: Compile Hypha
       run: |
         export CGO_ENABLED=1
