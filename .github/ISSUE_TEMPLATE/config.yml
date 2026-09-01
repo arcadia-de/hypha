@@ -1,0 +1,10 @@
+---
+blank_issues_enabled: false
+contact_links:
+- name: 📖 Hypha Getting Started Guide
+  url: https://github.com/s0cks/wiki
+  about: Read the official documentation before reporting configuration errors.
+
+- name: 🏗️ Developer Onboarding & Building
+  url: https://github.com/s0cks/wiki/Building
+  about: Check the exact dependency matrix and compilation flags for CGo/Meson.
