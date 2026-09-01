@@ -89,8 +89,10 @@ You can download from the [Releases](https://github.com/arcadia-de/hypha/release
 ```sh
 # using curl:
 curl -L https://github.com/arcadia-de/hypha/releases/latest/download/hypha -o hypha
+
 # using wget:
 wget https://github.com/arcadia-de/hypha/releases/latest/download/hypha
+
 # using httpie:
 https --download https://github.com/arcadia-de/hypha/releases/latest/download/hypha
 ```
@@ -194,18 +196,18 @@ Finally, if your changes look correct, let's apply those changes:
 hypha apply
 ```
 
-![Example](./docs/example.gif)
+![Example](./assets/example.gif)
 
 ### Observe Your Resources
 
 Once your resources are managed by Hypha, you can inspect them using:
 
-| Command                                                                      | Description                                                       |                  Example                 |
-|:-----------------------------------------------------------------------------|:------------------------------------------------------------------|:----------------------------------------:|
-| `hypha list`<br/>`hypha ls`                                                  | List resources, show a vertical slice of the resource graph       |     ![List Example](./docs/list.gif)     |
-| `hypha describe`<br/>`hypha desc`                                            | Describe resources, show a horizontal slice of the resource graph | ![Describe Example](./docs/describe.gif) |
-| `hypha query`<br/>`hypha query --expr 'resources(kind: "Controller"){ id }'` | Query the resource graph, filter and pick by the data you want    |                    TBD                   |
-| `hypha browse`<br/>`hypha browse --web`                                      | Browse the resource graph using a TUI or web browser              |   ![Browse Example](./docs/browse.gif)   |
+| Command                                                                      | Description                                                       |                   Example                  |
+|:-----------------------------------------------------------------------------|:------------------------------------------------------------------|:------------------------------------------:|
+| `hypha list`<br/>`hypha ls`                                                  | List resources, show a vertical slice of the resource graph       |     ![List Example](./assets/list.gif)     |
+| `hypha describe`<br/>`hypha desc`                                            | Describe resources, show a horizontal slice of the resource graph | ![Describe Example](./assets/describe.gif) |
+| `hypha query`<br/>`hypha query --expr 'resources(kind: "Controller"){ id }'` | Query the resource graph, filter and pick by the data you want    |                     TBD                    |
+| `hypha browse`<br/>`hypha browse --web`                                      | Browse the resource graph using a TUI or web browser              |   ![Browse Example](./assets/browse.gif)   |
 
 > You can find more in the [Getting Started](https://github.com/arcadia-de/hypha/wiki/Getting-Started) page in the wiki.
 

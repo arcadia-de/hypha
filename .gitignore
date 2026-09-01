@@ -4,6 +4,7 @@ dist/
 .cache/
 wiki/
 private/
+hypha
 bin/
 *.txt
 *.zip

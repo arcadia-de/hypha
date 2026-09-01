@@ -28,6 +28,13 @@ pre-commit:
       glob: "**/Dockerfile*"
       run: hadolint {staged_files}
       stage_fixed: true
+    render-vhs-tapes:
+      glob: "*.{tape}"
+      run: |
+        for tape in {staged_files}; do
+          vhs "${tape}" || exit 1
+        done
+      stage_fixed: true
     gitleaks:
       glob: "*"
       run: gitleaks protect --staged --verbose
