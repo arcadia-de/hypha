@@ -4,13 +4,11 @@ on:
   push:
     branches:
     - develop
-env:
-  REGISTRY: ghcr.io
 jobs:
   test:
     runs-on: ubuntu-latest
     container:
-      image: ${{ env.REGISTRY }}/${{ github.repository }}/hypha-build-env:latest
+      image: ghcr.io/${{ github.repository }}/hypha-build-env:latest
       credentials:
         username: ${{ github.actor }}
         password: ${{ secrets.GITHUB_TOKEN }}
