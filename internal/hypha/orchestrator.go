@@ -104,6 +104,10 @@ func (orc *Orchestrator) GetResourceGraph() ResourceGraph {
 	}
 }
 
+func (orc *Orchestrator) GetQuerySchema() *C.QuerySchema {
+	return C.GetOrcQuerySchema(orc.Handle)
+}
+
 func (orc *Orchestrator) PrintMetrics() error {
 	metrics := orc.GetMetrics()
 	fmt.Println("Telemetry:")
@@ -192,6 +196,8 @@ func (orc *Orchestrator) RenderAnonymousJsonnetManifest(code string) (string, er
 func (orc *Orchestrator) Run(info RunInfo) error {
 	i := info.ToC()
 	defer C.free(unsafe.Pointer(i))
+
+	orc.ProcessDiscoveredManifests(info.Mode)
 
 	success := C.OrchestratorRun(orc.Handle, i)
 	if !bool(success) {

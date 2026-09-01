@@ -10,6 +10,7 @@
 #include "hypha/discovery.h"
 #include "hypha/event.h"
 #include "hypha/planner.h"
+#include "hypha/query.h"
 #include "hypha/resource_decorator.h"
 #include "hypha/resource_graph.h"
 #include "hypha/run_info.h"
@@ -52,6 +53,7 @@ typedef struct {
   OrchestratorMetrics metrics;
   ResourceDecoratorPipeline decorator;
   AppliedActionLog actions;
+  QuerySchema* schema;
 
   size_t num_discovered_manifests;
   DiscoveredManifest* discovered_manifests;
@@ -72,6 +74,7 @@ const char* GetOrcConfigDir(OrchestratorHandle);
 const char* GetOrcStateDir(OrchestratorHandle);
 const char* GetOrcCacheDir(OrchestratorHandle);
 StateStore* GetOrcStateStore(OrchestratorHandle);
+QuerySchema* GetOrcQuerySchema(OrchestratorHandle);
 
 lua_State* NewOrchestratorLuaState(Orchestrator*);
 void QueueReconcileTask(Orchestrator* orc, Controller* ctrl, const ResourceGraphIndex index, Resource* res);

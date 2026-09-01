@@ -2,6 +2,7 @@
 #include <stdlib.h>
 #include <string.h>
 
+#include "hypha/assertions.h"
 #include "hypha/query.h"
 #include "query_ast.h"
 #include "query_parser.h"
@@ -16,7 +17,7 @@ const char* QueryArgGet(const QueryArg* args, const char* name) {
 }
 
 static const RootFieldDef* FindRoot(const QuerySchema* schema, const char* name) {
-  for (uint32_t i = 0; i < schema->num_roots; i++) {
+  for (uint32_t i = 0; i < schema->roots_len; i++) {
     if (strcmp(schema->roots[i].name, name) == 0)
       return &schema->roots[i];
   }
@@ -25,7 +26,7 @@ static const RootFieldDef* FindRoot(const QuerySchema* schema, const char* name)
 }
 
 static const TypeDef* FindType(const QuerySchema* schema, const char* type_name) {
-  for (uint32_t i = 0; i < schema->num_types; i++) {
+  for (uint32_t i = 0; i < schema->types_len; i++) {
     if (strcmp(schema->types[i].type_name, type_name) == 0)
       return &schema->types[i];
   }
@@ -42,9 +43,21 @@ static const FieldDef* FindField(const TypeDef* type, const char* name) {
   return NULL;
 }
 
-static QueryResult* NewNode(ResultKind kind) {
+static inline QueryResult* NewNode(ResultKind kind) {
   QueryResult* node = (QueryResult*)calloc(1, sizeof(QueryResult));
   node->kind = kind;
+  return node;
+}
+
+static inline QueryResult* NewErrorNode(char* message, const size_t message_len) {
+  ASSERT(message);
+  ASSERT(message_len > 0);
+  QueryResult* node = (QueryResult*)malloc(sizeof(QueryResult));
+  if (node) {
+    node->kind = kQueryResultError;
+    node->message = strndup(message, message_len);
+    node->message_len = message_len;
+  }
   return node;
 }
 
@@ -178,7 +191,7 @@ static QueryResult* ResolveObject(const QuerySchema* schema, const TypeDef* type
   return obj_node;
 }
 
-static QueryResult* ExecuteSelection(const QuerySchema* schema, const AstSelection* sel, char** out_error) {
+static QueryResult* ExecuteSelection(const QuerySchema* schema, void* ctx, const AstSelection* sel, char** out_error) {
   const RootFieldDef* root = FindRoot(schema, sel->name);
   if (!root) {
     char buf[160];
@@ -195,7 +208,7 @@ static QueryResult* ExecuteSelection(const QuerySchema* schema, const AstSelecti
     return NULL;
   }
 
-  RootResult rr = root->resolve(sel->args, schema->context);
+  RootResult rr = root->resolve(sel->args, ctx);
 
   QueryResult* array = NewNode(kQueryResultArray);
   array->num_array_items = rr.count;
@@ -215,32 +228,45 @@ static QueryResult* ExecuteSelection(const QuerySchema* schema, const AstSelecti
   return array;
 }
 
-QueryResult* QueryExecute(const QuerySchema* schema, const char* query_text, char** out_error) {
+QueryResult* QueryExecute(const QuerySchema* schema, void* ctx, const char* query_text) {
   AstDocument doc;
-  if (!ParseQuery(query_text, &doc, out_error))
-    return NULL;
+  memset(&doc, 0, sizeof(AstDocument));
 
-  QueryResult* top = NewNode(kQueryResultObject);
-  uint32_t count = 0;
-  for (AstSelection* s = doc.selections; s; s = s->next)
-    count++;
+  QueryResult* result = NULL;
+  char* out_error = NULL;
+  if (!ParseQuery(query_text, &doc, &out_error))
+    goto failed;
 
-  top->object_fields = (ResultObjectField*)malloc(sizeof(ResultObjectField) * count);
-  top->num_object_fields = count;
+  result = NewNode(kQueryResultObject);
+  const size_t num_selections = doc.num_selections;
+
+  result->object_fields = (ResultObjectField*)malloc(sizeof(ResultObjectField) * num_selections);
+  result->num_object_fields = num_selections;
 
   uint32_t i = 0;
   for (AstSelection* s = doc.selections; s; s = s->next, i++) {
-    top->object_fields[i].key = strdup(s->name);
-    top->object_fields[i].value = ExecuteSelection(schema, s, out_error);
-
-    if (*out_error) {
-      top->num_object_fields = i + 1;
-      ResultNodeFree(top);
-      AstDocumentFree(&doc);
-      return NULL;
-    }
+    result->object_fields[i].key = strdup(s->name);
+    result->object_fields[i].value = ExecuteSelection(schema, ctx, s, &out_error);
+    if (out_error)
+      goto failed;
   }
 
+  goto finished;
+
+failed:
+  if (result) {
+    for (size_t j = 0; j < i; i++) {
+      free(result->object_fields[j].key);
+      free(result->object_fields[j].value);
+    }
+
+    free(result->object_fields);
+    free(result);
+  }
+
+  result = NewErrorNode(out_error, strlen(out_error));
+
+finished:
   AstDocumentFree(&doc);
-  return top;
+  return result;
 }

@@ -3,12 +3,13 @@
 
 #include "hypha.h"
 #include "hypha/query.h"
+#include "hypha/resource.h"
 
 typedef struct {
   Resource* resources;
   uint64_t count;
 } ResourcesQueryContext;
 
-QuerySchema HyphaResourcesQuerySchema(ResourcesQueryContext* ctx);
+QuerySchema* NewHyphaResourcesQuerySchema();
 
 #endif  // HYPHA_RESOURCE_QUERY_SCHEMA_H

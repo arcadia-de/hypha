@@ -17,6 +17,7 @@
 #include "hypha/history.h"
 #include "hypha/log.h"
 #include "hypha/orchestrator.h"
+#include "hypha/resource_query_schema.h"
 
 #ifdef HYPHA_ENABLE_PROFILING
 
@@ -216,6 +217,7 @@ OrchestratorHandle NewOrchestrator(OrchestratorConfig config) {
     OrchestratorSubscribe(orc, RECONCILE_COMPLETE_EVENT, &OnReconcileComplete, orc, NULL);
     OrchestratorSubscribe(orc, RECONCILE_COMPLETE_EVENT, &StopLoopOnReconcileDone, orc, NULL);
     OrchestratorSubscribe(orc, RECONCILE_FAILED_EVENT, &StopLoopOnReconcileDone, orc, NULL);
+    orc->schema = NewHyphaResourcesQuerySchema();
 
     if (!ExecInit(orc)) {
       getDefaultSources(orc->L);

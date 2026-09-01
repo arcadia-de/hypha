@@ -78,12 +78,12 @@ func (orc *Orchestrator) Query(query string) (any, error) {
 	cRqctx.count = C.GetNumberOfResourcesInResourceGraph(cResourceGraph)
 
 	cQuery := C.CString(query)
-	cQuerySchema := C.HyphaResourcesQuerySchema(cRqctx)
+	cQuerySchema := orc.GetQuerySchema()
 
 	var cErr *C.char
-	cQueryResult := C.QueryExecute(&cQuerySchema, cQuery, &cErr)
-	if cQueryResult == nil {
-		err_message := C.GoString(cErr)
+	cQueryResult := C.QueryExecute(cQuerySchema, unsafe.Pointer(cRqctx), cQuery)
+	if cQueryResult.kind == C.kQueryResultError {
+		err_message := C.GoStringN(cQueryResult.message, C.int32_t(cQueryResult.message_len))
 		C.free(unsafe.Pointer(cErr))
 		return nil, fmt.Errorf("failed to execute query: %s", err_message)
 	}

@@ -16,6 +16,8 @@ ResourceSelector* NewRefResourceSelector(const char* rhs);
 ResourceSelector* NewKindResourceSelector(const char* rhs);
 ResourceSelector* NewLabelResourceSelector(const Label* rhs);
 ResourceSelector* NewNamespaceResourceSelector(const char* ns);
+ResourceSelector* NewNameResourceSelector(const char* name);
+ResourceSelector* NewStateResourceSelector(ResourceState rh);
 ResourceSelector* NewAnnotationResourceSelector(const Annotation* rhs);
 ResourceSelector* NewAnnotationKeyResourceSelector(const AnnotationKey* rhs);
 ResourceSelector* NewAnnotationValueResourceSelector(const AnnotationValue* rhs);

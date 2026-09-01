@@ -8,6 +8,7 @@
 #include "hypha/log.h"
 #include "hypha/resource.h"
 #include "hypha/resource_kind.h"
+#include "hypha/resource_selector.h"
 
 static const uuid_t kHyphaBootstrapNamespaceUuid = {0xbd, 0x84, 0x2c, 0x9a, 0xef, 0x83, 0x49, 0x52,
                                                     0xa6, 0xa7, 0xda, 0x55, 0xd7, 0x33, 0x0c, 0xd4};
@@ -111,27 +112,21 @@ static inline bool VisitFindProvides(const ResourceGraphIndex idx, Resource* res
 }
 
 bool FindResourceProviding(ResourceGraph* graph, const char* kind, const char* provides, Resource** out) {
+  if (!graph || !kind || !provides) {
+    if (out)
+      *out = NULL;
+    return false;
+  }
+
+  ResourceSelector* selectors[2];
+  selectors[0] = NewKindResourceSelector(kind);
+  Annotation annotation;
+  memset(&annotation, 0, sizeof(Annotation));
+  memcpy(&annotation.key[0], &kProvidesAnnotationKey[0], sizeof(AnnotationKey));
+  memcpy(&annotation.value[0], provides, strlen(provides));
+  selectors[1] = NewAnnotationResourceSelector(&annotation);
+  Resource* found = FindResourceMatching(graph, NewAndResourceSelector(selectors, 2));
   if (out)
-    *out = NULL;
-
-  if (!graph || !kind || !provides)
-    return false;
-
-  ResourceKind k = FindResourceKind(kind);
-  if (k == kInvalidResourceKind)
-    return false;
-
-  FindProvidesContext ctx = {
-      .kind = k,
-      .provides = provides,
-      .found = NULL,
-  };
-  VisitAllResources(graph, &VisitFindProvides, &ctx);
-
-  if (!ctx.found)
-    return false;
-
-  if (out)
-    *out = ctx.found;
+    *out = found;
   return true;
 }

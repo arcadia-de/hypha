@@ -12,6 +12,7 @@ subdir('delta')
 subdir('validation')
 subdir('action')
 subdir('service')
+subdir('query-schema')
 
 subdir('controllers')
 subdir('bindings')

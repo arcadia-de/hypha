@@ -34,9 +34,6 @@ func HandlePlan(cmd *cobra.Command, args []string) error {
 		Mode: hypha.RunPlanMode,
 	}
 
-	if err := orc.ProcessDiscoveredManifests(info.Mode); err != nil {
-		return fmt.Errorf("failed to process discovered manifests: %v", err)
-	}
 	orc.Run(info)
 	fmt.Println()
 

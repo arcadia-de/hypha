@@ -2,6 +2,7 @@
 #define HYPHA_QUERY_H
 
 #include <stdint.h>
+#include <stdlib.h>
 
 typedef struct _QueryArg {
   char* name;
@@ -69,18 +70,22 @@ typedef struct {
 } RootFieldDef;
 
 typedef struct {
-  const RootFieldDef* roots;
-  uint32_t num_roots;
-  const TypeDef* types;
-  uint32_t num_types;
-  void* context;
+  size_t roots_len;
+  size_t roots_cap;
+  RootFieldDef* roots;
+
+  size_t types_len;
+  size_t types_cap;
+  TypeDef* types;
+
 } QuerySchema;
 
 #define FOR_EACH_QUERY_RESULT_KIND(V) \
   V(Null)                             \
   V(String)                           \
   V(Object)                           \
-  V(Array)
+  V(Array)                            \
+  V(Error)
 
 // clang-format off
 typedef enum {
@@ -108,10 +113,13 @@ struct _QueryResult {
 
   QueryResult** array_items;
   uint32_t num_array_items;
+
+  char* message;
+  size_t message_len;
 };
 
 void ResultNodeFree(QueryResult* node);
 char* ResultNodeToJSON(const QueryResult* node);
-QueryResult* QueryExecute(const QuerySchema* schema, const char* query_text, char** out_error);
+QueryResult* QueryExecute(const QuerySchema* schema, void* ctx, const char* query_text);
 
 #endif  // HYPHA_QUERY_H

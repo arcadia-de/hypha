@@ -190,15 +190,15 @@ static inline void ReconcileAfterWork(uv_work_t* req, int status) {
 
   BEGIN_RESOURCE_LOG_CTX(res);
   orc->metrics.num_actions[task->action]++;
-
   AppendPlan(&orc->plan, &task->plan);
   AppendValidationLog(&orc->vlog, &task->vlog);
   AppendDeltaLog(&orc->dlog, &task->dlog);
+  AppendAppliedActionLog(&orc->actions, &task->alog);
 
-  orc->run.status = UpdateResourceState(status, task, &res->state);
+  const ControllerStatus cstatus = UpdateResourceState(status, task, &res->state);
+  orc->metrics.num_statuses[cstatus]++;
+  orc->run.status = cstatus;
   if (IsApplyReconcileTask(task)) {
-    AppendAppliedActionLog(&orc->actions, &task->alog);
-
     WriteResourceState(orc, res);
     if (task->action != kNoAction)
       WriteHistory(orc, res, task);
