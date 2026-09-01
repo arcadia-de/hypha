@@ -2,9 +2,10 @@
 name: Render and Commit VHS Tapes
 on:
   push:
-    branches: [main]
+    branches:
+    - develop
     paths:
-    - 'assets/*.tape'
+    - assets/*.tape
   workflow_dispatch: {}
 permissions:
   contents: write
