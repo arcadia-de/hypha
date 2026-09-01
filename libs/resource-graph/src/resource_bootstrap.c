@@ -128,5 +128,5 @@ bool FindResourceProviding(ResourceGraph* graph, const char* kind, const char* p
   Resource* found = FindResourceMatching(graph, NewAndResourceSelector(selectors, 2));
   if (out)
     *out = found;
-  return true;
+  return found != NULL;
 }
