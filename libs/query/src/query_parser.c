@@ -28,7 +28,7 @@ static bool Fail(ParserState* p, const char* msg) {
 }
 
 static bool Expect(ParserState* p, TokenKind kind, const char* what) {
-  if (p->cur.kind == kTokError)
+  if (p->cur.kind == kInvalidToken)
     return Fail(p, p->cur.text ? p->cur.text : "lexical error");
 
   if (p->cur.kind != kind) {
@@ -47,21 +47,21 @@ static QueryArg* ParseArgList(ParserState* p) {
   QueryArg* tail = NULL;
 
   for (;;) {
-    if (!Expect(p, kTokIdent, "an argument name"))
+    if (!Expect(p, kIdentifierToken, "an argument name"))
       return head;
 
     QueryArg* arg = (QueryArg*)calloc(1, sizeof(QueryArg));
     arg->name = strdup(p->cur.text);
     Advance(p);
 
-    if (!Expect(p, kTokColon, "':' after argument name")) {
+    if (!Expect(p, kColonToken, "':' after argument name")) {
       free(arg->name);
       free(arg);
       return head;
     }
     Advance(p);
 
-    if (p->cur.kind != kTokIdent && p->cur.kind != kTokString && p->cur.kind != kTokNumber) {
+    if (p->cur.kind != kIdentifierToken && p->cur.kind != kStringToken && p->cur.kind != kNumberToken) {
       Fail(p, "expected an argument value");
       free(arg->name);
       free(arg);
@@ -77,7 +77,7 @@ static QueryArg* ParseArgList(ParserState* p) {
     }
     tail = arg;
 
-    if (p->cur.kind == kTokComma) {
+    if (p->cur.kind == kCommaToken) {
       Advance(p);
       continue;
     }
@@ -85,7 +85,7 @@ static QueryArg* ParseArgList(ParserState* p) {
     break;
   }
 
-  if (!Expect(p, kTokRParen, "')' to close argument list"))
+  if (!Expect(p, kRParenToken, "')' to close argument list"))
     return head;
   Advance(p);
 
@@ -98,12 +98,12 @@ static AstField* ParseFieldList(ParserState* p) {
   AstField* head = NULL;
   AstField* tail = NULL;
 
-  while (p->cur.kind == kTokIdent) {
+  while (p->cur.kind == kIdentifierToken) {
     AstField* field = (AstField*)calloc(1, sizeof(AstField));
     field->name = strdup(p->cur.text);
     Advance(p);
 
-    if (p->cur.kind == kTokLBrace)
+    if (p->cur.kind == kLBraceToken)
       field->sub_fields = ParseFieldList(p);
 
     if (tail) {
@@ -117,7 +117,7 @@ static AstField* ParseFieldList(ParserState* p) {
       return head;
   }
 
-  if (!Expect(p, kTokRBrace, "'}' to close selection"))
+  if (!Expect(p, kRBraceToken, "'}' to close selection"))
     return head;
   Advance(p);
 
@@ -129,13 +129,13 @@ static AstSelection* ParseSelection(ParserState* p) {
   sel->name = strdup(p->cur.text);
   Advance(p);
 
-  if (p->cur.kind == kTokLParen)
+  if (p->cur.kind == kLParenToken)
     sel->args = ParseArgList(p);
 
   if (p->error)
     return sel;
 
-  if (!Expect(p, kTokLBrace, "'{' to begin a field selection"))
+  if (!Expect(p, kLBraceToken, "'{' to begin a field selection"))
     return sel;
 
   sel->fields = ParseFieldList(p);
@@ -150,24 +150,26 @@ bool ParseQuery(const char* query_text, AstDocument* out_doc, char** out_error) 
   out_doc->selections = NULL;
   AstSelection* tail = NULL;
 
-  if (p.cur.kind == kTokEof) {
+  if (p.cur.kind == kEofToken) {
     TokenFree(&p.cur);
     *out_error = strdup("empty query");
     return false;
   }
 
-  while (p.cur.kind == kTokIdent && !p.error) {
+  while (p.cur.kind == kIdentifierToken && !p.error) {
     AstSelection* sel = ParseSelection(&p);
+
     if (tail) {
       tail->next = sel;
     } else {
       out_doc->selections = sel;
+      out_doc->num_selections++;
     }
 
     tail = sel;
   }
 
-  if (!p.error && p.cur.kind != kTokEof)
+  if (!p.error && p.cur.kind != kEofToken)
     Fail(&p, "expected another selection or end of query");
 
   TokenFree(&p.cur);

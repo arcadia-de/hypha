@@ -20,6 +20,7 @@ typedef struct _AstSelection {
 
 typedef struct {
   AstSelection* selections;
+  size_t num_selections;
 } AstDocument;
 
 void AstDocumentFree(AstDocument* doc);

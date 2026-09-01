@@ -56,16 +56,15 @@ static Token MakeToken(TokenKind kind, char* text, int line, int col) {
 static Token ErrorToken(Lexer* lex, const char* msg) {
   char buf[256];
   snprintf(buf, sizeof(buf), "%s (line %d, col %d)", msg, lex->line, lex->col);
-  return MakeToken(kTokError, strdup(buf), lex->line, lex->col);
+  return MakeToken(kInvalidToken, strdup(buf), lex->line, lex->col);
 }
 
 static Token LexString(Lexer* lex) {
   const int start_line = lex->line, start_col = lex->col;
   Advance(lex);
 
-  char buf[4096];
   int n = 0;
-
+  char buf[4096];
   while (Peek(lex) != '"') {
     if (Peek(lex) == '\0')
       return ErrorToken(lex, "unterminated string literal");
@@ -98,7 +97,7 @@ static Token LexString(Lexer* lex) {
   Advance(lex);
 
   buf[n] = '\0';
-  return MakeToken(kTokString, strdup(buf), start_line, start_col);
+  return MakeToken(kStringToken, strdup(buf), start_line, start_col);
 }
 
 static Token LexIdentOrKeyword(Lexer* lex) {
@@ -114,7 +113,7 @@ static Token LexIdentOrKeyword(Lexer* lex) {
   }
 
   buf[n] = '\0';
-  return MakeToken(kTokIdent, strdup(buf), start_line, start_col);
+  return MakeToken(kIdentifierToken, strdup(buf), start_line, start_col);
 }
 
 static Token LexNumber(Lexer* lex) {
@@ -130,7 +129,7 @@ static Token LexNumber(Lexer* lex) {
   }
 
   buf[n] = '\0';
-  return MakeToken(kTokNumber, strdup(buf), start_line, start_col);
+  return MakeToken(kNumberToken, strdup(buf), start_line, start_col);
 }
 
 Token LexerNext(Lexer* lex) {
@@ -140,36 +139,36 @@ Token LexerNext(Lexer* lex) {
   const char c = Peek(lex);
 
   if (c == '\0')
-    return MakeToken(kTokEof, NULL, line, col);
+    return MakeToken(kEofToken, NULL, line, col);
 
   if (c == '{') {
     Advance(lex);
-    return MakeToken(kTokLBrace, NULL, line, col);
+    return MakeToken(kLBraceToken, NULL, line, col);
   }
 
   if (c == '}') {
     Advance(lex);
-    return MakeToken(kTokRBrace, NULL, line, col);
+    return MakeToken(kRBraceToken, NULL, line, col);
   }
 
   if (c == '(') {
     Advance(lex);
-    return MakeToken(kTokLParen, NULL, line, col);
+    return MakeToken(kLParenToken, NULL, line, col);
   }
 
   if (c == ')') {
     Advance(lex);
-    return MakeToken(kTokRParen, NULL, line, col);
+    return MakeToken(kRParenToken, NULL, line, col);
   }
 
   if (c == ':') {
     Advance(lex);
-    return MakeToken(kTokColon, NULL, line, col);
+    return MakeToken(kColonToken, NULL, line, col);
   }
 
   if (c == ',') {
     Advance(lex);
-    return MakeToken(kTokComma, NULL, line, col);
+    return MakeToken(kCommaToken, NULL, line, col);
   }
 
   if (c == '"')

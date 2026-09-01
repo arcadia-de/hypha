@@ -1,6 +1,8 @@
 #ifndef HYPHA_RESOURCE_STATE_H
 #define HYPHA_RESOURCE_STATE_H
 
+#include <strings.h>
+
 #define FOR_EACH_RESOURCE_STATE(V) \
   V(Pending)                       \
   V(Processing)                    \
@@ -27,6 +29,21 @@ static inline const char* ResourceStateCStr(const ResourceState rhs) {
     default:
       return "Unknown";
   }
+}
+
+static inline ResourceState ParseResourceState(const char* value) {
+  if (!value)
+    return kResourceUnknown;
+
+  // clang-format off
+#define DEFINE_CHECK(Name) \
+  else if(strcasecmp(#Name, value) == 0) \
+    return kResource##Name;
+  FOR_EACH_RESOURCE_STATE(DEFINE_CHECK)
+#undef DEFINE_CHECK
+  // clang-format on
+
+  return kResourceUnknown;
 }
 
 #endif  // HYPHA_RESOURCE_STATE_H

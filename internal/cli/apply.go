@@ -121,9 +121,6 @@ func handleApply(cmd *cobra.Command, args []string) error {
 		Mode: hypha.RunApplyMode,
 	}
 
-	if err := orc.ProcessDiscoveredManifests(info.Mode); err != nil {
-		return fmt.Errorf("failed to process discovered manifests: %v", err)
-	}
 	err = orc.Run(info)
 	if err != nil {
 		return fmt.Errorf("failed to run Orchestrator: %v", err)

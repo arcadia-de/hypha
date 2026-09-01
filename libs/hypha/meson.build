@@ -24,6 +24,7 @@ hypha_deps = [
   hypha_resource_graph_dep,
   hypha_controllers_dep,
   delta_dep,
+  query_schema_dep,
 ]
 hypha_deps += pkg_manager_deps
 hypha_deps += services_deps
@@ -39,7 +40,6 @@ hypha = static_library(
     'src/reconcile.c',
     'src/discovery.c',
     'src/history_log.c',
-    'src/query_schema_resources.c',
   ],
   dependencies: hypha_deps,
   link_with: [

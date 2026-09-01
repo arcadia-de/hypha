@@ -1,6 +1,7 @@
 #ifndef HYPHA_H
 #define HYPHA_H
 
+#include "hypha/controller_status.h"
 #ifdef __cplusplus
 extern "C" {
 #endif  // __cplusplus
@@ -26,12 +27,14 @@ typedef struct _Resource Resource;
 typedef void* OrchestratorHandle;
 
 typedef uint64_t ControllerActionCounts[kTotalNumberOfControllerActions];
+typedef uint64_t ControllerStatusCounts[kTotalNumberOfControllerStatuses];
 
 typedef struct {
   time_t run_start;
   time_t run_finished;
   uint64_t num_processed;
   ControllerActionCounts num_actions;
+  ControllerStatusCounts num_statuses;
 } OrchestratorMetrics;
 
 typedef struct _HistoryLog HistoryLog;

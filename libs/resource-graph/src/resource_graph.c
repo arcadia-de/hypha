@@ -26,6 +26,19 @@ uint64_t GetNumberOfResourcesInResourceGraph(ResourceGraph* rg) {
   return rg ? rg->count : 0;
 }
 
+Resource* FindResourceMatching(const ResourceGraph* rg, ResourceSelector* selector) {
+  ASSERT(rg);
+  ASSERT(selector);
+
+  for (ResourceGraphIndex i = 0; i < rg->count; i++) {
+    Resource* res = &rg->resources[i];
+    if (ResourceSelectorMatch(selector, res))
+      return res;
+  }
+
+  return NULL;
+}
+
 bool VisitAllResources(const ResourceGraph* rg, ResourceVisitorFn fn, void* data) {
   if (!rg)
     return false;

@@ -172,6 +172,31 @@ ResourceSelector* NewNamespaceResourceSelector(const char* ns) {
   return NewResourceSelector(&MatchesNamespace, strdup(ns), free);
 }
 
+static inline bool MatchesName(const Resource* res, void* data) {
+  if (!res || !res->info.name || !data)
+    return false;
+
+  return strcmp(res->info.name, (const char*)data) == 0;
+}
+
+ResourceSelector* NewNameResourceSelector(const char* name) {
+  if (!name)
+    return NULL;
+
+  return NewResourceSelector(&MatchesName, strdup(name), free);
+}
+
+static inline bool MatchesState(const Resource* res, void* data) {
+  if (!res || !data)
+    return false;
+
+  return res->state == *(ResourceState*)data;
+}
+
+ResourceSelector* NewStateResourceSelector(ResourceState rhs) {
+  return NewResourceSelector(&MatchesState, &rhs, NULL);
+}
+
 ResourceSelector* NewLabelResourceSelector(const Label* rhs) {
   if (!rhs)
     return NULL;

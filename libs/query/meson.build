@@ -2,6 +2,7 @@ hypha_query_inc = include_directories('include/')
 hypha_query_deps = [
   libuv,
   threads,
+  hypha_api_dep,
 ]
 hypha_query = static_library(
   'hypha-query',

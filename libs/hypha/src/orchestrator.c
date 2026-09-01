@@ -45,6 +45,7 @@ DEFINE_GETTER(AppliedActionLog, actions);
 __DEFINE_GETTER(lua_State, LuaState, ((Orchestrator*)handle)->L);
 DEFINE_GETTER(Plan, plan);
 _DEFINE_GETTER(StateStore, ((Orchestrator*)handle)->state);
+_DEFINE_GETTER(QuerySchema, ((Orchestrator*)handle)->schema);
 
 #undef __DEFINE_GETTER
 #undef _DEFINE_GETTER

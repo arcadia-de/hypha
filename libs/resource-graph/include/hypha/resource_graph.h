@@ -30,6 +30,7 @@ FOR_EACH_SCHEDULING_STRATEGY(DECLARE_SCHEDULING_STRATEGY)
 
 typedef bool (*ResourceVisitorFn)(const ResourceGraphIndex, Resource*, void*);
 
+Resource* FindResourceMatching(const ResourceGraph* rg, ResourceSelector* selector);
 bool VisitAllResources(const ResourceGraph* rg, ResourceVisitorFn fn, void* data);
 bool VisitAllMatchingResources(const ResourceGraph* rg, const ResourceSelector* rs, ResourceVisitorFn fn, void* data);
 bool VisitAllNonMatchingResources(const ResourceGraph* rg, const ResourceSelector* rs, ResourceVisitorFn fn,
