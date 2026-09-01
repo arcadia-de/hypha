@@ -6,6 +6,10 @@
 
 #include "hypha/assertions.h"
 
+#ifdef __cplusplus
+extern "C" {
+#endif  // __cplusplus
+
 #define FOR_EACH_PACKAGE_MANAGER(V) \
   V(Apt)                            \
   V(Asdf)                           \
@@ -108,5 +112,9 @@ int ExecPackageManager(PackageManager* mgr, const char** args, const uint64_t nu
 #define DEFINE_PACKAGE_MANAGER_CONFIG(Name) static const PackageManagerConfig k##Name##Config =
 
 void InitPackageManagers(const char* luarocks_dir);
+
+#ifdef __cplusplus
+};
+#endif  // __cplusplus
 
 #endif  // HYPHA_PACKAGE_MANAGER_H

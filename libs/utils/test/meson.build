@@ -1,5 +1,6 @@
 test_utils_exec = executable('hypha-utils-tests',
   sources : [
+    'test_crc32.cc',
     'test_expander.cc',
     'test_ignore.cc',
   ],

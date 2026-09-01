@@ -8,7 +8,8 @@ pkg_manager_test_exec = executable('hypha-pkg-manager-api-tests',
   ],
 )
 
-test('GoogleTest Core Features',
+test(
+  'Package Manager Api Tests',
   pkg_manager_test_exec,
   protocol: 'gtest',
 )

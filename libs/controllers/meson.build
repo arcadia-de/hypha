@@ -4,39 +4,57 @@ subdir('wasm-runtime')
 
 controllers_matrix = {
   'test': {
+    'test_name': 'Test Controller Tests',
     'sources': [
-      'src' / 'test_spec.c',
+      'test_spec.c',
     ],
   },
   'directory': {
+    'test_name': 'Directory Controller Tests',
     'sources': [
-      'src' / 'directory_spec.c',
+      'directory_spec.c',
     ],
+    'has_tests': true,
   },
   'package': {
+    'test_name': 'Package Controller Tests',
     'sources': [
-      'src' / 'package_spec.c',
+      'package_spec.c',
     ],
+    'deps': [
+      pkg_manager_api_dep,
+    ],
+    'has_tests': true,
   },
   'symlink': {
+    'test_name': 'Symlink Controller Tests',
     'sources': [
-      'src' / 'symlink_spec.c',
+      'symlink_spec.c',
     ],
+    'has_tests': true,
   },
   'template': {
+    'test_name': 'Template Controller Tests',
     'sources': [
-      'src' / 'template_spec.c',
+      'template_spec.c',
     ],
+    'has_tests': true,
   },
   'package_manager': {
     'sources': [
-      'src' / 'package_manager_spec.c',
+      'package_manager_spec.c',
     ],
+    'deps': [
+      pkg_manager_api_dep,
+    ],
+    'test_name': 'Package Manager Controller Tests',
+    'has_tests': true,
   },
   'task': {
+    'test_name': 'Task Controller Tests',
     'sources': [
-      'src' / 'task_spec.c',
-      'src' / 'exec_spec.c',
+       'task_spec.c',
+       'exec_spec.c',
     ]
   },
 }
@@ -47,6 +65,8 @@ if archive.found()
       'deps': [
         archive,
       ],
+      'test_name': 'Archive Controller Tests',
+      'has_tests': true,
     },
   }
 endif
@@ -57,6 +77,23 @@ if git2.found()
       'deps': [
         git2,
       ],
+      'test_name': 'Repository Controller Tests',
+      'has_tests': true,
+    },
+  }
+endif
+
+if curl.found()
+  controllers_matrix += {
+    'download': {
+      'sources': [ 'download_spec.c',
+      ],
+      'deps': [
+        curl,
+        sodium,
+      ],
+      'test_name': 'Download Controller Tests',
+      'has_tests': true,
     },
   }
 endif
@@ -83,20 +120,44 @@ foreach name, cfg : controllers_matrix
     name / 'src' / name + '_controller.c',
   ]
   foreach source : cfg.get('sources', [])
-    binding_sources += name / source
+    binding_sources += name / 'src' / source
   endforeach
+  binding_deps = base_controller_deps + cfg.get('deps', [])
   binding_lib = static_library(
     'hypha-' + name + '-controller',
     binding_sources,
     include_directories: binding_inc,
-    dependencies: base_controller_deps + cfg.get('deps', []),
+    dependencies: binding_deps,
     c_args: base_c_args + cfg.get('c_args', []),
     override_options: cfg.get('override_opts', []),
   )
-  controllers_deps += declare_dependency(
+  binding_dep = declare_dependency(
     link_with: binding_lib,
+    dependencies: binding_deps,
     include_directories: binding_inc,
   )
+  controllers_deps += binding_dep
+  if cfg.get('has_tests', false) and gtest_dep.found()
+    test_sources = [
+      name / 'test' / 'test_' + name + '_controller.cc',
+    ]
+    foreach source : cfg.get('test_sources', [])
+      test_sources += 'test' / source
+    endforeach
+    controller_test_exec = executable(
+      'test-' + name + '-ctrl',
+      test_sources,
+      dependencies: [
+        gtest_dep,
+        binding_dep,
+      ],
+    )
+    test(
+      cfg.get('test_name', name + ' Controller Tests'),
+      controller_test_exec,
+      protocol: 'gtest',
+    )
+  endif
 endforeach
 
 subdir('all')

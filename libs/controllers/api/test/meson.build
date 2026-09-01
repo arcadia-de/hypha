@@ -8,7 +8,8 @@ controller_test_exec = executable('hypha-controller-tests',
   ],
 )
 
-test('GoogleTest Core Features',
+test(
+  'Controller Api Tests',
   controller_test_exec,
   protocol: 'gtest',
 )

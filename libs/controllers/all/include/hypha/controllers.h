@@ -20,12 +20,18 @@
 #include "hypha/repository_controller.h"
 #endif  // HYPHA_HAS_GIT2
 
+#ifdef HYPHA_HAS_CURL
+// TODO(@s0cks): need to change FOR_EACH_CONTROLLER
+#include "hypha/download_controller.h"
+#endif  // HYPHA_HAS_CURL
+
 #define FOR_EACH_CONTROLLER(V) \
   V(Controller)                \
   V(Test)                      \
   V(Task)                      \
   V(Archive)                   \
   V(Directory)                 \
+  V(Download)                  \
   V(Package)                   \
   V(Repository)                \
   V(Symlink)                   \

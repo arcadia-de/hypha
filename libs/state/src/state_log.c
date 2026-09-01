@@ -75,7 +75,7 @@ static inline void EncodeRecord(bool tombstone, const char* key, const uint8_t* 
 static inline bool AppendFramedRecord(StateLog* log, const uint8_t* body, uint32_t body_len,
                                       uint32_t value_offset_in_body, uint32_t value_len, StateLogLocation* out_loc) {
   bool success = false;
-  const uint32_t crc = crc32(body, body_len);
+  const uint32_t crc = HyphaCrc32C(body, body_len);
 
   if (fseek(log->file, 0, SEEK_END) != 0)
     goto finished;
@@ -175,7 +175,7 @@ void StateLogReplay(StateLog* log, StateLogReplayFn fn, void* data) {
       break;
     }
 
-    if (crc32(body, body_len) != stored_crc) {
+    if (HyphaCrc32C(body, body_len) != stored_crc) {
       free(body);
       break;
     }
@@ -269,7 +269,7 @@ void StateLogReplayWithValues(StateLog* log, StateLogReplayValueFn fn, void* dat
       break;
     }
 
-    if (crc32(body, body_len) != stored_crc) {
+    if (HyphaCrc32C(body, body_len) != stored_crc) {
       free(body);
       break;
     }

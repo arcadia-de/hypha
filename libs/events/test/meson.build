@@ -11,7 +11,7 @@ hypha_events_test_exec = executable(
 )
 
 test(
-  'GoogleTest Core Features',
+  'Events Tests',
   hypha_events_test_exec,
   protocol: 'gtest',
 )

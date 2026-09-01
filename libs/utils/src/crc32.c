@@ -82,7 +82,7 @@ static inline bool IsHardwareAccelerationSupported() {
   return supported;
 }
 
-uint32_t crc32(const uint8_t* bytes, size_t nbytes) {
+uint32_t HyphaCrc32C(const uint8_t* bytes, size_t nbytes) {
 #ifdef HYPHA_CRC32_FORCE_SOFTWARE_FOR_TESTING
   return Crc32cSoftware(bytes, nbytes);
 #endif

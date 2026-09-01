@@ -20,24 +20,11 @@ static inline void InitServiceManagers() {
   InitSystemDServiceManager();
 }
 
-// Kind name for the Manifest pseudo-resource (see InitHypha below). Shared here as a single
-// #define so the Go side (internal/hypha/manifest_resource.go) has exactly one string literal to
-// keep in sync with, matching the existing convention of hardcoding kind names like "Controller"
-// and "PackageManager" at their point of use rather than routing them through a shared registry.
 #define kManifestResourceKindName "Manifest"
 
 void InitHypha(const char* luarocks_dir) {
-  // Registered ahead of controller init, on purpose: Manifest resources are graph-visible
-  // bookkeeping (RESOURCE_FLAG_SYNTHETIC) representing a discovered manifest itself, not a
-  // user-managed resource. They never carry depends_on, never enter kResourcePending, and have
-  // no controller by design -- the reconcile loop never has a reason to look one up. Registering
-  // the kind before InitControllers() isn't load-bearing (FindOrCreateResourceKind works fine at
-  // any point), but it means the kind exists from the moment the runtime boots rather than only
-  // after the first manifest is discovered, which is one less thing to reason about for anything
-  // that walks VisitAllResourceKinds early (`hypha info`, kind-driven CLI command registration).
-  if (FindOrCreateResourceKind(kManifestResourceKindName) == kInvalidResourceKind)
-    LOG_FATAL("failed to register `%s` resource kind", kManifestResourceKindName);
-
+  LOG_FATAL_IF(FindOrCreateResourceKind(kManifestResourceKindName) == kInvalidResourceKind,
+               "failed to register `%s` resource kind", kManifestResourceKindName);
   InitControllers();
   InitPackageManagers(luarocks_dir);
   InitServiceManagers();
@@ -49,12 +36,6 @@ static inline void ToLowerCStr(char* dst, const char* src, const size_t dst_size
     dst[i] = (char)tolower((unsigned char)src[i]);
   dst[i] = '\0';
 }
-
-// Kind name for the Manifest pseudo-resource (see InitHypha below). Shared here as a single
-// #define so the Go side (internal/hypha/manifest_resource.go) has exactly one string literal to
-// keep in sync with, matching the existing convention of hardcoding kind names like "Controller"
-// and "PackageManager" at their point of use rather than routing them through a shared registry.
-#define kManifestResourceKindName "Manifest"
 
 #define HYPHA_MAX_CORE_RESOURCE_DEFS 64
 
@@ -69,6 +50,8 @@ static const char kRepositoryDocs[]     = "https://github.com/arcadia-de/hypha/w
 static const char kSymlinkDocs[]        = "https://github.com/arcadia-de/hypha/wiki/BuiltinResources-Symlinks";
 static const char kTemplateDocs[]       = "https://github.com/arcadia-de/hypha/wiki/BuiltinResources-Templates";
 static const char kTaskDocs[]           = "";
+static const char kManifestDocs[]       = "";
+static const char kDownloadDocs[]       = "";
 // clang-format on
 
 void BootstrapHyphaCoreResources(ResourceGraph* graph) {

@@ -110,5 +110,14 @@ void FreePlan(Plan* pl) {
     free(pl->actions);
   }
 
-  free(pl);
+  // NOTE: `Plan` is caller-owned storage -- every real usage embeds it directly in a
+  // longer-lived struct (e.g. `orc->plan`, `task->plan`) and calls `InitPlan(&x.plan, cap)`
+  // on it directly, mirroring `InitValidationLog`/`FreeValidationLog`. This used to also
+  // `free(pl)` itself, as if `pl` were heap-allocated, which crashes (or worse, silently
+  // corrupts the allocator) the moment anyone calls `FreePlan` on a stack- or embedded-`Plan`
+  // -- which is every real call site. There is no `NewPlan()` anywhere that would justify
+  // treating `pl` itself as owned by this function.
+  pl->actions = NULL;
+  pl->actions_len = 0;
+  pl->actions_cap = 0;
 }

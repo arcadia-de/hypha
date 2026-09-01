@@ -23,8 +23,11 @@ static inline bool GetSpecField(const Resource* res, const char* field, char** r
   ASSERT(res);
   ASSERT(res->spec.doc);
 
-  Expander expander;
   json_t* source = json_object_get(res->spec.doc, field);
+  if (!source || !json_is_string(source))
+    return false;
+
+  Expander expander;
   return ExpandStr(&expander, json_string_value(source), result, result_len);
 }
 
@@ -77,7 +80,6 @@ DEFINE_CONTROLLER_PLAN_FN(Symlink) {
   ASSERT(log);
   Resource* desired = (Resource*)ctx->desired;  // TODO(@s0cks): const cast
   ASSERT(desired);
-  ASSERT(desired);
 
   struct stat source_stat;
   if (stat(symlink_spec.source, &source_stat) != 0) {
@@ -123,7 +125,6 @@ DEFINE_CONTROLLER_STATUS_FN(Symlink) {
   const Resource* current = ctx->current;
   ASSERT(current);
 
-  ASSERT(current);
   struct stat source_stat;
   if (stat(symlink_spec.source, &source_stat) != 0) {
     LOG_ERROR("Source '%s' does not exist", symlink_spec.source);

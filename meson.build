@@ -48,6 +48,12 @@ if git2.found()
   add_project_arguments('-DHYPHA_HAS_GIT2', language: ['c', 'cpp'])
 endif
 
+curl = dependency('libcurl', version: '>=8.0.0', required: false)
+if curl.found()
+  all_hypha_deps += curl
+  add_project_arguments('-DHYPHA_HAS_CURL', language: ['c', 'cpp'])
+endif
+
 gvc = dependency('libgvc', version: '>= 15.1.0', required: false)
 if gvc.found()
   message('graphviz is enabled')

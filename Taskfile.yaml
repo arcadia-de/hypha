@@ -1,3 +1,4 @@
+---
 version: '3'
 vars:
   BUILD_DIR: "{{.ROOT_DIR}}/build"
@@ -16,50 +17,50 @@ tasks:
     vars:
       GO_TEST_PATH: "./internal/{{.GO_TARGET}}"
     cmds:
-      - go test "{{.GO_TEST_PATH}}"
+    - go test "{{.GO_TEST_PATH}}"
   go:run:
     internal: false
     cmds:
-      - go run
+    - go run
   meson:reconfigure:
     deps:
-      - clean
+    - clean
     cmds:
-      - meson setup build/ --reconfigure
+    - meson setup build/ --reconfigure
   run:
     cmds:
-      - task: go:run
-        vars:
-          GO_TARGET: hypha
+    - task: go:run
+      vars:
+        GO_TARGET: hypha
   meson:build:
     cmds:
-      - ninja -C build/
+    - ninja -C build/
   go:clean-cache:
     cmds:
-      - go clean -cache -testcache
-      # cd ui/
-      # npm install
-      # npm run build
-      # cd ../
+    - go clean -cache -testcache
+    # cd ui/
+    # npm install
+    # npm run build
+    # cd ../
   go:build:dev:
     cmds:
-      - |
-        PKG_CONFIG_PATH="$(pwd)/build/meson-uninstalled:$PKG_CONFIG_PATH" \
-        CGO_LDFLAGS="-Wl,-export-dynamic -Wl,--whole-archive -Wl,--no-whole-archive" \
-        go build {{.GO_BUILD_FLAGS}} \
-        -o {{.BIN_DIR}}/{{.GO_TARGET_NAME}} \
-        {{.GO_SOURCE_FILE}}
+    - |
+      PKG_CONFIG_PATH="$(pwd)/build/meson-uninstalled:$PKG_CONFIG_PATH" \
+      CGO_LDFLAGS="-Wl,-export-dynamic -Wl,--whole-archive -Wl,--no-whole-archive" \
+      go build {{.GO_BUILD_FLAGS}} \
+      -o {{.BIN_DIR}}/{{.GO_TARGET_NAME}} \
+      {{.GO_SOURCE_FILE}}
     vars:
       GO_BUILD_FLAGS: -ldflags="-linkmode=external"
       GO_TARGET_NAME: hypha
       GO_SOURCE_FILE: cmd/hypha/main.go
   go:build:
     cmds:
-      - |
-        PKG_CONFIG_PATH="$(pwd)/build/meson-uninstalled:$PKG_CONFIG_PATH" \
-          go build {{.GO_BUILD_FLAGS}} \
-          -o {{.BIN_DIR}}/{{.GO_TARGET_NAME}} \
-          {{.GO_SOURCE_FILE}}
+    - |
+      PKG_CONFIG_PATH="$(pwd)/build/meson-uninstalled:$PKG_CONFIG_PATH" \
+        go build {{.GO_BUILD_FLAGS}} \
+        -o {{.BIN_DIR}}/{{.GO_TARGET_NAME}} \
+        {{.GO_SOURCE_FILE}}
     vars:
       GO_BUILD_FLAGS: -ldflags="-linkmode=external -s -w -extldflags=-Wl,--gc-sections"
       GO_TARGET_NAME: hypha
@@ -67,84 +68,84 @@ tasks:
   build:dashboard:
     dir: "dashboard/"
     cmds:
-      - pnpm build
+    - pnpm build
   build:lib:dev:
     cmds:
-      - task: meson:reconfigure
-      - task: meson:build
+    - task: meson:reconfigure
+    - task: meson:build
   build:dev:
     cmds:
-      - task: build:lib:dev
-      - task: go:build:dev
+    - rm -rf build/hypha
+    - task: build:lib:dev
   build:
     cmds:
-      - task: build:lib:dev
-      - task: go:build
+    - rm -rf build/hypha
+    - task: build:lib:dev
   build:build-image:
     cmds:
-      - |
-        docker buildx build . \
-          -t ghcr.io/arcadia-de/hypha-build-env:latest
+    - |
+      docker buildx build . \
+        -t ghcr.io/arcadia-de/hypha-build-env:latest
   test:
     deps:
-      - build
+    - build
     cmds:
-      - "{{.HYPHA_LIB_TESTS_BIN_FILE}}"
-      - task: go:test
-        vars:
-          GO_TARGET: hypha
+    - "{{.HYPHA_LIB_TESTS_BIN_FILE}}"
+    - task: go:test
+      vars:
+        GO_TARGET: hypha
   ouch:compress:
     internal: true
     vars:
       OUCH_ARTIFACT: "{{.ROOT_DIR_NAME}}-sources.{{.OUCH_COMPRESSION}}"
     cmds:
-      - |
-        ouch compress        \
-          assets             \
-          cmd                \
-          config             \
-          docs               \
-          internal           \
-          libs               \
-          lua                \
-          schema             \
-          wiki               \
-          .clang-format      \
-          .clang-tidy        \
-          .clangd            \
-          .env               \
-          .gitignore         \
-          .luarc.json        \
-          go.mod             \
-          go.sum             \
-          LICENSE            \
-          meson.build        \
-          README.md          \
-          Taskfile.yaml      \
-          {{.OUCH_ARTIFACT}}
+    - |
+      ouch compress        \
+        assets             \
+        cmd                \
+        config             \
+        docs               \
+        internal           \
+        libs               \
+        lua                \
+        schema             \
+        wiki               \
+        .clang-format      \
+        .clang-tidy        \
+        .clangd            \
+        .env               \
+        .gitignore         \
+        .luarc.json        \
+        go.mod             \
+        go.sum             \
+        LICENSE            \
+        meson.build        \
+        README.md          \
+        Taskfile.yaml      \
+        {{.OUCH_ARTIFACT}}
   zip:
     cmds:
-      - task: ouch:compress
-        vars:
-          OUCH_COMPRESSION: zip
+    - task: ouch:compress
+      vars:
+        OUCH_COMPRESSION: zip
   targz:
     cmds:
-      - task: ouch:compress
-        vars:
-          OUCH_COMPRESSION: tar.gz
+    - task: ouch:compress
+      vars:
+        OUCH_COMPRESSION: tar.gz
   clean:bin:
     cmds:
-      - rm -rf "{{.HYPHA_BIN_FILE}}"
+    - rm -rf "{{.HYPHA_BIN_FILE}}"
   clean:libs:
     cmds:
-      - rm -rf "{{.HYPHA_LIB_FILE}}"
+    - rm -rf "{{.HYPHA_LIB_FILE}}"
   clean:tests:
     cmds:
-      - rm -rf "{{.HYPHA_LIB_TESTS_BIN_FILE}}"
+    - rm -rf "{{.HYPHA_LIB_TESTS_BIN_FILE}}"
   clean:archives:
     cmds:
-      - rm -rf "{{.ROOT_DIR_NAME}}-sources.zip"
-      - rm -rf "{{.ROOT_DIR_NAME}}-sources.tar.gz"
+    - rm -rf "{{.ROOT_DIR_NAME}}-sources.zip"
+    - rm -rf "{{.ROOT_DIR_NAME}}-sources.tar.gz"
   # clean:journal:
   #   cmds:
   #     - rm -rf "{{.ROOT_DIR}}/journal.log"
@@ -153,12 +154,12 @@ tasks:
   #     - rm -rf "{{.ROOT_DIR}}/history.log"
   clean:
     deps:
-      - clean:bin
-      - clean:libs
-      - clean:tests
-      - clean:archives
-      # - clean:history
-      # - clean:journal
+    - clean:bin
+    - clean:libs
+    - clean:tests
+    - clean:archives
+    # - clean:history
+    # - clean:journal
   default:
     cmds:
-      - task: build:dev
+    - task: build:dev
