@@ -1,5 +1,19 @@
 # Changelog
 
+## [1.10.0](https://github.com/arcadia-de/hypha/compare/v1.9.0...v1.10.0) (2026-09-01)
+
+
+### Features
+
+* ✨ add tldr docs generator ([a1c77b4](https://github.com/arcadia-de/hypha/commit/a1c77b4e8c1617c9ea8314bce478b590c9af69f5))
+* **gql:** ✨ add manifests collection to query schemas ([341eb52](https://github.com/arcadia-de/hypha/commit/341eb5269e50ac25b8c203d6dcd7a564704efbd1))
+* **query:** ✨ make query command report in different formats ([341eb52](https://github.com/arcadia-de/hypha/commit/341eb5269e50ac25b8c203d6dcd7a564704efbd1))
+
+
+### Bug Fixes
+
+* **resource-graph:** 🐛 fix ResourceBootstrapTest failing due to faulty logic in FindProvides algo ([15fa9da](https://github.com/arcadia-de/hypha/commit/15fa9dadf7c6be0aa527f94e1435bc71bd328f38))
+
 ## [1.9.0](https://github.com/arcadia-de/hypha/compare/v1.8.0...v1.9.0) (2026-08-31)
 
 
