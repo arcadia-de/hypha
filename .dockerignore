@@ -3,6 +3,7 @@
 .github/
 .rumdl_cache/
 .task/
+dist/
 assets/
 bin/
 build/

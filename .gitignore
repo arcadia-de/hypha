@@ -1,4 +1,5 @@
 .rumdl_cache/
+dist/
 .task/
 .cache/
 wiki/

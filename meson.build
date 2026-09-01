@@ -101,25 +101,28 @@ pkg.generate(
   ],
 )
 
+python3 = import('python').find_installation()
+
+go = find_program('go', required: true)
+
 go_build_env = environment()
 go_build_env.set('CGO_ENABLED', '1')
 go_build_env.set('CGO_LDFLAGS', '-Wl,-export-dynamic -Wl,--whole-archive -Wl,--no-whole-archive')
 go_build_env.prepend('PKG_CONFIG_PATH', meson.project_source_root() / 'build' / 'meson-uninstalled')
 
-go = find_program('go', required: true)
 if get_option('buildtype') == 'debug'
   hypha = custom_target(
     'hypha',
     output: 'hypha',
     input:  'cmd' / 'hypha' / 'main.go',
-    depend_files: [
-      'go.mod',
-      'go.sum',
-      'cmd',
-      'internal',
-    ],
     env : go_build_env,
     command: [
+      python3, '-c',
+      'import os, sys, subprocess; ' +
+      'os.path.exists(sys.argv[1]) and os.remove(sys.argv[1]); ' +
+      'sys.exit(subprocess.run(sys.argv[2:]).returncode)',
+      '@OUTPUT@',
+
       go,
       'build',
       '-ldflags=-linkmode=external',
@@ -133,14 +136,14 @@ else
     'hypha',
     output: 'hypha',
     input:  'cmd' / 'hypha' / 'main.go',
-    depend_files: [
-      'go.mod',
-      'go.sum',
-      'internal',
-      'cmd',
-    ],
     env : go_build_env,
     command: [
+      python3, '-c',
+      'import os, sys, subprocess; ' +
+      'os.path.exists(sys.argv[1]) and os.remove(sys.argv[1]); ' +
+      'sys.exit(subprocess.run(sys.argv[2:]).returncode)',
+      '@OUTPUT@',
+
       go,
       'build',
       '-ldflags=-linkmode=external',

@@ -15,7 +15,7 @@ func HandleGenTldrDocs(cmd *cobra.Command, args []string) error {
 func HandleGenManDocs(cmd *cobra.Command, args []string) error {
 	outDir := os.Getenv("MESON_INSTALL_DESTDIR_MAN")
 	if outDir == "" {
-		outDir = "./dist/man" // fallback
+		outDir = "./dist/man/man1" // fallback
 	}
 	_ = os.MkdirAll(outDir, 0755)
 
