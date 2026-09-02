@@ -36,6 +36,7 @@ RUN apt-get update \
     pkg-config \
     ca-certificates \
     curl \
+    libcurl4-openssl-dev \
     git \
     autoconf \
     cmake \

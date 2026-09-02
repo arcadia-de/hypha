@@ -22,7 +22,3 @@ hypha_controllers_dep = declare_dependency(
     hypha_controllers_inc,
   ]
 )
-
-# if gtest_dep.found()
-#   subdir('test/')
-# endif
