@@ -6,6 +6,8 @@ wiki/
 private/
 hypha
 bin/
+build/
+build2/
 *.txt
 *.zip
 *.tar.gz
