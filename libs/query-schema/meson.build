@@ -15,6 +15,9 @@ query_schema = static_library(
     'src/query_schema_resources.c',
   ],
   dependencies: query_schema_deps,
+  c_args: [
+    '-Wno-unused',
+  ],
   include_directories: [
     query_schema_inc,
   ],

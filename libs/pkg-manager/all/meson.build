@@ -10,7 +10,9 @@ pkg_managers = static_library(
     'package_managers.c',
   ],
   dependencies: pkg_managers_deps,
-  c_args: [ '-Wno-unused-variable' ],
+  c_args: [
+    '-Wno-unused',
+  ],
   install: false,
 )
 pkg_managers_dep = declare_dependency(

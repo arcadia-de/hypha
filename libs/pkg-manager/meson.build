@@ -1,31 +1,22 @@
 subdir('api/')
 pkg_manager_matrix = {
-  'luarocks': {
-  },
-  'apt': {
-  },
-  'pacman': {
-  },
-  'yay': {
-  },
-  'paru': {
-  },
-  'asdf': {
-  },
-  'brew': {
-  },
-  'cargo': {
-  },
-  'dnf': {
-  },
-  'eget': {
-  },
-  'flatpak': {
-  },
-  'go': {
-  },
+  'luarocks': { },
+  'apt': { },
+  'pacman': { },
+  'yay': { },
+  'paru': { },
+  'asdf': { },
+  'brew': { },
+  'cargo': { },
+  'dnf': { },
+  'eget': { },
+  'flatpak': { },
+  'go': { },
 }
 
+base_c_args = [
+  '-Wno-unused',
+]
 base_pkg_manager_deps = [
   hypha_api_dep,
   hypha_log_dep,
@@ -41,7 +32,7 @@ foreach name, cfg : pkg_manager_matrix
     include_directories: [
       pkg_manager_inc,
     ],
-    c_args: ['-Wno-unused-variable'],
+    c_args: base_c_args + cfg.get('c_args', []),
     dependencies: base_pkg_manager_deps + cfg.get('deps', []),
     override_options: cfg.get('override_opts', []),
   )

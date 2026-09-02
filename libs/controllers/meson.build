@@ -86,7 +86,8 @@ endif
 if curl.found()
   controllers_matrix += {
     'download': {
-      'sources': [ 'download_spec.c',
+      'sources': [
+        'download_spec.c',
       ],
       'deps': [
         curl,
@@ -99,7 +100,10 @@ if curl.found()
 endif
 
 base_c_args = [
-  '-Wno-unused-function',
+  '-Wno-unused',
+]
+base_cpp_args = [
+  '-Wno-unused',
 ]
 base_controller_deps = [
   jansson,
@@ -147,6 +151,8 @@ foreach name, cfg : controllers_matrix
     controller_test_exec = executable(
       'test-' + name + '-ctrl',
       test_sources,
+      c_args: base_c_args + cfg.get('c_args', []),
+      cpp_args: base_cpp_args + cfg.get('cpp_args', []),
       dependencies: [
         gtest_dep,
         binding_dep,
