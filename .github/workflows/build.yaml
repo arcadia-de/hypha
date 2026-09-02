@@ -17,7 +17,7 @@ jobs:
   test:
     runs-on: ubuntu-latest
     container:
-      image: ghcr.io/${{ github.repository }}/hypha-build-env:latest
+      image: ghcr.io/${{ github.repository }}/build-env:latest
       credentials:
         username: ${{ github.actor }}
         password: ${{ secrets.GITHUB_TOKEN }}
@@ -48,7 +48,7 @@ jobs:
     needs: release-please
     if: ${{ github.event_name == 'release' || needs.release-please.outputs.releases_created == 'true' }}
     container:
-      image: ghcr.io/arcadia-de/hypha/hypha-build-env:latest
+      image: ghcr.io/${{ github.repository }}/build-env:latest
       credentials:
         username: ${{ github.actor }}
         password: ${{ secrets.GITHUB_TOKEN }}
