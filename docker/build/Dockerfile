@@ -191,4 +191,5 @@ RUN curl -L -R -O https://www.lua.org/ftp/lua-${LUA_VERSION}.tar.gz -o lua-${LUA
  && echo "Description: An Extensible Embedded Language" >> /usr/local/lib/pkgconfig/lua54.pc \
  && echo "Version: ${LUA_VERSION}" >> /usr/local/lib/pkgconfig/lua54.pc \
  && echo "Libs: -L\${libdir} -llua -lm" >> /usr/local/lib/pkgconfig/lua54.pc \
- && echo "Cflags: -I\${includedir}" >> /usr/local/lib/pkgconfig/lua54.pc
+ && echo "Cflags: -I\${includedir}" >> /usr/local/lib/pkgconfig/lua54.pc \
+ && cd ..
