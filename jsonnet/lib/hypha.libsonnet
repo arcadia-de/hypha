@@ -23,6 +23,37 @@ local natives = [
   for name in natives
 } +
 {
+  When(cond, resources):
+    if cond then
+      resources
+    else
+      [],
+
+  WhenOS(os, resources):
+    assert os != null && os != '' :
+           'OS cannot be empty';
+    $.When($.getOS() == os, resources),
+
+  WhenDistro(distro, resources):
+    assert distro != null && distro != '' :
+           'Distro cannot be empty';
+    $.When($.getDistro() == distro, resources),
+
+  WhenUsername(username, resources):
+    assert username != null && username != '' :
+           'Username cannot be empty';
+    $.When($.getUsername() == username, resources),
+
+  WhenHostname(hostname, resources):
+    assert hostname != null && hostname != '' :
+           'Hostname cannot be empty';
+    $.When($.getHostname() == hostname, resources),
+
+  WhenArch(arch, resources):
+    assert arch != null && arch != '' :
+           'Arch cannot be empty';
+    $.When($.getArch() == arch, resources),
+
   Labels(labels=null):
     (if labels != null then
        {
@@ -54,6 +85,8 @@ local natives = [
      else
        {}),
   Metadata(name, labels=null, annotations=null):
+    assert name != null && name != '' :
+           'Name cannot be empty';
     {
       metadata+: {
         name: name,
@@ -62,6 +95,10 @@ local natives = [
     $.Labels(labels) +
     $.Annotations(annotations),
   Manifest(kind, name, spec=null, labels=null, annotations=null):
+    assert std.member(kind, kinds) :
+           'Unknown hypha resource kind: ' + kind;
+    assert name != null && name != '' :
+           'Name cannot be empty';
     {
       kind: kind,
       spec: (if spec != null then spec else {}),
@@ -70,6 +107,8 @@ local natives = [
 } +
 {
   [kind + 'Manifest'](name, spec=null, labels=null, annotations=null):
+    assert name != null && name != '' :
+           'Name cannot be empty';
     $.Manifest(kind, name, spec=spec, labels=labels, annotations=annotations)
   for kind in kinds
 } +
@@ -78,11 +117,29 @@ local natives = [
   // │ Archives │
   // ╰──────────╯
   ArchiveSpec(source, dest):
+    assert source != null && source != '' :
+           'Archive source cannot be empty';
+    assert std.isString(source) :
+           'Archive source should be a string';
+    assert dest != null && dest != '' :
+           'Archive dest cannot be empty';
+    assert std.isString(dest) :
+           'Archive dest should be a string';
     {
       source: source,
       dest: dest,
     },
   Archive(name, source, dest, labels=null, annotations=null):
+    assert name != null && name != '' :
+           'Name cannot be empty';
+    assert source != null && source != '' :
+           'Archive source cannot be empty';
+    assert std.isString(source) :
+           'Archive source should be a string';
+    assert dest != null && dest != '' :
+           'Archive dest cannot be empty';
+    assert std.isString(dest) :
+           'Archive dest should be a string';
     $.ArchiveManifest(name, $.ArchiveSpec(source, dest), labels, annotations),
   Archives(data, labels=null, annotations=null):
     [
