@@ -7,10 +7,7 @@ import (
 	"gopkg.in/yaml.v3"
 	"os"
 	"path/filepath"
-	"runtime"
 	"strings"
-
-	lib "github.com/arcadia-de/hypha/jsonnet"
 )
 
 type ManifestFormat int
@@ -78,44 +75,6 @@ func ParseResourceSpecs(code string) (any, error) {
 	}
 
 	return spec, nil
-}
-
-type MemoryImporter struct{}
-
-func (m *MemoryImporter) Import(importedFrom, importedPath string) (contents jsonnet.Contents, foundAt string, err error) {
-	if importedPath == "shared_config" {
-		return jsonnet.MakeContents(`
-			local getOperatingSystemName = std.native("getOperatingSystemName");
-			{
-				getOperatingSystemName: getOperatingSystemName,
-			}
-		`), "memory", nil
-	}
-	return jsonnet.Contents{}, "", fmt.Errorf("import blocked: %s", importedPath)
-}
-
-func HandleGetOperatingSystemName(args []any) (any, error) {
-	return runtime.GOOS, nil
-}
-
-func GetOperatingSystemName() *jsonnet.NativeFunction {
-	return &jsonnet.NativeFunction{
-		Name: "getOperatingSystemName",
-		Func: HandleGetOperatingSystemName,
-	}
-}
-
-func CreateJsonnetVM() *jsonnet.VM {
-	vm := jsonnet.MakeVM()
-	vm.Importer(&EmbedImporter{
-		FS: lib.LibsonnetFiles,
-	})
-
-	vm.ExtVar("env", "production")
-	vm.ExtCode("features", `{"enableBeta": true, "maxUsers": 100}`)
-
-	vm.NativeFunction(GetOperatingSystemName())
-	return vm
 }
 
 func RenderJsonnetManifest(vm *jsonnet.VM, name string, code string) (string, error) {

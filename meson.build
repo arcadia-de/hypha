@@ -144,12 +144,6 @@ else
     input:  'cmd' / 'hypha' / 'main.go',
     env : go_build_env,
     command: [
-      python3, '-c',
-      'import os, sys, subprocess; ' +
-      'os.path.exists(sys.argv[1]) and os.remove(sys.argv[1]); ' +
-      'sys.exit(subprocess.run(sys.argv[2:]).returncode)',
-      '@OUTPUT@',
-
       go,
       'build',
       '-ldflags=-linkmode=external',

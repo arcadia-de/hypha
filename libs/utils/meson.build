@@ -7,6 +7,7 @@ hypha_utils = static_library(
   'hypha-utils',
   [
     'src/process.c',
+    'src/platform.c',
     'src/expander.c',
     'src/ignore.c',
     'src/glob.c',

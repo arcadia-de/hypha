@@ -1,52 +1,28 @@
 subdir('api/')
 pkg_manager_matrix = {
   'luarocks': {
-    'deps': [],
-    'override_opts': [],
   },
   'apt': {
-    'deps': [],
-    'override_opts': [],
   },
   'pacman': {
-    'deps': [],
-    'override_opts': [],
   },
   'yay': {
-    'deps': [],
-    'override_opts': [],
   },
   'paru': {
-    'deps': [],
-    'override_opts': [],
   },
   'asdf': {
-    'deps': [],
-    'override_opts': [],
   },
   'brew': {
-    'deps': [],
-    'override_opts': [],
   },
   'cargo': {
-    'deps': [],
-    'override_opts': [],
   },
   'dnf': {
-    'deps': [],
-    'override_opts': [],
   },
   'eget': {
-    'deps': [],
-    'override_opts': [],
   },
   'flatpak': {
-    'deps': [],
-    'override_opts': [],
   },
   'go': {
-    'deps': [],
-    'override_opts': [],
   },
 }
 
@@ -66,8 +42,8 @@ foreach name, cfg : pkg_manager_matrix
       pkg_manager_inc,
     ],
     c_args: ['-Wno-unused-variable'],
-    dependencies: base_pkg_manager_deps + cfg.get('deps'),
-    override_options: cfg.get('override_opts'),
+    dependencies: base_pkg_manager_deps + cfg.get('deps', []),
+    override_options: cfg.get('override_opts', []),
   )
   pkg_manager_deps += declare_dependency(
     link_with: [

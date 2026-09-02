@@ -10,14 +10,7 @@
 
 #include "hypha/process.h"
 
-// --- Get all the info about the host
-// ---@return hypha.host.HostInfo
-// function M.info() end
-//
-// --- Execute /usr/bin/which for a specific bin
-// ---@param bin string The binary to search for
-// ---@return string
-// function M.find(bin) end
+// TODO(@s0cks): use platform funcs
 
 LUA_FN(os) {
 #if defined(_WIN32) || defined(_WIN64)

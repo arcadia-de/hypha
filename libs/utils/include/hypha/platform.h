@@ -9,4 +9,10 @@
 #define HYPHA_WINDOWS 1
 #endif
 
+char* GetOS();
+char* GetHostname();
+char* GetUsername();
+char* GetDistro();
+char* GetArch();
+
 #endif  // HYPHA_PLATFORM_H
