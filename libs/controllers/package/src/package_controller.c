@@ -140,4 +140,22 @@ static const ControllerConfig kPackageControllerConfig = {
     .normalize = NULL,
     .destroy = NULL,
 };
-DEFINE_NEW_CONTROLLER(Package);
+static ResourceKind kPackageKind = kInvalidResourceKind;
+
+ResourceKind GetPackageResourceKind() {
+  return kPackageKind;
+}
+
+Controller* NewPackageController() {
+  kPackageKind = NewResourceKind(kPackageControllerKindName);
+  if (kPackageKind == kInvalidResourceKind)
+    return NULL;
+
+  const char* aliases[4] = {
+      "package",
+      "packages",
+      "pkg",
+      "pkgs",
+  };
+  return NewController(kPackageKind, kPackageControllerConfig, aliases, 4, NULL, NULL);
+}

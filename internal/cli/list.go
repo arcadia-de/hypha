@@ -124,14 +124,11 @@ func HandleDefaultListResources(args []string) error {
 }
 
 func CreateListResourcesByKindCommand(kind string) *cobra.Command {
+	aliases := hypha.GetAliasesForController(kind)
 	listKindCommand := &cobra.Command{
-		Use: kind + "s",
-		Aliases: []string{
-			kind,
-			strings.ToLower(kind),
-			strings.ToLower(kind + "s"),
-		},
-		Short: fmt.Sprintf("List %s resource", kind),
+		Use:     kind + "s",
+		Aliases: aliases,
+		Short:   fmt.Sprintf("List %s resource", kind),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			return HandleListResourcesByKindCommand(kind, args)
 		},

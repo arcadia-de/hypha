@@ -362,4 +362,20 @@ static const ControllerConfig kTemplateControllerConfig = {
     .normalize = NULL,
     .destroy = NULL,
 };
-DEFINE_NEW_CONTROLLER(Template);
+static ResourceKind kTemplateKind = kInvalidResourceKind;
+
+ResourceKind GetTemplateResourceKind() {
+  return kTemplateKind;
+}
+
+Controller* NewTemplateController() {
+  kTemplateKind = NewResourceKind(kTemplateControllerKindName);
+  if (kTemplateKind == kInvalidResourceKind)
+    return NULL;
+
+  const char* aliases[2] = {
+      "template",
+      "templates",
+  };
+  return NewController(kTemplateKind, kTemplateControllerConfig, aliases, 2, NULL, NULL);
+}

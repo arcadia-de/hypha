@@ -75,4 +75,20 @@ static const ControllerConfig kTestControllerConfig = {
     .plan = TestPlan,
     .apply = TestApply,
 };
-DEFINE_NEW_CONTROLLER(Test);
+static ResourceKind kTestKind = kInvalidResourceKind;
+
+ResourceKind GetTestResourceKind() {
+  return kTestKind;
+}
+
+Controller* NewTestController() {
+  kTestKind = NewResourceKind(kTestControllerKindName);
+  if (kTestKind == kInvalidResourceKind)
+    return NULL;
+
+  const char* aliases[2] = {
+      "test",
+      "tests",
+  };
+  return NewController(kTestKind, kTestControllerConfig, aliases, 2, NULL, NULL);
+}

@@ -5,7 +5,7 @@
 static Controller* NewControllerController() {
   ResourceKind kControllerKind = NewResourceKind("Controller");
   static ControllerConfig kControllerConfig = {};
-  return NewController(kControllerKind, kControllerConfig, NULL, NULL);
+  return NewController(kControllerKind, kControllerConfig, NULL, 0, NULL, NULL);
 }
 
 void InitControllers() {

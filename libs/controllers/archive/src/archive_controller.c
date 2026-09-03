@@ -20,6 +20,7 @@
 #include "hypha/planned_action.h"
 #include "hypha/planner.h"
 #include "hypha/reason.h"
+#include "hypha/resource_kind.h"
 #include "hypha/validation_log.h"
 
 static const uint32_t kDefaultBufferSize = 16384;
@@ -211,8 +212,8 @@ DEFINE_CONTROLLER_PLAN_FN(Archive) {
       return kNoAction;
     }
 
-    PlannedAction* action = NewNoPlannedAction(log, desired, "Destination `%s` exists but is not a directory",
-                                                archive_spec.destination);
+    PlannedAction* action =
+        NewNoPlannedAction(log, desired, "Destination `%s` exists but is not a directory", archive_spec.destination);
     ASSERT(action);
     return kNoAction;
   }
@@ -232,9 +233,8 @@ DEFINE_CONTROLLER_APPLY_FN(Archive) {
     return kStatusInternalError;
   }
 
-  AppliedAction* action =
-      NewCreateAction(ctx->log, desired, "Archive `%s` extracted to `%s`", archive_spec.source,
-                       archive_spec.destination);
+  AppliedAction* action = NewCreateAction(ctx->log, desired, "Archive `%s` extracted to `%s`", archive_spec.source,
+                                          archive_spec.destination);
   ASSERT(action);
   return kStatusOk;
 }
@@ -265,4 +265,21 @@ static const ControllerConfig kArchiveControllerConfig = {
     .normalize = NULL,
     .destroy = NULL,
 };
-DEFINE_NEW_CONTROLLER(Archive);
+
+static ResourceKind kArchiveKind = kInvalidResourceKind;
+
+ResourceKind GetArchiveResourceKind() {
+  return kArchiveKind;
+}
+
+Controller* NewArchiveController() {
+  kArchiveKind = NewResourceKind(kArchiveControllerKindName);
+  if (kArchiveKind == kInvalidResourceKind)
+    return NULL;
+
+  const char* aliases[2] = {
+      "archive",
+      "archives",
+  };
+  return NewController(kArchiveKind, kArchiveControllerConfig, aliases, 2, NULL, NULL);
+}

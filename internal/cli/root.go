@@ -121,11 +121,6 @@ func init() {
 		Title: "Development Commands",
 	})
 
-	RootCmd.AddGroup(&cobra.Group{
-		ID:    "resources",
-		Title: "Resource Commands",
-	})
-
 	config_dir, err := getDefaultConfigDir()
 	if err != nil {
 		fmt.Printf("failed to get default config dir: %v", err)

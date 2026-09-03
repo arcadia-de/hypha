@@ -303,4 +303,20 @@ static const ControllerConfig kTaskControllerConfig = {
     .validate = &TaskValidate,
     .apply = &TaskApply,
 };
-DEFINE_NEW_CONTROLLER(Task);
+static ResourceKind kTaskKind = kInvalidResourceKind;
+
+ResourceKind GetTaskResourceKind() {
+  return kTaskKind;
+}
+
+Controller* NewTaskController() {
+  kTaskKind = NewResourceKind(kTaskControllerKindName);
+  if (kTaskKind == kInvalidResourceKind)
+    return NULL;
+
+  const char* aliases[2] = {
+      "task",
+      "tasks",
+  };
+  return NewController(kTaskKind, kTaskControllerConfig, aliases, 2, NULL, NULL);
+}

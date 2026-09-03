@@ -135,8 +135,12 @@ bool VisitAllControllers(ControllerVisitFn, void*);
 
 Controller* GetControllerForKind(ResourceKind kind);
 Controller* GetControllerForKindName(const char* name);
-Controller* NewController(ResourceKind kind, ControllerConfig config, void* data, void (*free_data)(void*));
+Controller* NewController(ResourceKind kind, ControllerConfig config, const char** aliases, size_t num_aliases,
+                          void* data, void (*free_data)(void*));
 ResourceKind GetControllerKind(const Controller* ctrl);
+
+typedef bool (*ControllerAliasesVisitFn)(const uint64_t, char*, void*);
+void VisitControllerAliases(Controller* ctrl, ControllerAliasesVisitFn fn, void* data);
 
 void ControllerInit(Controller*);
 void ControllerDeInit(Controller*);

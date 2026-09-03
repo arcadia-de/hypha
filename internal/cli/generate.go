@@ -64,12 +64,11 @@ func HandleGenerate(kind string, args []string) error {
 }
 
 func createGenResourceCommand(kind string) *cobra.Command {
+	aliases := hypha.GetAliasesForController(kind)
 	actionCmd := &cobra.Command{
-		Use: kind + "s",
-		Aliases: []string{
-			kind,
-		},
-		Short: fmt.Sprintf("Generate a %s manifest", hypha.Capitalize(kind)),
+		Use:     kind + "s",
+		Aliases: aliases,
+		Short:   fmt.Sprintf("Generate a %s manifest", hypha.Capitalize(kind)),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			return HandleGenerate(kind, args)
 		},

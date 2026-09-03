@@ -124,7 +124,7 @@ static inline bool Sha256File(const char* path, char* out) {
   crypto_hash_sha256_init(&state);
 
   unsigned char buf[8192];
-  size_t n;
+  size_t n = 0;
   while ((n = fread(buf, 1, sizeof(buf), in)) > 0)
     crypto_hash_sha256_update(&state, buf, n);
 
@@ -370,4 +370,21 @@ static const ControllerConfig kDownloadControllerConfig = {
     .normalize = NULL,
     .destroy = NULL,
 };
-DEFINE_NEW_CONTROLLER(Download);
+
+static ResourceKind kDownloadKind = kInvalidResourceKind;
+
+ResourceKind GetDownloadResourceKind() {
+  return kDownloadKind;
+}
+
+Controller* NewDownloadController() {
+  kDownloadKind = NewResourceKind(kDownloadControllerKindName);
+  if (kDownloadKind == kInvalidResourceKind)
+    return NULL;
+
+  const char* aliases[2] = {
+      "download",
+      "downloads",
+  };
+  return NewController(kDownloadKind, kDownloadControllerConfig, aliases, 2, NULL, NULL);
+}

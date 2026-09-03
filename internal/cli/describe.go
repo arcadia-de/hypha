@@ -50,14 +50,11 @@ func HandleDescribeKind(kind string, args []string) error {
 }
 
 func CreateDescribeKindCommand(kind string) *cobra.Command {
+	aliases := hypha.GetAliasesForController(kind)
 	cmd := &cobra.Command{
-		Use: kind + "s",
-		Aliases: []string{
-			kind,
-			strings.ToLower(kind),
-			strings.ToLower(kind) + "s",
-		},
-		Short: fmt.Sprintf("Describe %s resources", kind),
+		Use:     kind,
+		Aliases: aliases,
+		Short:   fmt.Sprintf("Describe %s resources", kind),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			return HandleDescribeKind(kind, args)
 		},

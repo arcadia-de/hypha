@@ -9,6 +9,7 @@ package hypha
 #include "hypha/controller.h"
 
 bool goVisitController(uint32_t idx, char* kind, Controller* ctrl, void* data);
+bool goVisitControllerAlias(uint64_t idx, char* kind, void* data);
 */
 import "C"
 import (
@@ -82,6 +83,42 @@ func GetAllControllerKinds() []string {
 	var results []string
 	VisitControllers(func(ctrl Controller) bool {
 		results = append(results, ctrl.Kind)
+		return true
+	})
+	return results
+}
+
+type ControllerAliasVisitor func(idx uint64, alias string) bool
+
+//export goVisitControllerAlias
+func goVisitControllerAlias(idx C.uint64_t, alias *C.char, data *C.void) C.bool {
+	handle := cgo.Handle(*(*uintptr)(unsafe.Pointer(data)))
+	vis := handle.Value().(ControllerAliasVisitor)
+	goAlias := C.GoString(alias)
+	return C.bool(vis(uint64(idx), goAlias))
+}
+
+func VisitControllerAliases(kind string, vis ControllerAliasVisitor) {
+	cKind := C.CString(kind)
+	defer C.free(unsafe.Pointer(cKind))
+	ctrl := C.GetControllerForKindName(cKind)
+
+	handle := cgo.NewHandle(vis)
+	defer handle.Delete()
+
+	C.VisitControllerAliases(
+		ctrl,
+		C.ControllerAliasesVisitFn(unsafe.Pointer(C.goVisitControllerAlias)),
+		unsafe.Pointer(&handle),
+	)
+
+	runtime.KeepAlive(handle)
+}
+
+func GetAliasesForController(kind string) []string {
+	var results = []string{}
+	VisitControllerAliases(kind, func(idx uint64, alias string) bool {
+		results = append(results, alias)
 		return true
 	})
 	return results

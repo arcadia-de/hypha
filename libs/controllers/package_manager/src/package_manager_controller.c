@@ -131,4 +131,21 @@ static const ControllerConfig kPackageManagerControllerConfig = {
     .normalize = PackageManagerNormalize,
     .destroy = NULL,
 };
-DEFINE_NEW_CONTROLLER(PackageManager);
+
+static ResourceKind kPackageManagerKind = kInvalidResourceKind;
+
+ResourceKind GetPackageManagerResourceKind() {
+  return kPackageManagerKind;
+}
+
+Controller* NewPackageManagerController() {
+  kPackageManagerKind = NewResourceKind(kPackageManagerControllerKindName);
+  if (kPackageManagerKind == kInvalidResourceKind)
+    return NULL;
+
+  const char* aliases[8] = {
+      "packge-manager", "package-managers", "packagemanager", "packagemanagers",
+      "pkg-manager",    "pkg-managers",     "pkg-mgr",        "pkg-mgrs",
+  };
+  return NewController(kPackageManagerKind, kPackageManagerControllerConfig, aliases, 8, NULL, NULL);
+}

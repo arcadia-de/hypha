@@ -134,7 +134,7 @@ DEFINE_CONTROLLER_PLAN_FN(Repository) {
   struct stat dest_stat;
   if (stat(repository_spec.destination, &dest_stat) == 0) {
     PlannedAction* action = NewNoPlannedAction(log, desired, "Destination `%s` exists but is not a git repository",
-                                                repository_spec.destination);
+                                               repository_spec.destination);
     ASSERT(action);
     return kNoAction;
   }
@@ -185,4 +185,22 @@ static const ControllerConfig kRepositoryControllerConfig = {
     .normalize = NULL,
     .destroy = NULL,
 };
-DEFINE_NEW_CONTROLLER(Repository);
+static ResourceKind kRepositoryKind = kInvalidResourceKind;
+
+ResourceKind GetRepositoryResourceKind() {
+  return kRepositoryKind;
+}
+
+Controller* NewRepositoryController() {
+  kRepositoryKind = NewResourceKind(kRepositoryControllerKindName);
+  if (kRepositoryKind == kInvalidResourceKind)
+    return NULL;
+
+  const char* aliases[4] = {
+      "repository",
+      "repositories",
+      "repo",
+      "repos",
+  };
+  return NewController(kRepositoryKind, kRepositoryControllerConfig, aliases, 4, NULL, NULL);
+}

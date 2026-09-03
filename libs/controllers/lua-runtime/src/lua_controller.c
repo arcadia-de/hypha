@@ -95,7 +95,7 @@ Controller* NewLuaController(lua_State* L, const char* kind, const int tbl_index
       .init = LuaInit,
       .deinit = LuaDeInit,
   };
-  return NewController(k, config, lctrl, &FreeLuaCtrl);
+  return NewController(k, config, NULL, 0, lctrl, &FreeLuaCtrl);
 }
 
 void FreeLuaController(LuaController* ctrl) {

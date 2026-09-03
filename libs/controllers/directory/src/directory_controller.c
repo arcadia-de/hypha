@@ -158,4 +158,21 @@ static const ControllerConfig kDirectoryControllerConfig = {
     .normalize = NULL,
     .destroy = NULL,
 };
-DEFINE_NEW_CONTROLLER(Directory);
+
+static ResourceKind kDirectoryKind = kInvalidResourceKind;
+
+ResourceKind GetDirectoryResourceKind() {
+  return kDirectoryKind;
+}
+
+Controller* NewDirectoryController() {
+  kDirectoryKind = NewResourceKind(kDirectoryControllerKindName);
+  if (kDirectoryKind == kInvalidResourceKind)
+    return NULL;
+
+  const char* aliases[2] = {
+      "directory",
+      "directories",
+  };
+  return NewController(kDirectoryKind, kDirectoryControllerConfig, aliases, 2, NULL, NULL);
+}

@@ -156,4 +156,20 @@ static const ControllerConfig kSymlinkControllerConfig = {
     .normalize = NULL,
     .destroy = NULL,
 };
-DEFINE_NEW_CONTROLLER(Symlink);
+static ResourceKind kSymlinkKind = kInvalidResourceKind;
+
+ResourceKind GetSymlinkResourceKind() {
+  return kSymlinkKind;
+}
+
+Controller* NewSymlinkController() {
+  kSymlinkKind = NewResourceKind(kSymlinkControllerKindName);
+  if (kSymlinkKind == kInvalidResourceKind)
+    return NULL;
+
+  const char* aliases[2] = {
+      "symlink",
+      "symlinks",
+  };
+  return NewController(kSymlinkKind, kSymlinkControllerConfig, aliases, 2, NULL, NULL);
+}

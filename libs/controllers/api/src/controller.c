@@ -28,6 +28,10 @@ struct _Controller {
   ResourceKind kind;
   ControllerConfig config;
 
+  char** aliases;
+  size_t aliases_len;
+  size_t aliases_cap;
+
   void* data;
   void (*free_data)(void*);
 };
@@ -52,7 +56,8 @@ static inline bool EnsureCapacity(const size_t new_len) {
   return true;
 }
 
-Controller* NewController(ResourceKind kind, ControllerConfig config, void* data, void (*free_data)(void*)) {
+Controller* NewController(ResourceKind kind, ControllerConfig config, const char** aliases, const size_t num_aliases,
+                          void* data, void (*free_data)(void*)) {
   if (kind == kInvalidResourceKind)
     return NULL;
 
@@ -75,7 +80,32 @@ Controller* NewController(ResourceKind kind, ControllerConfig config, void* data
   ctrl->data = data;
   ctrl->free_data = free_data;
   memcpy(&ctrl->config, &config, sizeof(ControllerConfig));
+
+  if (aliases && num_aliases > 0) {
+    char** new_aliases = (char**)calloc(sizeof(char*), num_aliases);
+    LOG_FATAL_IF(!new_aliases, "failed to allocate %zu Controller aliases", num_aliases);
+    for (size_t i = 0; i < num_aliases; i++)
+      new_aliases[i] = strdup(aliases[i]);
+
+    ctrl->aliases = new_aliases;
+    ctrl->aliases_len = ctrl->aliases_cap = num_aliases;
+  } else {
+    ctrl->aliases = NULL;
+    ctrl->aliases_len = 0;
+    ctrl->aliases_cap = 0;
+  }
+
   return ctrl;
+}
+
+void VisitControllerAliases(Controller* ctrl, ControllerAliasesVisitFn fn, void* data) {
+  if (!ctrl || !ctrl->aliases || ctrl->aliases_len == 0)
+    return;
+
+  for (size_t i = 0; i < ctrl->aliases_len; i++) {
+    if (!fn((uint64_t)i, ctrl->aliases[i], data))
+      return;
+  }
 }
 
 ResourceKind GetControllerKind(const Controller* ctrl) {
