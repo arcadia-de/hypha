@@ -4,7 +4,6 @@ commit-msg:
     conventional-commits:
       run: cog verify --file {1}
 pre-commit:
-  parallel: true
   commands:
     go-fmt:
       glob: "*.go"
