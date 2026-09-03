@@ -4,7 +4,7 @@ dist/
 .cache/
 wiki/
 private/
-hypha
+/hypha
 bin/
 build/
 build2/
