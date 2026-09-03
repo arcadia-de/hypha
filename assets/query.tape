@@ -5,6 +5,6 @@ Set FontSize 13
 Set Width 1200
 Set Height 600
 
-Type "./hypha query --expr 'resources(kind: "Test"){ id name labels }'" Sleep 500ms  Enter
+Type "./hypha query --expr 'resources(kind: "Test"){ id name }'" Sleep 500ms  Enter
 
 Sleep 5s
