@@ -8,7 +8,8 @@ pre-commit:
   commands:
     go-fmt:
       glob: "*.go"
-      run: gofmt -w {staged_files} && git add {staged_files}
+      run: gofmt -w {staged_files}
+      stage_fixed: true
     c-format:
       glob: "*.[ch]"
       run: clang-format -i {staged_files}
@@ -24,13 +25,9 @@ pre-commit:
     hadolint-format:
       glob: "**/Dockerfile*"
       run: hadolint {staged_files}
-      stage_fixed: true
     render-vhs-tapes:
       glob: "*.tape"
-      run: |
-        for tape in {staged_files}; do
-          vhs "${tape}" || exit 1
-        done
+      run: echo {staged_files} | xargs -n 1 vhs && git add assets/*.gif
       stage_fixed: true
     gitleaks:
       glob: "*"
