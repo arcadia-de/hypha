@@ -317,7 +317,7 @@ void FreeResourceSelector(ResourceSelector* rs) {
   if (IsAtomicSelector(rs)) {
     if (rs->free_data && rs->data)
       rs->free_data(rs->data);
-  } else if (IsCompositeSelector(rs)) {
+  } else if (IsCompositeSelector(rs) || IsNegateSelector(rs) || IsNotSelector(rs)) {
     if (rs->selectors && rs->num_selectors > 0) {
       BEGIN_FOREACH_SELECTOR(rs, selector)
       if (IsCompositeSelector(selector))
@@ -329,4 +329,75 @@ void FreeResourceSelector(ResourceSelector* rs) {
   }
 
   free(rs);
+}
+
+static inline void EnsureCap(ResourceSelectorBuilder* builder, const size_t new_len) {
+  ASSERT(builder);
+  if (new_len < builder->selectors_cap)
+    return;
+
+  const size_t new_cap = new_len;
+  const size_t total_size = sizeof(ResourceSelector*) * new_cap;
+  ResourceSelector** new_selectors = (ResourceSelector**)realloc(builder->selectors, total_size);
+  LOG_FATAL_IF(!new_selectors, "failed to reallocate new ResourceSelector array of %zu items", new_len);
+  builder->selectors = new_selectors;
+  builder->selectors_cap = new_cap;
+}
+
+void InitResourceSelectorBuilder(ResourceSelectorBuilder* builder, const size_t init_cap) {
+  ASSERT(builder);
+  if (init_cap == 0) {
+    builder->selectors = NULL;
+    builder->selectors_len = builder->selectors_cap = 0;
+    return;
+  }
+
+  memset(builder, 0, sizeof(ResourceSelectorBuilder));
+  EnsureCap(builder, init_cap);
+}
+
+ResourceSelector* BuildAndResourceSelector(ResourceSelectorBuilder* builder) {
+  ASSERT(builder);
+  ASSERT(builder->selectors);
+  ASSERT(builder->selectors_len > 0);
+  ResourceSelector* selector = NewAndResourceSelector(builder->selectors, builder->selectors_len);
+
+  free(builder->selectors);
+  builder->selectors = NULL;
+  builder->selectors_len = builder->selectors_cap = 0;
+
+  return selector;
+}
+
+ResourceSelector* BuildOrResourceSelector(ResourceSelectorBuilder* builder) {
+  ASSERT(builder);
+  ASSERT(builder->selectors);
+  ASSERT(builder->selectors_len > 0);
+  ResourceSelector* selector = NewOrResourceSelector(builder->selectors, builder->selectors_len);
+
+  free(builder->selectors);
+  builder->selectors = NULL;
+  builder->selectors_len = builder->selectors_cap = 0;
+
+  return selector;
+}
+
+void AppendResourceSelectors(ResourceSelectorBuilder* builder, ResourceSelector** selectors,
+                             const size_t num_selectors) {
+  ASSERT(builder);
+  ASSERT(selectors);
+  ASSERT(num_selectors > 0);
+  EnsureCap(builder, builder->selectors_len + num_selectors);
+  const size_t total_size = sizeof(ResourceSelector*) * num_selectors;
+  memcpy(&builder->selectors[builder->selectors_len], selectors, total_size);
+  builder->selectors_len += num_selectors;
+}
+
+void FreeResourceSelectorBuilder(ResourceSelectorBuilder* builder) {
+  ASSERT(builder);
+  if (builder->selectors) {
+    for (size_t i = 0; i < builder->selectors_len; i++)
+      FreeResourceSelector(builder->selectors[i]);
+    free(builder->selectors);
+  }
 }

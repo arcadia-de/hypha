@@ -44,7 +44,8 @@ static const FieldDef* FindField(const TypeDef* type, const char* name) {
 }
 
 static inline QueryResult* NewNode(ResultKind kind) {
-  QueryResult* node = (QueryResult*)calloc(1, sizeof(QueryResult));
+  QueryResult* node = (QueryResult*)malloc(sizeof(QueryResult));
+  memset(node, 0, sizeof(QueryResult));
   node->kind = kind;
   return node;
 }
@@ -58,6 +59,7 @@ static inline QueryResult* NewErrorNode(char* message, const size_t message_len)
     node->message = strndup(message, message_len);
     node->message_len = message_len;
   }
+
   return node;
 }
 
@@ -92,9 +94,8 @@ static QueryResult* ResolveField(const QuerySchema* schema, const TypeDef* type,
     return NULL;
   }
 
-  FieldResolverResult r = def->resolve(object);
   QueryResult* result = NULL;
-
+  FieldResolverResult r = def->resolve(object);
   switch (r.kind) {
     case kQueryFieldResultScalar:
       if (r.scalar) {

@@ -71,25 +71,27 @@ FIELD_RESOLVER_FN(name) {
 static inline ResourceSelector* CreateSelector(ResourcesQueryContext* ctx, const QueryArg* args) {
   ASSERT(ctx);
 
-  size_t num_selectors = 0;
-  ResourceSelector** selectors = (ResourceSelector**)calloc(sizeof(ResourceSelector*), 8);
-  ASSERT(selectors);
+  ResourceSelectorBuilder builder;
+  InitResourceSelectorBuilder(&builder, 10);
+  if (args) {
+#define DEFINE_FILTER(Field, Filter)                \
+  ({                                                \
+    const char* filter = QueryArgGet(args, #Field); \
+    if (filter)                                     \
+      AppendResourceSelector(&builder, (Filter));   \
+  })
 
-  const char* id_filter = QueryArgGet(args, "id");
-  if (id_filter) {
-    selectors[num_selectors] = NewRefResourceSelector(id_filter);
-    num_selectors++;
+    DEFINE_FILTER(id, NewRefResourceSelector(filter));
+    DEFINE_FILTER(kind, NewKindResourceSelector(filter));
+#undef DEFINE_FILTER
   }
 
-  const char* kind_filter = QueryArgGet(args, "kind");
-  if (kind_filter) {
-    selectors[num_selectors] = NewKindResourceSelector(kind_filter);
-    num_selectors++;
+  if (IsResourceSelectorBuilderEmpty(&builder)) {
+    FreeResourceSelectorBuilder(&builder);
+    return NULL;
   }
 
-  if (num_selectors > 0)
-    return NewAndResourceSelector(selectors, num_selectors);
-  return NULL;
+  return BuildAndResourceSelector(&builder);
 }
 
 DEFINE_ROOT_TYPE(Resource, resources, FOR_EACH_RESOURCE_FIELD, 7) {

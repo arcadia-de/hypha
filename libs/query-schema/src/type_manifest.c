@@ -64,38 +64,31 @@ static inline ResourceSelector* CreateSelector(ResourcesQueryContext* ctx, const
   // const char* hash_filter = QueryArgGet(args, "hash");
   // const char* path_filter = QueryArgGet(args, "path");
   // const char* source_filter = QueryArgGet(args, "source");
-  size_t num_selectors = 0;
-  ResourceSelector* selectors[6];
-  selectors[num_selectors] = NewKindResourceSelector("Manifest");
-  num_selectors++;
 
+  ResourceSelectorBuilder builder;
+  InitResourceSelectorBuilder(&builder, 10);
+  AppendResourceSelector(&builder, NewKindResourceSelector("Manifest"));
   if (args) {
-    const char* id_filter = QueryArgGet(args, "id");
-    if (id_filter) {
-      selectors[num_selectors] = NewRefResourceSelector(id_filter);
-      num_selectors++;
-    }
+#define DEFINE_FILTER(Field, Filter)                \
+  ({                                                \
+    const char* filter = QueryArgGet(args, #Field); \
+    if (filter)                                     \
+      AppendResourceSelector(&builder, (Filter));   \
+  })
 
-    const char* state_filter = QueryArgGet(args, "state");
-    if (state_filter) {
-      selectors[num_selectors] = NewStateResourceSelector(ParseResourceState(state_filter));
-      num_selectors++;
-    }
-
-    const char* namespace_filter = QueryArgGet(args, "namespace");
-    if (namespace_filter) {
-      selectors[num_selectors] = NewNamespaceResourceSelector(namespace_filter);
-      num_selectors++;
-    }
-
-    const char* name_filter = QueryArgGet(args, "name");
-    if (name_filter) {
-      selectors[num_selectors] = NewNameResourceSelector(name_filter);
-      num_selectors++;
-    }
+    DEFINE_FILTER(id, NewRefResourceSelector(filter));
+    DEFINE_FILTER(state, NewStateResourceSelector(ParseResourceState(filter)));
+    DEFINE_FILTER(namespace, NewNamespaceResourceSelector(filter));
+    DEFINE_FILTER(name, NewNameResourceSelector(filter));
+#undef DEFINE_FILTER
   }
 
-  return NewAndResourceSelector(selectors, num_selectors);
+  if (IsResourceSelectorBuilderEmpty(&builder)) {
+    FreeResourceSelectorBuilder(&builder);
+    return NULL;
+  }
+
+  return BuildAndResourceSelector(&builder);
 }
 
 DEFINE_ROOT_TYPE(Manifest, manifests, FOR_EACH_MANIFEST_FIELD, 5) {
