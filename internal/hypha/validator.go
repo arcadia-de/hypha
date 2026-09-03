@@ -25,9 +25,10 @@ import (
 type SchemaValidator struct {
 	Compiler *jsonschema.Compiler
 	Schema   *jsonschema.Schema
+	Jsonnet  *jsonnet.VM
 }
 
-func NewSchemaValidator() (*SchemaValidator, error) {
+func NewSchemaValidatorWithJsonnetVM(vm *jsonnet.VM) (*SchemaValidator, error) {
 	compiler := jsonschema.NewCompiler()
 
 	var schema any
@@ -49,7 +50,12 @@ func NewSchemaValidator() (*SchemaValidator, error) {
 	return &SchemaValidator{
 		Compiler: compiler,
 		Schema:   compiledSchema,
+		Jsonnet:  vm,
 	}, nil
+}
+
+func NewSchemaValidator() (*SchemaValidator, error) {
+	return NewSchemaValidatorWithJsonnetVM(CreateJsonnetVM())
 }
 
 type SchemaValidationResult struct {
@@ -58,11 +64,11 @@ type SchemaValidationResult struct {
 	Error    error
 }
 
-func (validator *SchemaValidator) ValidateSchemas(vm *jsonnet.VM, filenames []string) []SchemaValidationResult {
+func (validator *SchemaValidator) ValidateSchemas(filenames []string) []SchemaValidationResult {
 	results := make([]SchemaValidationResult, 0)
 	for _, filename := range filenames {
 		if strings.HasSuffix(filename, ".jsonnet") {
-			specs, err := ParseSpecsFromJsonnet(vm, filename)
+			specs, err := ParseSpecsFromJsonnet(validator.Jsonnet, filename)
 			if err != nil {
 				results = append(results, SchemaValidationResult{
 					Filename: filename,

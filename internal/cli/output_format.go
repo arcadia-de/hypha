@@ -3,6 +3,7 @@ package cli
 import (
 	"strings"
 
+	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
 )
 
@@ -56,4 +57,15 @@ func GetOutFormat() OutputFormat {
 	}
 
 	return ParseOutputFormat(viper.GetString("format"))
+}
+
+func AddFormatFlags(c *cobra.Command) {
+	c.Flags().StringP("format", "f", DefaultOutputFormatString, "The output format. Values are: plain, colored, pretty, json, jsonl, yaml (default: pretty)")
+	c.Flags().BoolP("plain", "", false, "Set the output format to plain")
+	c.Flags().BoolP("colored", "", false, "Set the output format to colored")
+	c.Flags().BoolP("pretty", "", false, "Set the output format to pretty")
+	c.Flags().BoolP("json", "", false, "Set the output format to colored")
+	c.Flags().BoolP("jsonl", "", false, "Set the output format to jsonl")
+	c.Flags().BoolP("yaml", "", false, "Set the output format to yaml")
+	c.MarkFlagsMutuallyExclusive("format", "plain", "colored", "pretty", "json", "jsonl", "yaml")
 }

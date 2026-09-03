@@ -115,14 +115,7 @@ func init() {
 		GroupID: "config",
 		RunE:    HandleInit,
 	}
-	initCmd.Flags().StringP("format", "f", DefaultOutputFormatString, "The output format. Values are: plain, colored, pretty, json, jsonl, yaml (default: pretty)")
-	initCmd.Flags().BoolP("plain", "", false, "Set the output format to plain")
-	initCmd.Flags().BoolP("colored", "", false, "Set the output format to colored")
-	initCmd.Flags().BoolP("pretty", "", false, "Set the output format to pretty")
-	initCmd.Flags().BoolP("json", "", false, "Set the output format to colored")
-	initCmd.Flags().BoolP("jsonl", "", false, "Set the output format to jsonl")
-	initCmd.Flags().BoolP("yaml", "", false, "Set the output format to yaml")
-	initCmd.MarkFlagsMutuallyExclusive("format", "plain", "colored", "pretty", "json", "jsonl", "yaml")
+	AddFormatFlags(initCmd)
 
 	RootCmd.AddCommand(initCmd)
 }
