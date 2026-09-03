@@ -3,16 +3,15 @@ package hypha
 /*
 #cgo pkg-config: hypha-uninstalled
 #include <stdlib.h>
+
 #include "hypha.h"
 #include "hypha/resource.h"
 #include "hypha/controller.h"
 
 bool goVisitController(uint32_t idx, char* kind, Controller* ctrl, void* data);
-bool goVisitControllerAppend(uint32_t idx, char* kind, Controller* ctrl, void* data);
 */
 import "C"
 import (
-	"fmt"
 	"runtime"
 	"runtime/cgo"
 	"unsafe"
@@ -79,29 +78,11 @@ func VisitControllers(vis ControllerVisitFn) {
 	runtime.KeepAlive(handle)
 }
 
-//export goVisitControllerAppend
-func goVisitControllerAppend(idx C.uint32_t, kind *C.char, ctrl *C.Controller, data *C.void) C.bool {
-	rawPtr := unsafe.Pointer(data)
-	if rawPtr == nil {
-		return C.bool(false)
-	}
-
-	slicePtr := (*[]string)(rawPtr)
-	goKind := C.GoString(kind)
-	*slicePtr = append(*slicePtr, goKind)
-	return C.bool(true)
-}
-
 func GetAllControllerKinds() []string {
-	cb := C.ControllerVisitFn(C.goVisitControllerAppend)
-
 	var results []string
-	ctxPointer := unsafe.Pointer(&results)
-	success := C.VisitAllControllers(cb, ctxPointer)
-	if !bool(success) {
-		fmt.Println("C visitor failed")
-		return []string{}
-	}
-
+	VisitControllers(func(ctrl Controller) bool {
+		results = append(results, ctrl.Kind)
+		return true
+	})
 	return results
 }

@@ -13,9 +13,6 @@ import (
 	"unsafe"
 )
 
-// bool VisitAllNonMatchingResources(const ResourceGraph* rg, const ResourceSelector* rs, ResourceVisitorFn fn,
-//                                   void* data);
-
 type ResourceSelector struct {
 	Handle *C.ResourceSelector
 }

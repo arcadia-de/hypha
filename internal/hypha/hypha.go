@@ -57,7 +57,7 @@ func EnsureCacheDirExists() (string, error) {
 	return dir, nil
 }
 
-func InitHypha(luarocksDir string) {
+func GetNewLuaPath() string {
 	libs := []string{
 		"$HOME/.local/state/hypha/?.lua",
 		"$HOME/.local/state/hypha/lua/?.lua",
@@ -65,8 +65,11 @@ func InitHypha(luarocksDir string) {
 		"$XDG_CONFIG_HOME/hypha/?.lua",
 		"$XDG_CONFIG_HOME/hypha/lua/?.lua",
 	}
-	expandedPath := os.ExpandEnv(strings.Join(libs, ";") + ";;")
-	os.Setenv("LUA_PATH", expandedPath)
+	return os.ExpandEnv(strings.Join(libs, ";") + ";;")
+}
+
+func InitHypha(luarocksDir string) {
+	os.Setenv("LUA_PATH", GetNewLuaPath())
 
 	cLuarocksDir := C.CString(luarocksDir)
 	defer C.free(unsafe.Pointer(cLuarocksDir))
