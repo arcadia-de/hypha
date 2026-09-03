@@ -8,70 +8,7 @@ Hypha, is a declarative configuration system for managing a user's environment a
 It represents configuration as Resources defined by declarative manifests, forming a
 dependency graph that is reconciled through pluggable controllers.
 
-```mermaid
-flowchart LR
-    subgraph MANIFESTS["Manifests"]
-        MAN0["sym-0.yaml"]
-        MAN1["sym-1.json"]
-        MAN2["directories.jsonnet"]
-        MAN3["packages.jsonnet"]
-    end
-
-    subgraph ORCHESTRATOR["Orchestrator"]
-        subgraph CONTROLLERS["Controllers"]
-            SYM_CONTROLLER["Symlink Controller"]
-            DIR_CONTROLLER["Directory Controller"]
-            PKG_CONTROLLER["Package Controller"]
-        end
-
-        subgraph RESOURCE_GRAPH["Resource Graph"]
-            RES0["sym-0"]
-            RES1["sym-1"]
-
-            RES2["dir-0"]
-            RES3["dir-1"]
-
-            RES4["pkg-0"]
-            RES5["pkg-1"]
-            RES6["pkg-2"]
-        end
-    end
-
-    MAN0 & MAN1 --> SYM_CONTROLLER
-    MAN2 --> DIR_CONTROLLER
-    MAN3 --> PKG_CONTROLLER
-    SYM_CONTROLLER --> RES0 & RES1
-    DIR_CONTROLLER --> RES2 & RES3
-    PKG_CONTROLLER --> RES4 & RES5 & RES6
-
-    RES0 --- SYM0
-    RES1 --- SYM1
-
-    RES2 --- DIR0
-    RES3 --- DIR1
-
-    RES4 --- PKG0
-    RES5 --- PKG1
-    RES6 --- PKG2
-    subgraph SYSTEM["System Resources"]
-        SYM0[".gitconfig => ~/.gitconfig"]
-        SYM1[".zshrc => ~/.zshrc"]
-
-        DIR0["~/Photos"]
-        DIR1["~/Documents"]
-
-        PKG0["git"]
-        PKG1["neovim"]
-        PKG2["zoxide"]
-    end
-
-    classDef pkg fill:#000,stroke:#333,stroke-width:2px;
-    classDef dir fill:#bbf,stroke:#000,color:#000,stroke-width:2px;
-    classDef sym fill:#bfb,stroke:#333,color:#000,stroke-width:2px;
-    class PKG0,PKG1,PKG2,RES4,RES5,RES6,MAN3,PKG_CONTROLLER pkg;
-    class DIR0,DIR1,RES2,RES3,MAN2,DIR_CONTROLLER dir;
-    class SYM0,SYM1,RES0,RES1,MAN0,MAN1,SYM_CONTROLLER sym;
-```
+![Flowchart](./assets/flowchart.png)
 
 ## Features
 
