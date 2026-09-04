@@ -109,8 +109,61 @@ TEST_F(PackageManagerControllerTest, NormalizeStampsProvidesAnnotation) {
   EXPECT_EQ(ControllerPlan(ctrl, &res, &res, &plan), kNoAction);
   FreePlan(&plan);
 
+  EXPECT_EQ(ControllerStat(ctrl, &res), kStatusOk);
+
   free(res.info.name);
   FreeResourceSpecJson(&res.spec);
   free(res.spec.raw);
   free(res.info.annotations);
+}
+
+TEST_F(PackageManagerControllerTest, StatusFailsForUnregisteredType) {
+  Resource res = MakeDesiredResource("NotARealPackageManager");
+
+  StateEntry last = {};
+  ASSERT_EQ(ControllerObserve(ctrl, &res, &last), kStatusOk);
+
+  EXPECT_EQ(ControllerStat(ctrl, &res), kStatusInternalError);
+
+  free(res.info.name);
+  FreeResourceSpecJson(&res.spec);
+  free(res.spec.raw);
+}
+
+// Diff and Status agree here -- there's no more granular comparison available than "is this
+// backend registered and its binary reachable."
+TEST_F(PackageManagerControllerTest, DiffMatchesStatus) {
+  Resource res = MakeDesiredResource("TestPkgManager");
+
+  StateEntry last = {};
+  ASSERT_EQ(ControllerObserve(ctrl, &res, &last), kStatusOk);
+
+  DeltaLog dlog = {};
+  InitDeltaLog(&dlog, 4);
+  EXPECT_EQ(ControllerDiff(ctrl, &res, &dlog), kStatusOk);
+  ASSERT_EQ(dlog.data_len, 1u);
+  EXPECT_NE(strstr(dlog.data[0].reason, "is available"), nullptr);
+  FreeDeltaLog(&dlog);
+
+  free(res.info.name);
+  FreeResourceSpecJson(&res.spec);
+  free(res.spec.raw);
+}
+
+TEST_F(PackageManagerControllerTest, DiffFailsForUnregisteredType) {
+  Resource res = MakeDesiredResource("NotARealPackageManager");
+
+  StateEntry last = {};
+  ASSERT_EQ(ControllerObserve(ctrl, &res, &last), kStatusOk);
+
+  DeltaLog dlog = {};
+  InitDeltaLog(&dlog, 4);
+  EXPECT_EQ(ControllerDiff(ctrl, &res, &dlog), kStatusInternalError);
+  ASSERT_EQ(dlog.data_len, 1u);
+  EXPECT_NE(strstr(dlog.data[0].reason, "not a registered package manager"), nullptr);
+  FreeDeltaLog(&dlog);
+
+  free(res.info.name);
+  FreeResourceSpecJson(&res.spec);
+  free(res.spec.raw);
 }

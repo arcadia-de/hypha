@@ -287,7 +287,7 @@ finished:
   return valid;
 }
 
-ControllerStatus ControllerDiff(Controller* ctrl, const Resource* current) {
+ControllerStatus ControllerDiff(Controller* ctrl, const Resource* current, DeltaLog* dlog) {
   BEGIN_CONTROLLER_FUNC(Diff);
   ControllerStatus status = kStatusOk;
 
@@ -295,8 +295,9 @@ ControllerStatus ControllerDiff(Controller* ctrl, const Resource* current) {
     goto finished;
 
   DiffContext ctx = {
-      .current = current,
+      .observed = current,
       .desired = NULL,
+      .log = dlog,
   };
   status = ctrl->config.diff(&ctx, ctrl->data);
 finished:

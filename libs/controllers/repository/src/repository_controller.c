@@ -172,6 +172,44 @@ DEFINE_CONTROLLER_STATUS_FN(Repository) {
   return kStatusOk;
 }
 
+// Status only checks "is destination a git repo at all." Diff goes slightly further: since
+// there's no `ref`/`commit` field on RepositorySpec to compare against (and checking the
+// remote's actual HEAD would mean a network fetch, well outside what a local Diff should
+// do), it reports the current branch and commit it's actually sitting at, which is
+// genuinely useful diagnostic information Status doesn't surface, without pretending there's
+// a "correct" value to check it against.
+DEFINE_CONTROLLER_DIFF_FN(Repository) {
+  const Resource* observed = ctx->observed;
+  ASSERT(observed);
+  DeltaLog* dlog = ctx->log;
+  ASSERT(dlog);
+
+  git_repository* repo = NULL;
+  if (git_repository_open_ext(&repo, repository_spec.destination, GIT_REPOSITORY_OPEN_NO_SEARCH, NULL) < 0) {
+    NewNoDelta(dlog, "`%s` is not a git repository -- `%s` would be cloned there", repository_spec.destination,
+               repository_spec.url);
+    return kStatusInternalError;
+  }
+
+  git_reference* head = NULL;
+  if (git_repository_head(&head, repo) < 0) {
+    NewNoDelta(dlog, "`%s` is a git repository with no commits yet", repository_spec.destination);
+    git_repository_free(repo);
+    return kStatusOk;
+  }
+
+  const git_oid* oid = git_reference_target(head);
+  char oid_str[GIT_OID_SHA1_HEXSIZE + 1] = {0};
+  if (oid)
+    git_oid_tostr(oid_str, sizeof(oid_str), oid);
+
+  NewNoDelta(dlog, "`%s` is at `%s` (%s)", repository_spec.destination, git_reference_shorthand(head), oid_str);
+
+  git_reference_free(head);
+  git_repository_free(repo);
+  return kStatusOk;
+}
+
 static const ControllerConfig kRepositoryControllerConfig = {
     .init = InitController,
     .deinit = DeInitController,
@@ -179,7 +217,7 @@ static const ControllerConfig kRepositoryControllerConfig = {
     .plan = RepositoryPlan,
     .apply = RepositoryApply,
     .validate = RepositoryValidate,
-    .diff = NULL,
+    .diff = RepositoryDiff,
     .status = RepositoryStatus,
     .rollback = NULL,
     .normalize = NULL,

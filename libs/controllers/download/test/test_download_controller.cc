@@ -239,3 +239,81 @@ TEST_F(DownloadControllerTest, StatusFailsWhenDestinationMissing) {
   FreeResourceSpecJson(&res.spec);
   free(res.spec.raw);
 }
+
+// Diff and Status agree here -- there's no more granular comparison available than "does
+// destination exist and, if a checksum was given, does it match."
+TEST_F(DownloadControllerTest, DiffMatchesStatus) {
+  const std::string source = TempPath("-diff-source.txt");
+  FILE* sf = fopen(source.c_str(), "w");
+  ASSERT_NE(sf, nullptr);
+  fputs("diff test content", sf);
+  fclose(sf);
+
+  const std::string destination = TempPath("-diff-dest");
+  Resource res = MakeDesiredResource(FileUrl(source), destination);
+
+  StateEntry last = {};
+  ASSERT_EQ(ControllerObserve(ctrl, &res, &last), kStatusOk);
+
+  DeltaLog dlog = {};
+  InitDeltaLog(&dlog, 4);
+  EXPECT_EQ(ControllerDiff(ctrl, &res, &dlog), kStatusInternalError);
+  ASSERT_EQ(dlog.data_len, 1u);
+  EXPECT_NE(strstr(dlog.data[0].reason, "does not exist"), nullptr);
+  FreeDeltaLog(&dlog);
+
+  Plan plan = {};
+  InitPlan(&plan, 4);
+  ControllerAction action = ControllerPlan(ctrl, &res, &res, &plan);
+  FreePlan(&plan);
+
+  AppliedActionLog alog = {};
+  ASSERT_EQ(ControllerApply(ctrl, &res, action, &alog), kStatusOk);
+
+  DeltaLog dlog2 = {};
+  InitDeltaLog(&dlog2, 4);
+  EXPECT_EQ(ControllerDiff(ctrl, &res, &dlog2), kStatusOk);
+  ASSERT_EQ(dlog2.data_len, 1u);
+  EXPECT_NE(strstr(dlog2.data[0].reason, "up to date"), nullptr);
+  FreeDeltaLog(&dlog2);
+
+  free(res.info.name);
+  FreeResourceSpecJson(&res.spec);
+  free(res.spec.raw);
+  remove(source.c_str());
+  remove(destination.c_str());
+}
+
+TEST_F(DownloadControllerTest, DiffFailsOnChecksumMismatch) {
+  const std::string content = "expected content";
+  const std::string source = TempPath("-diff-cksum-source.txt");
+  FILE* sf = fopen(source.c_str(), "w");
+  ASSERT_NE(sf, nullptr);
+  fputs(content.c_str(), sf);
+  fclose(sf);
+
+  const std::string destination = TempPath("-diff-cksum-dest");
+  FILE* df = fopen(destination.c_str(), "w");
+  ASSERT_NE(df, nullptr);
+  fputs("stale content", df);
+  fclose(df);
+
+  const std::string digest = Sha256Hex(content);
+  Resource res = MakeDesiredResource(FileUrl(source), destination, digest.c_str());
+
+  StateEntry last = {};
+  ASSERT_EQ(ControllerObserve(ctrl, &res, &last), kStatusOk);
+
+  DeltaLog dlog = {};
+  InitDeltaLog(&dlog, 4);
+  EXPECT_EQ(ControllerDiff(ctrl, &res, &dlog), kStatusInternalError);
+  ASSERT_EQ(dlog.data_len, 1u);
+  EXPECT_NE(strstr(dlog.data[0].reason, "has checksum"), nullptr);
+  FreeDeltaLog(&dlog);
+
+  free(res.info.name);
+  FreeResourceSpecJson(&res.spec);
+  free(res.spec.raw);
+  remove(source.c_str());
+  remove(destination.c_str());
+}

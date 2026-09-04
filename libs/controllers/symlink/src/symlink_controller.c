@@ -4,6 +4,7 @@
 #include <jansson.h>
 #include <linux/limits.h>
 #include <stdio.h>
+#include <string.h>
 #include <sys/stat.h>
 #include <time.h>
 #include <unistd.h>
@@ -143,6 +144,39 @@ DEFINE_CONTROLLER_STATUS_FN(Symlink) {
   return kStatusInternalError;
 }
 
+DEFINE_CONTROLLER_DIFF_FN(Symlink) {
+  const Resource* observed = ctx->observed;
+  ASSERT(observed);
+  DeltaLog* dlog = ctx->log;
+  ASSERT(dlog);
+
+  struct stat target_stat;
+  if (lstat(symlink_spec.target, &target_stat) != 0) {
+    NewNoDelta(dlog, "`%s` does not exist -- would link to `%s`", symlink_spec.target, symlink_spec.source);
+    return kStatusInternalError;
+  }
+
+  if (!S_ISLNK(target_stat.st_mode)) {
+    NewNoDelta(dlog, "`%s` exists but is not a symlink", symlink_spec.target);
+    return kStatusInternalError;
+  }
+
+  char actual[PATH_MAX];
+  const ssize_t n = readlink(symlink_spec.target, actual, sizeof(actual) - 1);
+  if (n < 0) {
+    NewNoDelta(dlog, "failed to read `%s`: %s", symlink_spec.target, strerror(errno));
+    return kStatusInternalError;
+  }
+  actual[n] = '\0';
+
+  if (strcmp(actual, symlink_spec.source) != 0) {
+    NewNoDelta(dlog, "`%s` points to `%s`, expected `%s`", symlink_spec.target, actual, symlink_spec.source);
+    return kStatusInternalError;
+  }
+
+  return kStatusOk;
+}
+
 static const ControllerConfig kSymlinkControllerConfig = {
     .init = NULL,
     .deinit = NULL,
@@ -150,7 +184,7 @@ static const ControllerConfig kSymlinkControllerConfig = {
     .plan = SymlinkPlan,
     .apply = SymlinkApply,
     .validate = SymlinkValidate,
-    .diff = NULL,
+    .diff = SymlinkDiff,
     .status = SymlinkStatus,
     .rollback = NULL,
     .normalize = NULL,

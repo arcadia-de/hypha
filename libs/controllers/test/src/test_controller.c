@@ -1,11 +1,10 @@
 #include "hypha/test_controller.h"
 
-#include <bits/time.h>
-#include <pthread.h>
 #include <stdlib.h>
 #include <unistd.h>
 
 #include "hypha.h"
+#include "hypha/delta_log.h"
 #include "hypha/log.h"
 #include "hypha/planned_action.h"
 #include "hypha/planner.h"
@@ -69,11 +68,22 @@ DEFINE_CONTROLLER_APPLY_FN(Test) {
   return kStatusOk;
 }
 
+DEFINE_CONTROLLER_STATUS_FN(Test) {
+  return kStatusOk;
+}
+
+DEFINE_CONTROLLER_DIFF_FN(Test) {
+  NewNoDelta(ctx->log, "Test resources have no real external state to diff");
+  return kStatusOk;
+}
+
 static const ControllerConfig kTestControllerConfig = {
     .observe = TestObserve,
     .validate = TestValidate,
     .plan = TestPlan,
     .apply = TestApply,
+    .diff = TestDiff,
+    .status = TestStatus,
 };
 static ResourceKind kTestKind = kInvalidResourceKind;
 

@@ -132,17 +132,34 @@ DEFINE_CONTROLLER_APPLY_FN(Directory) {
   return kStatusOk;
 }
 
-DEFINE_CONTROLLER_STATUS_FN(Directory) {
-  const Resource* current = ctx->current;
-  ASSERT(current);
+// Status and Diff ask the same question here -- "does target exist and is it a directory" --
+// so they share one implementation. `dlog` is NULL from Status (plain pass/fail, logs
+// failures normally) and non-NULL from Diff (records the same finding as a Delta).
+static inline ControllerStatus CheckDirectoryExists(const Resource* observed, DeltaLog* dlog) {
+  ASSERT(observed);
 
   struct stat target_stat;
   if (lstat(directory_spec.target, &target_stat) != 0 || !S_ISDIR(target_stat.st_mode)) {
-    LOG_ERROR("target `%s` does not exist or is not a directory", directory_spec.target);
+    if (dlog) {
+      NewNoDelta(dlog, "target `%s` does not exist or is not a directory", directory_spec.target);
+    } else {
+      LOG_ERROR("target `%s` does not exist or is not a directory", directory_spec.target);
+    }
     return kStatusInternalError;
   }
 
+  if (dlog)
+    NewNoDelta(dlog, "target `%s` exists", directory_spec.target);
+
   return kStatusOk;
+}
+
+DEFINE_CONTROLLER_STATUS_FN(Directory) {
+  return CheckDirectoryExists(ctx->current, NULL);
+}
+
+DEFINE_CONTROLLER_DIFF_FN(Directory) {
+  return CheckDirectoryExists(ctx->observed, ctx->log);
 }
 
 static const ControllerConfig kDirectoryControllerConfig = {
@@ -152,7 +169,7 @@ static const ControllerConfig kDirectoryControllerConfig = {
     .plan = DirectoryPlan,
     .apply = DirectoryApply,
     .validate = DirectoryValidate,
-    .diff = NULL,
+    .diff = DirectoryDiff,
     .status = DirectoryStatus,
     .rollback = NULL,
     .normalize = NULL,

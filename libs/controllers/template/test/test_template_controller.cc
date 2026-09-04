@@ -191,3 +191,76 @@ TEST_F(TemplateControllerTest, StatusFailsWhenTargetMissing) {
   FreeResourceSpecJson(&res.spec);
   free(res.spec.raw);
 }
+
+TEST_F(TemplateControllerTest, DiffFailsWhenTargetMissing) {
+  const std::string target = TempPath("-diff-never-rendered");
+  Resource res = MakeDesiredResource(target, ", \"template\": \"hello\"");
+
+  StateEntry last = {};
+  ASSERT_EQ(ControllerObserve(ctrl, &res, &last), kStatusOk);
+
+  DeltaLog dlog = {};
+  InitDeltaLog(&dlog, 4);
+  EXPECT_EQ(ControllerDiff(ctrl, &res, &dlog), kStatusInternalError);
+  ASSERT_EQ(dlog.data_len, 1u);
+  EXPECT_NE(strstr(dlog.data[0].reason, "does not exist"), nullptr);
+  FreeDeltaLog(&dlog);
+
+  free(res.info.name);
+  FreeResourceSpecJson(&res.spec);
+  free(res.spec.raw);
+}
+
+TEST_F(TemplateControllerTest, DiffPassesWhenContentMatches) {
+  const std::string target = TempPath("-diff-match-dest");
+  Resource res = MakeDesiredResource(target, ", \"template\": \"hello\"");
+
+  StateEntry last = {};
+  ASSERT_EQ(ControllerObserve(ctrl, &res, &last), kStatusOk);
+
+  Plan plan = {};
+  InitPlan(&plan, 4);
+  ControllerAction action = ControllerPlan(ctrl, &res, &res, &plan);
+  FreePlan(&plan);
+
+  AppliedActionLog alog = {};
+  ASSERT_EQ(ControllerApply(ctrl, &res, action, &alog), kStatusOk);
+
+  DeltaLog dlog = {};
+  InitDeltaLog(&dlog, 4);
+  EXPECT_EQ(ControllerDiff(ctrl, &res, &dlog), kStatusOk);
+  FreeDeltaLog(&dlog);
+
+  free(res.info.name);
+  FreeResourceSpecJson(&res.spec);
+  free(res.spec.raw);
+  remove(target.c_str());
+}
+
+// This is the case that actually distinguishes Diff from Status: a target that exists (so
+// Status reports kStatusOk) but whose content doesn't match what would actually be rendered.
+TEST_F(TemplateControllerTest, DiffFailsWhenContentDiffersEvenThoughStatusPasses) {
+  const std::string target = TempPath("-diff-stale-dest");
+  FILE* f = fopen(target.c_str(), "w");
+  ASSERT_NE(f, nullptr);
+  fputs("stale, unrelated content", f);
+  fclose(f);
+
+  Resource res = MakeDesiredResource(target, ", \"template\": \"hello\"");
+  StateEntry last = {};
+  ASSERT_EQ(ControllerObserve(ctrl, &res, &last), kStatusOk);
+
+  EXPECT_EQ(ControllerStat(ctrl, &res), kStatusOk) << "Status only checks that target exists";
+
+  DeltaLog dlog = {};
+  InitDeltaLog(&dlog, 4);
+  EXPECT_EQ(ControllerDiff(ctrl, &res, &dlog), kStatusInternalError);
+  ASSERT_EQ(dlog.data_len, 1u);
+  EXPECT_NE(strstr(dlog.data[0].reason, "bytes"), nullptr);
+  FreeDeltaLog(&dlog);
+
+  free(res.info.name);
+  FreeResourceSpecJson(&res.spec);
+  free(res.spec.raw);
+  remove(target.c_str());
+}

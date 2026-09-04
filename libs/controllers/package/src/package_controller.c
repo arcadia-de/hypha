@@ -127,6 +127,51 @@ DEFINE_CONTROLLER_APPLY_FN(Package) {
   return kStatusOk;
 }
 
+// Status and Diff both boil down to the same question here -- "does the package manager
+// report this installed right now" -- so they share one implementation. Unlike Archive/
+// Symlink/Template, there isn't a more granular comparison available for Diff to make: a
+// package is either installed or it isn't, as far as PackageManagerStatus() can tell us.
+// `dlog` is NULL when called from Status (which has no log to write into and just returns
+// pass/fail, logging failures the usual way) and non-NULL when called from Diff (which
+// records the same finding as a Delta instead).
+static inline ControllerStatus CheckPackageInstalled(const Resource* observed, DeltaLog* dlog) {
+  ASSERT(observed);
+  PackageManager* mgr = FindPackageManager(package_spec.manager);
+  if (!mgr) {
+    if (dlog) {
+      NewNoDelta(dlog, "`%s` is not a registered package manager", package_spec.manager);
+    } else {
+      LOG_ERROR("`%s` is not a registered package manager", package_spec.manager);
+    }
+    return kStatusInternalError;
+  }
+
+  const PackageStatus status = PackageManagerStatus(mgr, package_spec.name);
+  if (status != kPackageInstalled) {
+    if (dlog) {
+      NewNoDelta(dlog, "`%s` is not installed via `%s`: %s", package_spec.name, package_spec.manager,
+                 PackageStatusName(status));
+    } else {
+      LOG_ERROR("`%s` is not installed via `%s`: %s", package_spec.name, package_spec.manager,
+                PackageStatusName(status));
+    }
+    return kStatusInternalError;
+  }
+
+  if (dlog)
+    NewNoDelta(dlog, "`%s` is installed via `%s`", package_spec.name, package_spec.manager);
+
+  return kStatusOk;
+}
+
+static inline ControllerStatus PackageCheckStatus(StatusContext* ctx, void* data) {
+  return CheckPackageInstalled(ctx->current, NULL);
+}
+
+static inline ControllerStatus PackageCheckDiff(DiffContext* ctx, void* data) {
+  return CheckPackageInstalled(ctx->observed, ctx->log);
+}
+
 static const ControllerConfig kPackageControllerConfig = {
     .init = NULL,
     .deinit = NULL,
@@ -134,8 +179,8 @@ static const ControllerConfig kPackageControllerConfig = {
     .plan = PackagePlan,
     .apply = PackageApply,
     .validate = PackageValidate,
-    .diff = NULL,
-    .status = NULL,
+    .diff = PackageCheckDiff,
+    .status = PackageCheckStatus,
     .rollback = NULL,
     .normalize = NULL,
     .destroy = NULL,

@@ -65,7 +65,7 @@ DECLARE_CONTROLLER_FN(Destroy, ControllerStatus);
 typedef struct {
   const Resource* observed;
   const Resource* desired;
-  DeltaLog log;
+  DeltaLog* log;
 } DiffContext;
 DECLARE_CONTROLLER_FN(Diff, ControllerStatus);
 
@@ -156,7 +156,7 @@ ControllerStatus ControllerApply(Controller* ctrl, Resource* desired, const Cont
 bool ControllerValidate(Controller* ctrl, Resource* current, ValidationLog* vl);
 ControllerStatus ControllerRollback(Controller* ctrl, const Resource* current);
 ControllerStatus ControllerDestroy(Controller* ctrl, const Resource* current);
-ControllerStatus ControllerDiff(Controller* ctrl, const Resource* current);
+ControllerStatus ControllerDiff(Controller* ctrl, const Resource* current, DeltaLog* dlog);
 ControllerStatus ControllerStat(Controller* ctrl, const Resource* current);
 ControllerStatus ControllerNormalize(Controller* ctrl, Resource* desired);
 

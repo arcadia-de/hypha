@@ -15,6 +15,7 @@
 #include "hypha/action_log.h"
 #include "hypha/archive_spec.h"
 #include "hypha/controller_status.h"
+#include "hypha/delta_log.h"
 #include "hypha/expander.h"
 #include "hypha/log.h"
 #include "hypha/planned_action.h"
@@ -252,6 +253,66 @@ DEFINE_CONTROLLER_STATUS_FN(Archive) {
   return kStatusOk;
 }
 
+// Status only checks that the destination directory exists at all -- Diff goes further and
+// walks the archive's own table of contents (without extracting), reporting exactly which
+// entries are missing from the destination via the DeltaLog. Genuinely more informative than
+// Status here, since libarchive already gives us the full entry list for free.
+DEFINE_CONTROLLER_DIFF_FN(Archive) {
+  const Resource* observed = ctx->observed;
+  ASSERT(observed);
+  DeltaLog* dlog = ctx->log;
+  ASSERT(dlog);
+
+  struct stat dest_stat;
+  if (stat(archive_spec.destination, &dest_stat) != 0 || !S_ISDIR(dest_stat.st_mode)) {
+    NewNoDelta(dlog, "`%s` does not exist -- `%s` would be extracted there in full", archive_spec.destination,
+               archive_spec.source);
+    return kStatusInternalError;
+  }
+
+  struct archive* a = archive_read_new();
+  archive_read_support_format_tar(a);
+  archive_read_support_format_zip(a);
+  archive_read_support_filter_gzip(a);
+  archive_read_support_filter_bzip2(a);
+  archive_read_support_filter_xz(a);
+
+  if (archive_read_open_filename(a, archive_spec.source, kDefaultBufferSize) != ARCHIVE_OK) {
+    NewNoDelta(dlog, "failed to open archive `%s`: %s", archive_spec.source, archive_error_string(a));
+    archive_read_free(a);
+    return kStatusInternalError;
+  }
+
+  size_t total = 0;
+  size_t missing = 0;
+  struct archive_entry* entry = NULL;
+  while (archive_read_next_header(a, &entry) == ARCHIVE_OK) {
+    total++;
+
+    char full_path[PATH_MAX];
+    snprintf(full_path, sizeof(full_path), "%s/%s", archive_spec.destination, archive_entry_pathname(entry));
+
+    struct stat entry_stat;
+    if (stat(full_path, &entry_stat) != 0) {
+      NewNoDelta(dlog, "`%s` is missing from `%s` (present in `%s`)", archive_entry_pathname(entry),
+                 archive_spec.destination, archive_spec.source);
+      missing++;
+    }
+
+    archive_read_data_skip(a);
+  }
+  archive_read_free(a);
+
+  if (missing > 0) {
+    NewNoDelta(dlog, "`%s` is missing %zu of %zu entries from `%s`", archive_spec.destination, missing, total,
+               archive_spec.source);
+    return kStatusInternalError;
+  }
+
+  NewNoDelta(dlog, "`%s` has all %zu entries from `%s`", archive_spec.destination, total, archive_spec.source);
+  return kStatusOk;
+}
+
 static const ControllerConfig kArchiveControllerConfig = {
     .init = NULL,
     .deinit = NULL,
@@ -259,7 +320,7 @@ static const ControllerConfig kArchiveControllerConfig = {
     .plan = ArchivePlan,
     .apply = ArchiveApply,
     .validate = ArchiveValidate,
-    .diff = NULL,
+    .diff = ArchiveDiff,
     .status = ArchiveStatus,
     .rollback = NULL,
     .normalize = NULL,

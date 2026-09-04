@@ -3,6 +3,7 @@ test_utils_exec = executable('hypha-utils-tests',
     'test_crc32.cc',
     'test_expander.cc',
     'test_ignore.cc',
+    'test_process.cc',
   ],
   include_directories: hypha_utils_inc,
   dependencies : [

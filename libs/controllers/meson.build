@@ -8,6 +8,7 @@ controllers_matrix = {
     'sources': [
       'test_spec.c',
     ],
+    'has_tests': true,
   },
   'directory': {
     'test_name': 'Directory Controller Tests',
@@ -55,7 +56,8 @@ controllers_matrix = {
     'sources': [
        'task_spec.c',
        'exec_spec.c',
-    ]
+    ],
+    'has_tests': true,
   },
 }
 
@@ -107,6 +109,7 @@ base_cpp_args = [
 ]
 base_controller_deps = [
   jansson,
+  xxhash,
   hypha_api_dep,
   hypha_log_dep,
   hypha_utils_dep,

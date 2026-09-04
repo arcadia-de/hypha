@@ -83,14 +83,15 @@ static inline void OnProcessErr(Process* p, const char* message) {
   LOG_ERROR("%s", message);
 }
 
-static inline void InitProcess(ExecSpec* spec, Process* p, bool* out_owns_command) {
+static inline void InitProcess(ExecSpec* spec, const bool sudo, const TaskTimeout timeout, Process* p,
+                               bool* out_owns_command) {
   ASSERT(spec);
   ASSERT(p);
   ASSERT(out_owns_command);
 
   memset(p, 0, sizeof(Process));
-  p->root = task.sudo;
-  p->timeout = (int)task.timeout;
+  p->root = sudo;
+  p->timeout = (int)timeout;
   p->out = &OnProcessOut;
   p->err = &OnProcessErr;
 
@@ -134,23 +135,31 @@ static inline void FreeProcessArgs(Process* p, const bool owns_command) {
   free((void*)p->args);
 }
 
-static inline int RunCheck(ExecSpec* spec) {
+// NOTE: sudo/timeout used to be read directly from the module-level thread_local `task`
+// inside InitProcess itself, rather than being passed in like every other part of the
+// ExecSpec being run. That happened to work for every existing call site (Plan always
+// populates `task` immediately before Apply's call chain runs), but breaks the moment
+// anything calls RunCheck/RunExecWithRetry without `task` having been freshly populated in
+// the same pass -- exactly what Status below needs to do, since it can't assume Plan ran
+// first. Passing sudo/timeout explicitly removes the hidden dependency entirely.
+static inline int RunCheck(ExecSpec* spec, const bool sudo, const TaskTimeout timeout) {
   bool owns_command = false;
   Process proc;
-  InitProcess(spec, &proc, &owns_command);
+  InitProcess(spec, sudo, timeout, &proc, &owns_command);
   const int status = ExecProcess(&proc);
   FreeProcessArgs(&proc, owns_command);
   return status;
 }
 
-static inline int RunExecWithRetry(ExecSpec* spec, const TaskRetrySpec* retry) {
+static inline int RunExecWithRetry(ExecSpec* spec, const TaskRetrySpec* retry, const bool sudo,
+                                   const TaskTimeout timeout) {
   const int32_t max_attempts = (retry->policy == kRetryPolicyAlways && retry->attempts > 1) ? retry->attempts : 1;
 
   int status = -1;
   for (int32_t attempt = 1; attempt <= max_attempts; attempt++) {
     bool owns_command = false;
     Process proc;
-    InitProcess(spec, &proc, &owns_command);
+    InitProcess(spec, sudo, timeout, &proc, &owns_command);
     status = ExecProcess(&proc);
     FreeProcessArgs(&proc, owns_command);
 
@@ -251,7 +260,7 @@ DEFINE_CONTROLLER_PLAN_FN(Task) {
   }
 
   if (should_run && task.policy != kTaskPolicyAlways && task.has_check) {
-    last_check_status = RunCheck(&task.check);
+    last_check_status = RunCheck(&task.check, task.sudo, task.timeout);
     if (last_check_status == 0) {
       should_run = false;
       skip_reason = "check already satisfied (exit 0)";
@@ -282,7 +291,7 @@ DEFINE_CONTROLLER_APPLY_FN(Task) {
   }
 
   DLOG_INFO("executing task `%s`...", desired->info.name);
-  const int status = RunExecWithRetry(&task.exec, &task.retry);
+  const int status = RunExecWithRetry(&task.exec, &task.retry, task.sudo, task.timeout);
   DLOG_INFO("task `%s` exit status: %d", desired->info.name, status);
 
   if (status != 0) {
@@ -297,10 +306,67 @@ DEFINE_CONTROLLER_APPLY_FN(Task) {
   return kStatusOk;
 }
 
+// Status and Diff both boil down to the same question here -- "does the check command
+// (if any) currently pass" -- so they share one implementation. `dlog` is NULL from Status
+// (plain pass/fail, logs failures normally) and non-NULL from Diff (records the same
+// finding as a Delta). Both are meant to be callable on their own (e.g. `hypha status`/
+// `hypha diff`, without a Plan having run first in the same process), so neither relies on
+// the thread_local `task`/`last_check_status` that Plan populates -- each parses its own
+// local TaskSpec straight from `current->spec.doc` instead.
+static inline ControllerStatus CheckTaskUpToDate(const Resource* current, DeltaLog* dlog) {
+  ASSERT(current);
+  if (!current->spec.doc)
+    return kStatusOk;
+
+  TaskSpec local_task;
+  memset(&local_task, 0, sizeof(TaskSpec));
+  if (!ParseTaskSpec(current->spec.doc, &local_task)) {
+    if (dlog)
+      NewNoDelta(dlog, "failed to parse task spec for `%s`", current->info.name);
+    else
+      LOG_ERROR("failed to parse task spec for `%s`", current->info.name);
+    return kStatusInternalError;
+  }
+
+  if (!local_task.has_check) {
+    FreeTaskSpec(&local_task);
+    if (dlog)
+      NewNoDelta(dlog, "Task `%s` has no `check` command -- nothing to compare against", current->info.name);
+    return kStatusOk;
+  }
+
+  const int check_status = RunCheck(&local_task.check, local_task.sudo, local_task.timeout);
+  FreeTaskSpec(&local_task);
+
+  if (check_status != 0) {
+    if (dlog) {
+      NewNoDelta(dlog, "Task `%s` check exited with code %d", current->info.name, check_status);
+    } else {
+      LOG_ERROR("Task `%s` check exited with code %d", current->info.name, check_status);
+    }
+    return kStatusInternalError;
+  }
+
+  if (dlog)
+    NewNoDelta(dlog, "Task `%s` check passed", current->info.name);
+
+  return kStatusOk;
+}
+
+static inline ControllerStatus TaskCheckStatus(StatusContext* ctx, void* data) {
+  return CheckTaskUpToDate(ctx->current, NULL);
+}
+
+static inline ControllerStatus TaskCheckDiff(DiffContext* ctx, void* data) {
+  return CheckTaskUpToDate(ctx->observed, ctx->log);
+}
+
 static const ControllerConfig kTaskControllerConfig = {
     .observe = &TaskObserve,
     .plan = &TaskPlan,
     .validate = &TaskValidate,
+    .status = &TaskCheckStatus,
+    .diff = &TaskCheckDiff,
     .apply = &TaskApply,
 };
 static ResourceKind kTaskKind = kInvalidResourceKind;

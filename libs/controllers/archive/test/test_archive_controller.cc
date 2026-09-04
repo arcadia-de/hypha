@@ -157,3 +157,92 @@ TEST_F(ArchiveControllerTest, StatusFailsWhenDestinationMissing) {
   free(res.spec.raw);
   remove(source.c_str());
 }
+
+TEST_F(ArchiveControllerTest, DiffFailsWhenDestinationMissing) {
+  const std::string source = TempPath("-fixture3.tar.gz");
+  const std::string destination = TempPath("-diff-never-extracted");
+  WriteFixtureArchive(source, "world");
+
+  Resource res = MakeDesiredResource(source, destination);
+  StateEntry last = {};
+  ASSERT_EQ(ControllerObserve(ctrl, &res, &last), kStatusOk);
+
+  DeltaLog dlog = {};
+  InitDeltaLog(&dlog, 4);
+  EXPECT_EQ(ControllerDiff(ctrl, &res, &dlog), kStatusInternalError);
+  ASSERT_EQ(dlog.data_len, 1u);
+  EXPECT_NE(strstr(dlog.data[0].reason, "does not exist"), nullptr);
+  FreeDeltaLog(&dlog);
+
+  free(res.info.name);
+  FreeResourceSpecJson(&res.spec);
+  free(res.spec.raw);
+  remove(source.c_str());
+}
+
+TEST_F(ArchiveControllerTest, DiffPassesWhenAllEntriesPresent) {
+  const std::string source = TempPath("-fixture4.tar.gz");
+  const std::string destination = TempPath("-diff-full-dest");
+  WriteFixtureArchive(source, "world");
+
+  Resource res = MakeDesiredResource(source, destination);
+  StateEntry last = {};
+  ASSERT_EQ(ControllerObserve(ctrl, &res, &last), kStatusOk);
+
+  Plan plan = {};
+  InitPlan(&plan, 4);
+  ControllerAction action = ControllerPlan(ctrl, &res, &res, &plan);
+  FreePlan(&plan);
+
+  AppliedActionLog alog = {};
+  ASSERT_EQ(ControllerApply(ctrl, &res, action, &alog), kStatusOk);
+
+  DeltaLog dlog = {};
+  InitDeltaLog(&dlog, 4);
+  EXPECT_EQ(ControllerDiff(ctrl, &res, &dlog), kStatusOk);
+  ASSERT_EQ(dlog.data_len, 1u);
+  EXPECT_NE(strstr(dlog.data[0].reason, "has all"), nullptr);
+  FreeDeltaLog(&dlog);
+
+  free(res.info.name);
+  FreeResourceSpecJson(&res.spec);
+  free(res.spec.raw);
+  remove(source.c_str());
+}
+
+TEST_F(ArchiveControllerTest, DiffFailsWhenExtractedFileWasRemoved) {
+  const std::string source = TempPath("-fixture5.tar.gz");
+  const std::string destination = TempPath("-diff-partial-dest");
+  WriteFixtureArchive(source, "world");
+
+  Resource res = MakeDesiredResource(source, destination);
+  StateEntry last = {};
+  ASSERT_EQ(ControllerObserve(ctrl, &res, &last), kStatusOk);
+
+  Plan plan = {};
+  InitPlan(&plan, 4);
+  ControllerAction action = ControllerPlan(ctrl, &res, &res, &plan);
+  FreePlan(&plan);
+
+  AppliedActionLog alog = {};
+  ASSERT_EQ(ControllerApply(ctrl, &res, action, &alog), kStatusOk);
+
+  // Remove the one file the fixture archive actually contains -- Diff should notice it's
+  // gone even though Status would only check that the destination directory itself exists.
+  remove((destination + "/hello.txt").c_str());
+
+  DeltaLog dlog = {};
+  InitDeltaLog(&dlog, 4);
+  EXPECT_EQ(ControllerDiff(ctrl, &res, &dlog), kStatusInternalError);
+  ASSERT_EQ(dlog.data_len, 2u) << "one delta for the missing entry, one summarizing the count";
+  EXPECT_NE(strstr(dlog.data[0].reason, "hello.txt"), nullptr);
+  EXPECT_NE(strstr(dlog.data[1].reason, "is missing"), nullptr);
+  FreeDeltaLog(&dlog);
+
+  EXPECT_EQ(ControllerStat(ctrl, &res), kStatusOk) << "Status only checks the destination dir, not its contents";
+
+  free(res.info.name);
+  FreeResourceSpecJson(&res.spec);
+  free(res.spec.raw);
+  remove(source.c_str());
+}

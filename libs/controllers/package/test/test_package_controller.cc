@@ -114,6 +114,8 @@ TEST_F(PackageControllerTest, ObservePlanApplyInstallsPackageAndBecomesIdempoten
   ASSERT_EQ(ControllerApply(ctrl, &res, action, &alog), kStatusOk);
   EXPECT_TRUE(g_mock_installed);
 
+  EXPECT_EQ(ControllerStat(ctrl, &res), kStatusOk);
+
   // Re-planning against an already-installed package should be a no-op.
   Plan replan = {};
   InitPlan(&replan, 4);
@@ -147,6 +149,54 @@ TEST_F(PackageControllerTest, ObserveDefaultsPackageNameToResourceNameWhenFieldM
   PackageManager* mgr = FindPackageManager("TestPkgManager");
   ASSERT_NE(mgr, nullptr);
   EXPECT_EQ(PackageManagerStatus(mgr, res.info.name), kPackageInstalled);
+
+  free(res.info.name);
+  FreeResourceSpecJson(&res.spec);
+  free(res.spec.raw);
+}
+
+TEST_F(PackageControllerTest, StatusFailsWhenNotInstalled) {
+  Resource res = MakeDesiredResource("cowsay-pkg", "cowsay", "TestPkgManager");
+
+  StateEntry last = {};
+  ASSERT_EQ(ControllerObserve(ctrl, &res, &last), kStatusOk);
+
+  EXPECT_EQ(ControllerStat(ctrl, &res), kStatusInternalError);
+
+  free(res.info.name);
+  FreeResourceSpecJson(&res.spec);
+  free(res.spec.raw);
+}
+
+// Diff and Status agree here -- there's no more granular comparison available than
+// "does the manager report this installed right now."
+TEST_F(PackageControllerTest, DiffMatchesStatus) {
+  Resource res = MakeDesiredResource("cowsay-pkg", "cowsay", "TestPkgManager");
+
+  StateEntry last = {};
+  ASSERT_EQ(ControllerObserve(ctrl, &res, &last), kStatusOk);
+
+  DeltaLog dlog = {};
+  InitDeltaLog(&dlog, 4);
+  EXPECT_EQ(ControllerDiff(ctrl, &res, &dlog), kStatusInternalError);
+  ASSERT_EQ(dlog.data_len, 1u);
+  EXPECT_NE(strstr(dlog.data[0].reason, "not installed"), nullptr);
+  FreeDeltaLog(&dlog);
+
+  Plan plan = {};
+  InitPlan(&plan, 4);
+  ControllerAction action = ControllerPlan(ctrl, &res, &res, &plan);
+  FreePlan(&plan);
+
+  AppliedActionLog alog = {};
+  ASSERT_EQ(ControllerApply(ctrl, &res, action, &alog), kStatusOk);
+
+  DeltaLog dlog2 = {};
+  InitDeltaLog(&dlog2, 4);
+  EXPECT_EQ(ControllerDiff(ctrl, &res, &dlog2), kStatusOk);
+  ASSERT_EQ(dlog2.data_len, 1u);
+  EXPECT_NE(strstr(dlog2.data[0].reason, "is installed"), nullptr);
+  FreeDeltaLog(&dlog2);
 
   free(res.info.name);
   FreeResourceSpecJson(&res.spec);

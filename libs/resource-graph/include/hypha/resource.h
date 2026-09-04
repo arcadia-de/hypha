@@ -19,6 +19,10 @@
 #include "hypha/resource_namespace.h"
 #include "hypha/resource_state.h"
 
+#ifdef __cplusplus
+extern "C" {
+#endif  // __cplusplus
+
 typedef struct {
   char* name;
   ResourceNamespace ns;
@@ -133,5 +137,9 @@ bool ResourceHasAnnotation(const Resource* res, const Annotation* annotation);
 bool ResourceHasAnnotationK(const Resource* res, const AnnotationKey* k);
 bool ResourceHasAnnotationV(const Resource* res, const AnnotationValue* v);
 bool ResourceHasAnnotationKV(const Resource* res, const AnnotationKey* k, const AnnotationValue* v);
+
+#ifdef __cplusplus
+}
+#endif  // __cplusplus
 
 #endif  // HYPHA_RESOURCE_H

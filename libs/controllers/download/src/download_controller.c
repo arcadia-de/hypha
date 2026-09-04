@@ -332,56 +332,57 @@ DEFINE_CONTROLLER_APPLY_FN(Download) {
   return kStatusOk;
 }
 
-DEFINE_CONTROLLER_STATUS_FN(Download) {
-  const Resource* current = ctx->current;
-  ASSERT(current);
+// Status and Diff ask the same question here -- "does destination exist and, if a checksum
+// was given, does it match" -- so they share one implementation. `dlog` is NULL from Status
+// (plain pass/fail, logs failures normally) and non-NULL from Diff (records the same
+// finding, success or failure, as a Delta).
+static inline ControllerStatus CheckDownloadUpToDate(const Resource* observed, DeltaLog* dlog) {
+  ASSERT(observed);
 
   struct stat dest_stat;
   if (stat(download_spec.destination, &dest_stat) != 0) {
-    LOG_ERROR("destination `%s` does not exist", download_spec.destination);
+    if (dlog) {
+      NewNoDelta(dlog, "destination `%s` does not exist", download_spec.destination);
+    } else {
+      LOG_ERROR("destination `%s` does not exist", download_spec.destination);
+    }
     return kStatusInternalError;
   }
 
   if (download_spec.sha256 && download_spec.sha256_len > 0) {
     char actual[crypto_hash_sha256_BYTES * 2 + 1];
     if (!Sha256File(download_spec.destination, actual)) {
-      LOG_ERROR("failed to hash `%s`", download_spec.destination);
+      if (dlog) {
+        NewNoDelta(dlog, "failed to hash `%s`", download_spec.destination);
+      } else {
+        LOG_ERROR("failed to hash `%s`", download_spec.destination);
+      }
       return kStatusInternalError;
     }
 
     if (strncmp(actual, download_spec.sha256, sizeof(actual)) != 0) {
-      LOG_ERROR("`%s` has checksum `%s`, expected `%s`", download_spec.destination, actual, download_spec.sha256);
+      if (dlog) {
+        NewNoDelta(dlog, "`%s` has checksum `%s`, expected `%s`", download_spec.destination, actual,
+                   download_spec.sha256);
+      } else {
+        LOG_ERROR("`%s` has checksum `%s`, expected `%s`", download_spec.destination, actual, download_spec.sha256);
+      }
       return kStatusInternalError;
     }
   }
+
+  if (dlog)
+    NewNoDelta(dlog, "destination `%s` is up to date", download_spec.destination);
 
   return kStatusOk;
 }
 
-DEFINE_CONTROLLER_DIFF_FN(Download) {
-  Resource* desired = (Resource*)ctx->desired;
-  Resource* observed = (Resource*)ctx->observed;
-  DeltaLog* log = &ctx->log;
-  ASSERT(desired);
-  ASSERT(observed);
-  ASSERT(log);
+static inline ControllerStatus DownloadCheckStatus(StatusContext* ctx, void* data) {
+  return CheckDownloadUpToDate(ctx->current, NULL);
+}
 
-  if (download_spec.sha256 && download_spec.sha256_len > 0) {
-    char actual[crypto_hash_sha256_BYTES * 2 + 1];
-    if (!Sha256File(download_spec.destination, actual)) {
-      NewNoDelta(log, "failed to hash existing `%s`", download_spec.destination);
-      return kStatusTransientError;
-    }
-
-    if (strncmp(actual, download_spec.sha256, sizeof(actual)) != 0) {
-      NewChangeDelta(log, "`%s` has checksum `%s`, expected `%s`", download_spec.destination, actual,
-                     download_spec.sha256);
-      return kStatusOk;
-    }
-  }
-
-  NewNoDelta(log, "`%s` is already up-to-date", download_spec.destination);
-  return kStatusOk;
+static inline ControllerStatus DownloadCheckDiff(DiffContext* ctx, void* data) {
+  return CheckDownloadUpToDate(ctx->observed, ctx->log);
 }
 
 static const ControllerConfig kDownloadControllerConfig = {
@@ -391,8 +392,8 @@ static const ControllerConfig kDownloadControllerConfig = {
     .plan = DownloadPlan,
     .apply = DownloadApply,
     .validate = DownloadValidate,
-    .diff = DownloadDiff,
-    .status = DownloadStatus,
+    .diff = DownloadCheckDiff,
+    .status = DownloadCheckStatus,
     .rollback = NULL,
     .normalize = NULL,
     .destroy = NULL,

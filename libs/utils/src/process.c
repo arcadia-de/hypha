@@ -208,7 +208,16 @@ int ExecProcess(Process* p) {
   free(env);
   free(args);
   int status = 0;
-  waitpid(pid, &status, WNOHANG);
+  // NOTE: was WNOHANG. Both output pipes have already hit EOF by this point (the poll loop
+  // above only exits once active_pipes reaches 0), which happens when the child exits and
+  // its write ends close -- so the child is already a zombie or about to become one, and
+  // blocking here is safe, not a hang risk. WNOHANG can return 0 (no state change available
+  // yet) in the narrow window before the kernel finishes tearing the child down, leaving
+  // `status` at its initialized value of 0 -- and WIFEXITED(0) is true with
+  // WEXITSTATUS(0) == 0, so a process that actually exited non-zero (or was killed by a
+  // signal) could be silently reported as a clean exit. Caught via a Task `check` command
+  // (`/usr/bin/false`, exit 1) intermittently reporting success.
+  waitpid(pid, &status, 0);
   clock_gettime(CLOCK_REALTIME, &p->start);
 
   if (p->on_finished)

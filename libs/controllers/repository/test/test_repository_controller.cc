@@ -24,6 +24,28 @@ Resource MakeDesiredResource(const std::string& url, const std::string& destinat
   return res;
 }
 
+// Creates an initial commit in `repo` so it has a real HEAD to report -- a freshly
+// git_repository_init()'d repo has none yet.
+void CreateInitialCommit(git_repository* repo) {
+  git_signature* sig = nullptr;
+  ASSERT_EQ(git_signature_now(&sig, "Test", "test@example.com"), 0);
+
+  git_index* index = nullptr;
+  ASSERT_EQ(git_repository_index(&index, repo), 0);
+  git_oid tree_oid;
+  ASSERT_EQ(git_index_write_tree(&tree_oid, index), 0);
+
+  git_tree* tree = nullptr;
+  ASSERT_EQ(git_tree_lookup(&tree, repo, &tree_oid), 0);
+
+  git_oid commit_oid;
+  ASSERT_EQ(git_commit_create_v(&commit_oid, repo, "HEAD", sig, sig, nullptr, "initial commit", tree, 0), 0);
+
+  git_tree_free(tree);
+  git_index_free(index);
+  git_signature_free(sig);
+}
+
 }  // namespace
 
 class RepositoryControllerTest : public ::testing::Test {  // NOLINT(cppcoreguidelines-special-member-functions)
@@ -119,6 +141,90 @@ TEST_F(RepositoryControllerTest, StatusFailsWhenDestinationMissing) {
   ASSERT_EQ(ControllerObserve(ctrl, &res, &last), kStatusOk);
 
   EXPECT_EQ(ControllerStat(ctrl, &res), kStatusInternalError);
+
+  free(res.info.name);
+  FreeResourceSpecJson(&res.spec);
+  free(res.spec.raw);
+}
+
+TEST_F(RepositoryControllerTest, DiffFailsWhenDestinationMissing) {
+  const std::string destination = TempPath("-diff-never-cloned");
+  Resource res = MakeDesiredResource(source_repo, destination);
+
+  StateEntry last = {};
+  ASSERT_EQ(ControllerObserve(ctrl, &res, &last), kStatusOk);
+
+  DeltaLog dlog = {};
+  InitDeltaLog(&dlog, 4);
+  EXPECT_EQ(ControllerDiff(ctrl, &res, &dlog), kStatusInternalError);
+  ASSERT_EQ(dlog.data_len, 1u);
+  // NOTE: Reason is a fixed 128-byte buffer; destination + url together can legitimately
+  // truncate before "would be cloned there", so only assert on what's guaranteed to fit.
+  EXPECT_NE(strstr(dlog.data[0].reason, "is not a git repository"), nullptr);
+  FreeDeltaLog(&dlog);
+
+  free(res.info.name);
+  FreeResourceSpecJson(&res.spec);
+  free(res.spec.raw);
+}
+
+// Cloning our `source_repo` fixture (which has no commits) gives a destination with no HEAD
+// either -- Diff should recognize that distinctly rather than treating it as an error.
+TEST_F(RepositoryControllerTest, DiffReportsNoCommitsYetForEmptyClone) {
+  const std::string destination = TempPath("-diff-empty-clone");
+  Resource res = MakeDesiredResource(source_repo, destination);
+
+  StateEntry last = {};
+  ASSERT_EQ(ControllerObserve(ctrl, &res, &last), kStatusOk);
+
+  Plan plan = {};
+  InitPlan(&plan, 4);
+  ControllerAction action = ControllerPlan(ctrl, &res, &res, &plan);
+  FreePlan(&plan);
+
+  AppliedActionLog alog = {};
+  ASSERT_EQ(ControllerApply(ctrl, &res, action, &alog), kStatusOk);
+
+  DeltaLog dlog = {};
+  InitDeltaLog(&dlog, 4);
+  EXPECT_EQ(ControllerDiff(ctrl, &res, &dlog), kStatusOk);
+  ASSERT_EQ(dlog.data_len, 1u);
+  EXPECT_NE(strstr(dlog.data[0].reason, "no commits yet"), nullptr);
+  FreeDeltaLog(&dlog);
+
+  free(res.info.name);
+  FreeResourceSpecJson(&res.spec);
+  free(res.spec.raw);
+}
+
+// This exercises the actual branch/commit reporting path: a source repo *with* a real commit
+// to clone and then report on.
+TEST_F(RepositoryControllerTest, DiffReportsBranchAndCommitForRealClone) {
+  git_repository* src = nullptr;
+  ASSERT_EQ(git_repository_open(&src, source_repo.c_str()), 0);
+  CreateInitialCommit(src);
+  git_repository_free(src);
+
+  const std::string destination = TempPath("-diff-real-clone");
+  Resource res = MakeDesiredResource(source_repo, destination);
+
+  StateEntry last = {};
+  ASSERT_EQ(ControllerObserve(ctrl, &res, &last), kStatusOk);
+
+  Plan plan = {};
+  InitPlan(&plan, 4);
+  ControllerAction action = ControllerPlan(ctrl, &res, &res, &plan);
+  FreePlan(&plan);
+
+  AppliedActionLog alog = {};
+  ASSERT_EQ(ControllerApply(ctrl, &res, action, &alog), kStatusOk);
+
+  DeltaLog dlog = {};
+  InitDeltaLog(&dlog, 4);
+  EXPECT_EQ(ControllerDiff(ctrl, &res, &dlog), kStatusOk);
+  ASSERT_EQ(dlog.data_len, 1u);
+  EXPECT_NE(strstr(dlog.data[0].reason, destination.c_str()), nullptr);
+  FreeDeltaLog(&dlog);
 
   free(res.info.name);
   FreeResourceSpecJson(&res.spec);

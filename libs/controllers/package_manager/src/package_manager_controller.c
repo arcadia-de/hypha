@@ -7,6 +7,7 @@
 #include "hypha.h"
 #include "hypha/action_log.h"
 #include "hypha/annotation.h"
+#include "hypha/controller.h"
 #include "hypha/controller_status.h"
 #include "hypha/expander.h"
 #include "hypha/log.h"
@@ -118,6 +119,45 @@ DEFINE_CONTROLLER_APPLY_FN(PackageManager) {
   return kStatusOk;
 }
 
+// Status and Diff ask the same question here -- "is `type` a registered, usable backend" --
+// so they share one implementation, the same shape used for Package's Status/Diff. `dlog` is
+// NULL from Status (plain pass/fail, logs failures normally) and non-NULL from Diff (records
+// the same finding as a Delta).
+static inline ControllerStatus CheckPackageManagerAvailable(const Resource* observed, DeltaLog* dlog) {
+  ASSERT(observed);
+
+  PackageManager* mgr = FindPackageManager(package_manager_spec.type);
+  if (!mgr) {
+    if (dlog) {
+      NewNoDelta(dlog, "`%s` is not a registered package manager", package_manager_spec.type);
+    } else {
+      LOG_ERROR("`%s` is not a registered package manager", package_manager_spec.type);
+    }
+    return kStatusInternalError;
+  }
+
+  if (access(GetPackageManagerPath(mgr), X_OK) != 0) {
+    if (dlog) {
+      NewNoDelta(dlog, "`%s` backend is not available on this host", package_manager_spec.type);
+    } else {
+      LOG_ERROR("`%s` backend is not available on this host", package_manager_spec.type);
+    }
+    return kStatusInternalError;
+  }
+
+  if (dlog)
+    NewNoDelta(dlog, "`%s` backend is available", package_manager_spec.type);
+  return kStatusOk;
+}
+
+static inline ControllerStatus PackageManagerCheckStatus(StatusContext* ctx, void* data) {
+  return CheckPackageManagerAvailable(ctx->current, NULL);
+}
+
+static inline ControllerStatus PackageManagerCheckDiff(DiffContext* ctx, void* data) {
+  return CheckPackageManagerAvailable(ctx->observed, ctx->log);
+}
+
 static const ControllerConfig kPackageManagerControllerConfig = {
     .init = NULL,
     .deinit = NULL,
@@ -125,8 +165,8 @@ static const ControllerConfig kPackageManagerControllerConfig = {
     .plan = PackageManagerPlan,
     .apply = PackageManagerApply,
     .validate = PackageManagerValidate,
-    .diff = NULL,
-    .status = NULL,
+    .diff = PackageManagerCheckDiff,
+    .status = PackageManagerCheckStatus,
     .rollback = NULL,
     .normalize = PackageManagerNormalize,
     .destroy = NULL,

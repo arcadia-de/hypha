@@ -4,6 +4,10 @@
 #include <stdint.h>
 #include <time.h>
 
+#ifdef __cplusplus
+extern "C" {
+#endif  // __cplusplus
+
 #ifndef HYPHA_PROCESS_BUFFER_SIZE
 #define HYPHA_PROCESS_BUFFER_SIZE 512
 #endif  // HYPHA_PROCESS_BUFFER_SIZE
@@ -45,5 +49,9 @@ int ExecProcess(Process* p);
 #endif  // HYPHA_WHICH_PATH
 
 bool ExecWhich(const char* bin, char** result);
+
+#ifdef __cplusplus
+}
+#endif  // __cplusplus
 
 #endif  // HYPHA_PROCESS_H

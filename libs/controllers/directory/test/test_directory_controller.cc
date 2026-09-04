@@ -126,3 +126,39 @@ TEST_F(DirectoryControllerTest, PlanIsNoOpWhenTargetExistsButIsNotADirectory) {
   free(res.spec.raw);
   remove(target.c_str());
 }
+
+// Diff and Status agree here -- there's no more granular comparison available than "does
+// target exist and is it a directory."
+TEST_F(DirectoryControllerTest, DiffMatchesStatus) {
+  const std::string target = TempPath("-diff-nested/a/b");
+  Resource res = MakeDesiredResource(target);
+
+  StateEntry last = {};
+  ASSERT_EQ(ControllerObserve(ctrl, &res, &last), kStatusOk);
+
+  DeltaLog dlog = {};
+  InitDeltaLog(&dlog, 4);
+  EXPECT_EQ(ControllerDiff(ctrl, &res, &dlog), kStatusInternalError);
+  ASSERT_EQ(dlog.data_len, 1u);
+  EXPECT_NE(strstr(dlog.data[0].reason, "does not exist"), nullptr);
+  FreeDeltaLog(&dlog);
+
+  Plan plan = {};
+  InitPlan(&plan, 4);
+  ControllerAction action = ControllerPlan(ctrl, &res, &res, &plan);
+  FreePlan(&plan);
+
+  AppliedActionLog alog = {};
+  ASSERT_EQ(ControllerApply(ctrl, &res, action, &alog), kStatusOk);
+
+  DeltaLog dlog2 = {};
+  InitDeltaLog(&dlog2, 4);
+  EXPECT_EQ(ControllerDiff(ctrl, &res, &dlog2), kStatusOk);
+  ASSERT_EQ(dlog2.data_len, 1u);
+  EXPECT_NE(strstr(dlog2.data[0].reason, "exists"), nullptr);
+  FreeDeltaLog(&dlog2);
+
+  free(res.info.name);
+  FreeResourceSpecJson(&res.spec);
+  free(res.spec.raw);
+}

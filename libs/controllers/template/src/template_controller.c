@@ -349,6 +349,89 @@ DEFINE_CONTROLLER_STATUS_FN(Template) {
   return kStatusOk;
 }
 
+// Status only checks that `target` exists -- it doesn't look at whether the content is
+// actually correct. Diff renders the template fresh (the same way Plan/Apply do) and
+// compares it byte-for-byte against what's actually on disk, reporting the size difference
+// or the first byte offset where they diverge. Genuinely more informative than Status, since
+// Template is one of the few controllers here where the "expected" content is something we
+// can regenerate and compare directly rather than just checking a checksum matches.
+DEFINE_CONTROLLER_DIFF_FN(Template) {
+  const Resource* observed = ctx->observed;
+  ASSERT(observed);
+  DeltaLog* dlog = ctx->log;
+  ASSERT(dlog);
+
+  json_t* doc = observed->spec.doc;
+  ASSERT(doc);
+
+  bool owned = false;
+  char* source = ResolveTemplateSource(doc, &owned);
+  if (!source) {
+    NewNoDelta(dlog, "failed to resolve template source for `%s`", observed->info.name);
+    return kStatusInternalError;
+  }
+
+  json_t* dataField = json_object_get(doc, "data");
+  char* dataValue = NULL;
+  bool data_owned = false;
+  if (dataField) {
+    if (json_is_object(dataField)) {
+      dataValue = json_dumps(dataField, 0);
+      data_owned = true;
+    } else {
+      dataValue = (char*)json_string_value(dataField);
+    }
+  }
+
+  char* rendered = RenderTemplate(source, dataValue, false);
+  if (owned)
+    free(source);
+  if (data_owned)
+    free(dataValue);
+
+  if (!rendered) {
+    NewNoDelta(dlog, "failed to render template for `%s`", observed->info.name);
+    return kStatusInternalError;
+  }
+
+  const size_t rendered_len = strlen(rendered);
+
+  char* actual = ReadFileContents(template_spec.target);
+  if (!actual) {
+    NewNoDelta(dlog, "`%s` does not exist -- would be rendered with %zu bytes", template_spec.target, rendered_len);
+    free(rendered);
+    return kStatusInternalError;
+  }
+
+  const size_t actual_len = strlen(actual);
+  if (rendered_len != actual_len) {
+    NewNoDelta(dlog, "`%s` is %zu bytes, expected %zu bytes", template_spec.target, actual_len, rendered_len);
+    free(rendered);
+    free(actual);
+    return kStatusInternalError;
+  }
+
+  size_t first_diff = 0;
+  bool differs = false;
+  for (; first_diff < rendered_len; first_diff++) {
+    if (rendered[first_diff] != actual[first_diff]) {
+      differs = true;
+      break;
+    }
+  }
+
+  free(rendered);
+  free(actual);
+
+  if (differs) {
+    NewNoDelta(dlog, "`%s` differs from the expected rendered content starting at byte %zu", template_spec.target,
+               first_diff);
+    return kStatusInternalError;
+  }
+
+  return kStatusOk;
+}
+
 static const ControllerConfig kTemplateControllerConfig = {
     .init = NULL,
     .deinit = NULL,
@@ -356,7 +439,7 @@ static const ControllerConfig kTemplateControllerConfig = {
     .plan = TemplatePlan,
     .apply = TemplateApply,
     .validate = TemplateValidate,
-    .diff = NULL,
+    .diff = TemplateDiff,
     .status = TemplateStatus,
     .rollback = NULL,
     .normalize = NULL,
