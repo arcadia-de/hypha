@@ -1,6 +1,6 @@
 ARG UBUNTU_VERSION=26.04
 ARG HYPHA_BUILDENV_VERSION=latest
-FROM ghcr.io/arcadia-de/hypha/hypha-build-env:${HYPHA_BUILDENV_VERSION} AS builder
+FROM ghcr.io/arcadia-de/hypha/build-env:${HYPHA_BUILDENV_VERSION} AS builder
 ARG GO_VERSION=1.26.4
 
 ENV DEBIAN_FRONTEND=noninteractive
