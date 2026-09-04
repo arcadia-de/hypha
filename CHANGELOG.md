@@ -1,5 +1,46 @@
 # Changelog
 
+## [1.11.0](https://github.com/arcadia-de/hypha/compare/v1.10.0...v1.11.0) (2026-09-04)
+
+
+### Features
+
+* ✨ add diff infrastructure ([a4f3170](https://github.com/arcadia-de/hypha/commit/a4f3170f5723b501d954e6a1337ce5fda03c224c))
+* ✨ finish all status & diff functions for Controllers ([a4f3170](https://github.com/arcadia-de/hypha/commit/a4f3170f5723b501d954e6a1337ce5fda03c224c))
+* ✨ implement PackageManager controller status ([a4f3170](https://github.com/arcadia-de/hypha/commit/a4f3170f5723b501d954e6a1337ce5fda03c224c))
+* ✨ partially implement the controllers and some tests ([47a8806](https://github.com/arcadia-de/hypha/commit/47a8806f56752bb4b060567903f970a9fc241d77))
+* **ctrl/archive:** ✨ implement Archive controller diff fn ([a4f3170](https://github.com/arcadia-de/hypha/commit/a4f3170f5723b501d954e6a1337ce5fda03c224c))
+* **ctrl/archive:** ✨ implement ArchiveController and some tests ([47a8806](https://github.com/arcadia-de/hypha/commit/47a8806f56752bb4b060567903f970a9fc241d77))
+* **ctrl/directory:** ✨ implement Directory Controller and some code cleanup ([47a8806](https://github.com/arcadia-de/hypha/commit/47a8806f56752bb4b060567903f970a9fc241d77))
+* **ctrl/directory:** ✨ implement Directory controller diff fn ([a4f3170](https://github.com/arcadia-de/hypha/commit/a4f3170f5723b501d954e6a1337ce5fda03c224c))
+* **ctrl/download:** ✨ add a Download Controller, some tests and code cleanup ([47a8806](https://github.com/arcadia-de/hypha/commit/47a8806f56752bb4b060567903f970a9fc241d77))
+* **ctrl/download:** ✨ implement Download controller diff fn ([a4f3170](https://github.com/arcadia-de/hypha/commit/a4f3170f5723b501d954e6a1337ce5fda03c224c))
+* **ctrl/package-manager:** ✨ implement PackageManager Controller and some code cleanup ([47a8806](https://github.com/arcadia-de/hypha/commit/47a8806f56752bb4b060567903f970a9fc241d77))
+* **ctrl/package-manager:** ✨ implement PackageManager diff fn ([a4f3170](https://github.com/arcadia-de/hypha/commit/a4f3170f5723b501d954e6a1337ce5fda03c224c))
+* **ctrl/package:** ✨ implement Package Controller and some code cleanup ([47a8806](https://github.com/arcadia-de/hypha/commit/47a8806f56752bb4b060567903f970a9fc241d77))
+* **ctrl/package:** ✨ implement Package controller diff fn ([a4f3170](https://github.com/arcadia-de/hypha/commit/a4f3170f5723b501d954e6a1337ce5fda03c224c))
+* **ctrl/package:** ✨ implement Package controller status fn ([a4f3170](https://github.com/arcadia-de/hypha/commit/a4f3170f5723b501d954e6a1337ce5fda03c224c))
+* **ctrl/repository:** ✨ implement Repository controller and tests ([47a8806](https://github.com/arcadia-de/hypha/commit/47a8806f56752bb4b060567903f970a9fc241d77))
+* **ctrl/repository:** ✨ implement Repository controller diff fn ([a4f3170](https://github.com/arcadia-de/hypha/commit/a4f3170f5723b501d954e6a1337ce5fda03c224c))
+* **ctrl/symlink:** ✨ impl Symlink Controller, some tests and code cleanup ([47a8806](https://github.com/arcadia-de/hypha/commit/47a8806f56752bb4b060567903f970a9fc241d77))
+* **ctrl/symlink:** ✨ implement Symlink controller diff fn ([a4f3170](https://github.com/arcadia-de/hypha/commit/a4f3170f5723b501d954e6a1337ce5fda03c224c))
+* **ctrl/task:** ✨ implement Task controller diff fn ([a4f3170](https://github.com/arcadia-de/hypha/commit/a4f3170f5723b501d954e6a1337ce5fda03c224c))
+* **ctrl/task:** ✨ implement Task controller status fn ([a4f3170](https://github.com/arcadia-de/hypha/commit/a4f3170f5723b501d954e6a1337ce5fda03c224c))
+* **ctrl/template:** ✨ implement Template controller diff fn ([a4f3170](https://github.com/arcadia-de/hypha/commit/a4f3170f5723b501d954e6a1337ce5fda03c224c))
+* **ctrl/template:** ✨ implement Template Controller, some tests and code cleanup ([47a8806](https://github.com/arcadia-de/hypha/commit/47a8806f56752bb4b060567903f970a9fc241d77))
+* **ctrl/test:** ✨ implement Task controller status fn ([a4f3170](https://github.com/arcadia-de/hypha/commit/a4f3170f5723b501d954e6a1337ce5fda03c224c))
+* **ctrl/test:** ✨ implement Test controller diff fn ([a4f3170](https://github.com/arcadia-de/hypha/commit/a4f3170f5723b501d954e6a1337ce5fda03c224c))
+* **ctrl/test:** ✨ implement Test controller status fn ([a4f3170](https://github.com/arcadia-de/hypha/commit/a4f3170f5723b501d954e6a1337ce5fda03c224c))
+* **jsonnet-lib:** ✨ improve jsonnet bindings [#56](https://github.com/arcadia-de/hypha/issues/56) ([ac92e54](https://github.com/arcadia-de/hypha/commit/ac92e543975ab9f928e90e0358ca67b8fc4bf63b))
+* **jsonnet-lib:** ✨ improve jsonnet lib natives ([ac92e54](https://github.com/arcadia-de/hypha/commit/ac92e543975ab9f928e90e0358ca67b8fc4bf63b))
+
+
+### Bug Fixes
+
+* 🐛 fix resource.h extern ([a4f3170](https://github.com/arcadia-de/hypha/commit/a4f3170f5723b501d954e6a1337ce5fda03c224c))
+* **ctrl/download:** 🐛 fix download Controller compilation error ([a4f3170](https://github.com/arcadia-de/hypha/commit/a4f3170f5723b501d954e6a1337ce5fda03c224c))
+* **utils/process:** 🐛 fix Process reaping happening after waitpid so status can be set properly ([a4f3170](https://github.com/arcadia-de/hypha/commit/a4f3170f5723b501d954e6a1337ce5fda03c224c))
+
 ## [1.10.0](https://github.com/arcadia-de/hypha/compare/v1.9.0...v1.10.0) (2026-09-01)
 
 
