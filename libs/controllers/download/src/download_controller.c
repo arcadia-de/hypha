@@ -14,6 +14,7 @@
 #include "hypha.h"
 #include "hypha/action_log.h"
 #include "hypha/controller_status.h"
+#include "hypha/delta_log.h"
 #include "hypha/download_spec.h"
 #include "hypha/expander.h"
 #include "hypha/log.h"
@@ -357,6 +358,32 @@ DEFINE_CONTROLLER_STATUS_FN(Download) {
   return kStatusOk;
 }
 
+DEFINE_CONTROLLER_DIFF_FN(Download) {
+  Resource* desired = (Resource*)ctx->desired;
+  Resource* observed = (Resource*)ctx->observed;
+  DeltaLog* log = &ctx->log;
+  ASSERT(desired);
+  ASSERT(observed);
+  ASSERT(log);
+
+  if (download_spec.sha256 && download_spec.sha256_len > 0) {
+    char actual[crypto_hash_sha256_BYTES * 2 + 1];
+    if (!Sha256File(download_spec.destination, actual)) {
+      NewNoDelta(log, "failed to hash existing `%s`", download_spec.destination);
+      return kStatusTransientError;
+    }
+
+    if (strncmp(actual, download_spec.sha256, sizeof(actual)) != 0) {
+      NewChangeDelta(log, "`%s` has checksum `%s`, expected `%s`", download_spec.destination, actual,
+                     download_spec.sha256);
+      return kStatusOk;
+    }
+  }
+
+  NewNoDelta(log, "`%s` is already up-to-date", download_spec.destination);
+  return kStatusOk;
+}
+
 static const ControllerConfig kDownloadControllerConfig = {
     .init = InitController,
     .deinit = DeInitController,
@@ -364,7 +391,7 @@ static const ControllerConfig kDownloadControllerConfig = {
     .plan = DownloadPlan,
     .apply = DownloadApply,
     .validate = DownloadValidate,
-    .diff = NULL,
+    .diff = DownloadDiff,
     .status = DownloadStatus,
     .rollback = NULL,
     .normalize = NULL,

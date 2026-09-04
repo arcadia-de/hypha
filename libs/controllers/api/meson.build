@@ -6,6 +6,7 @@ all_hypha_controller_deps = [
   hypha_log_dep,
   hypha_state_dep,
   hypha_action_dep,
+  delta_dep,
   hypha_resource_graph_dep,
   hypha_validation_dep,
   hypha_planner_dep,

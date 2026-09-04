@@ -11,6 +11,7 @@ extern "C" {
 #include "hypha.h"
 #include "hypha/action_log.h"
 #include "hypha/controller_status.h"
+#include "hypha/delta_log.h"
 #include "hypha/planner.h"
 #include "hypha/resource.h"
 #include "hypha/resource_kind.h"
@@ -62,8 +63,9 @@ typedef struct {
 DECLARE_CONTROLLER_FN(Destroy, ControllerStatus);
 
 typedef struct {
-  const Resource* current;
+  const Resource* observed;
   const Resource* desired;
+  DeltaLog log;
 } DiffContext;
 DECLARE_CONTROLLER_FN(Diff, ControllerStatus);
 
@@ -105,6 +107,9 @@ DECLARE_CONTROLLER_FN(Apply, ControllerStatus);
 
 #define DEFINE_CONTROLLER_STATUS_FN(Name) \
   _DEFINE_CONTROLLER_FN(Name, Status, ControllerStatus)
+
+#define DEFINE_CONTROLLER_DIFF_FN(Name) \
+  _DEFINE_CONTROLLER_FN(Name, Diff, ControllerStatus)
 
 #define DEFINE_CONTROLLER_VALIDATE_FN(Name) \
   _DEFINE_CONTROLLER_FN(Name, Validate, bool)

@@ -5,6 +5,7 @@
 
 typedef struct {
   Reason reason;
+  int change;
 } Delta;
 
 #endif  // HYPHA_DELTA_H
